@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 # Minimum data points needed for meaningful analysis
 MIN_DATA_POINTS = 50
 
+# Cooldown period: don't generate a new signal for the same symbol within this window
+SIGNAL_COOLDOWN_HOURS = 1
+
 # Symbols that map to short display names
 SYMBOL_DISPLAY = {
     ".NS": "stock",  # suffix check
@@ -96,6 +99,11 @@ class SignalGenerator:
         Returns:
             Signal object if generated, None if insufficient data or HOLD.
         """
+        # 0. Cooldown check — skip if a recent signal exists for this symbol
+        if await self._has_recent_signal(symbol):
+            logger.debug("Cooldown active for %s, skipping", symbol)
+            return None
+
         # 1. Fetch recent market data
         df = await self._fetch_market_data(symbol)
         if df is None or len(df) < MIN_DATA_POINTS:
@@ -205,3 +213,14 @@ class SignalGenerator:
         # Sort ascending by time for indicator calculations
         df = df.sort_values("timestamp").reset_index(drop=True)
         return df
+
+    async def _has_recent_signal(self, symbol: str) -> bool:
+        """Check if a signal was generated for this symbol within the cooldown period."""
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=SIGNAL_COOLDOWN_HOURS)
+        stmt = (
+            select(Signal.id)
+            .where(Signal.symbol == symbol, Signal.created_at >= cutoff)
+            .limit(1)
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none() is not None

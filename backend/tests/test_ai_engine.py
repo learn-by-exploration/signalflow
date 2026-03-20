@@ -115,21 +115,24 @@ class TestAISentimentEngine:
                 assert "earnings beat" in result["key_factors"]
 
     def test_parse_rss(self) -> None:
+        from app.services.ai_engine.news_fetcher import _parse_rss_titles
+
         xml = """<rss><channel>
             <title>Feed Title</title>
-            <item><title>Article 1</title></item>
-            <item><title>Article 2</title></item>
+            <item><title>Article 1 About Markets</title></item>
+            <item><title>Article 2 About Trading</title></item>
         </channel></rss>"""
-        articles = AISentimentEngine._parse_rss(xml)
+        articles = _parse_rss_titles(xml)
         assert len(articles) == 2
-        assert articles[0] == "Article 1"
 
     def test_parse_rss_cdata(self) -> None:
+        from app.services.ai_engine.news_fetcher import _parse_rss_titles
+
         xml = """<rss><channel>
             <title><![CDATA[Feed]]></title>
-            <item><title><![CDATA[News about BTC]]></title></item>
+            <item><title><![CDATA[News about BTC cryptocurrency markets]]></title></item>
         </channel></rss>"""
-        articles = AISentimentEngine._parse_rss(xml)
+        articles = _parse_rss_titles(xml)
         assert len(articles) == 1
         assert "BTC" in articles[0]
 

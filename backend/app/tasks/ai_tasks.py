@@ -1,10 +1,13 @@
 """AI sentiment analysis Celery tasks.
 
-Runs Claude AI sentiment analysis on news for all tracked symbols.
+Runs Claude AI sentiment analysis on news for tracked symbols.
+Budget-optimized: stocks only during market hours, crypto 24/7, forex during market hours.
 """
 
 import asyncio
 import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import redis.asyncio as aioredis
 
@@ -13,6 +16,8 @@ from app.services.ai_engine.sentiment import AISentimentEngine
 from app.tasks.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
+
+IST = ZoneInfo("Asia/Kolkata")
 
 
 def _detect_market_type(symbol: str) -> str:
@@ -26,23 +31,41 @@ def _detect_market_type(symbol: str) -> str:
     return "stock"
 
 
+def _is_stock_market_hours() -> bool:
+    """Check if NSE is likely open (Mon-Fri 9:00-16:00 IST with buffer)."""
+    now = datetime.now(IST)
+    if now.weekday() >= 5:  # Weekend
+        return False
+    return 9 <= now.hour <= 16
+
+
+def _is_forex_market_hours() -> bool:
+    """Check if forex markets are active (Sun 5:30 PM - Sat 3:30 AM IST, roughly)."""
+    now = datetime.now(IST)
+    # Forex is closed Sat 3:30 AM IST to Sun 5:30 PM IST
+    if now.weekday() == 5 and now.hour >= 4:  # Saturday after 4 AM
+        return False
+    if now.weekday() == 6 and now.hour < 17:  # Sunday before 5 PM
+        return False
+    return True
+
+
 async def _run_sentiment_async() -> dict:
-    """Async sentiment analysis for all symbols."""
+    """Async sentiment analysis — budget-aware with market-hours gating."""
     settings = get_settings()
     redis_client = aioredis.from_url(settings.redis_url)
 
     try:
         engine = AISentimentEngine(redis_client=redis_client)
-        all_symbols = settings.tracked_stocks + settings.tracked_crypto + settings.tracked_forex
 
         analyzed = 0
         errors = 0
         skipped = 0
 
-        for symbol in all_symbols:
+        # Always analyze crypto (24/7)
+        for symbol in settings.tracked_crypto:
             try:
-                market_type = _detect_market_type(symbol)
-                result = await engine.analyze_sentiment(symbol, market_type)
+                result = await engine.analyze_sentiment(symbol, "crypto")
                 if result.get("fallback_reason"):
                     skipped += 1
                 else:
@@ -50,6 +73,38 @@ async def _run_sentiment_async() -> dict:
             except Exception:
                 logger.exception("Sentiment analysis failed for %s", symbol)
                 errors += 1
+
+        # Stocks: only during market hours
+        if _is_stock_market_hours():
+            for symbol in settings.tracked_stocks:
+                try:
+                    result = await engine.analyze_sentiment(symbol, "stock")
+                    if result.get("fallback_reason"):
+                        skipped += 1
+                    else:
+                        analyzed += 1
+                except Exception:
+                    logger.exception("Sentiment analysis failed for %s", symbol)
+                    errors += 1
+        else:
+            skipped += len(settings.tracked_stocks)
+            logger.info("Skipping stock sentiment — market closed")
+
+        # Forex: only during forex hours
+        if _is_forex_market_hours():
+            for symbol in settings.tracked_forex:
+                try:
+                    result = await engine.analyze_sentiment(symbol, "forex")
+                    if result.get("fallback_reason"):
+                        skipped += 1
+                    else:
+                        analyzed += 1
+                except Exception:
+                    logger.exception("Sentiment analysis failed for %s", symbol)
+                    errors += 1
+        else:
+            skipped += len(settings.tracked_forex)
+            logger.info("Skipping forex sentiment — market closed")
 
         return {"status": "ok", "analyzed": analyzed, "skipped": skipped, "errors": errors}
     finally:

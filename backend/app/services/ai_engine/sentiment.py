@@ -12,6 +12,7 @@ import httpx
 
 from app.config import get_settings
 from app.services.ai_engine.cost_tracker import CostTracker
+from app.services.ai_engine.news_fetcher import fetch_news_for_symbol
 from app.services.ai_engine.prompts import SENTIMENT_PROMPT
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class AISentimentEngine:
         redis_client: Optional Redis client for caching. If None, caching is skipped.
     """
 
-    CACHE_TTL = 900  # 15 minutes
+    CACHE_TTL = 3600  # 60 minutes (matches sentiment task schedule)
 
     def __init__(self, redis_client: Any | None = None) -> None:
         self.settings = get_settings()
@@ -80,46 +81,11 @@ class AISentimentEngine:
         return result
 
     async def _fetch_news(self, symbol: str, market_type: str) -> list[str]:
-        """Fetch recent news articles for a symbol.
+        """Fetch recent news articles for a symbol using multi-source fetcher.
 
-        Uses free news APIs. Returns a list of article text snippets (max 10).
+        Returns a list of article text snippets (max 10).
         """
-        clean_symbol = symbol.replace(".NS", "").replace("USDT", "")
-
-        search_terms = {
-            "stock": f"{clean_symbol} NSE stock India",
-            "crypto": f"{clean_symbol} cryptocurrency",
-            "forex": f"{symbol} forex exchange rate",
-        }
-        query = search_terms.get(market_type, clean_symbol)
-
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                # Use Google News RSS as a free news source
-                url = "https://news.google.com/rss/search"
-                resp = await client.get(url, params={"q": query, "hl": "en-IN", "gl": "IN"})
-                resp.raise_for_status()
-
-                # Parse RSS XML to extract titles + descriptions
-                articles = self._parse_rss(resp.text)
-                return articles[:10]  # Max 10 articles per batch
-        except Exception:
-            logger.exception("Failed to fetch news for %s", symbol)
-            return []
-
-    @staticmethod
-    def _parse_rss(xml_text: str) -> list[str]:
-        """Extract article titles from RSS XML.
-
-        Uses simple string parsing to avoid lxml dependency.
-        """
-        import re
-
-        items = re.findall(r"<title><!\[CDATA\[(.*?)\]\]></title>", xml_text)
-        if not items:
-            items = re.findall(r"<title>(.*?)</title>", xml_text)
-        # Skip the feed title (first item)
-        return [item.strip() for item in items[1:] if item.strip()]
+        return await fetch_news_for_symbol(symbol, market_type, max_articles=10)
 
     async def _call_claude(
         self, symbol: str, market_type: str, articles: list[str]

@@ -3,12 +3,14 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
+from decimal import Decimal
 
 import redis.asyncio as aioredis
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import get_settings
+from app.models.market_data import MarketData
 from app.models.signal import Signal
 from app.models.signal_history import SignalHistory
 from app.services.signal_gen.generator import SignalGenerator
@@ -36,42 +38,116 @@ async def _generate_signals_async() -> dict:
         await engine.dispose()
 
 
-async def _resolve_expired_async() -> dict:
-    """Check active signals and resolve expired ones."""
+async def _resolve_signals_async() -> dict:
+    """Check active signals against current prices and resolve them.
+
+    For each active signal:
+    - Fetch the latest market price
+    - If price >= target_price (for BUY signals) → hit_target
+    - If price <= stop_loss (for BUY signals) → hit_stop
+    - If price <= target_price (for SELL signals) → hit_target
+    - If price >= stop_loss (for SELL signals) → hit_stop
+    - If expired → expired
+    """
     settings = get_settings()
     engine = create_async_engine(settings.database_url, pool_pre_ping=True)
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     now = datetime.now(timezone.utc)
-    resolved = 0
+    hit_target = 0
+    hit_stop = 0
+    expired = 0
 
     try:
         async with session_factory() as db:
-            # Find expired active signals
-            stmt = select(Signal).where(
-                Signal.is_active.is_(True),
-                Signal.expires_at <= now,
-            )
+            # Fetch all active signals
+            stmt = select(Signal).where(Signal.is_active.is_(True))
             result = await db.execute(stmt)
-            expired_signals = result.scalars().all()
+            active_signals = result.scalars().all()
 
-            for signal in expired_signals:
-                signal.is_active = False
-
-                # Create history entry
-                history = SignalHistory(
-                    signal_id=signal.id,
-                    outcome="expired",
-                    exit_price=signal.current_price,  # Use creation price as placeholder
-                    return_pct=None,
-                    resolved_at=now,
+            for signal in active_signals:
+                # Get the latest price for this symbol
+                price_stmt = (
+                    select(MarketData.close)
+                    .where(MarketData.symbol == signal.symbol)
+                    .order_by(MarketData.timestamp.desc())
+                    .limit(1)
                 )
-                db.add(history)
-                resolved += 1
+                price_result = await db.execute(price_stmt)
+                latest_price_row = price_result.scalar_one_or_none()
+
+                if latest_price_row is None:
+                    continue
+
+                current_price = Decimal(str(latest_price_row))
+                is_buy = "BUY" in signal.signal_type
+                outcome = None
+
+                if is_buy:
+                    if current_price >= signal.target_price:
+                        outcome = "hit_target"
+                    elif current_price <= signal.stop_loss:
+                        outcome = "hit_stop"
+                else:
+                    # SELL signal: target is lower, stop is higher
+                    if current_price <= signal.target_price:
+                        outcome = "hit_target"
+                    elif current_price >= signal.stop_loss:
+                        outcome = "hit_stop"
+
+                # Check expiry
+                if outcome is None and signal.expires_at and signal.expires_at <= now:
+                    outcome = "expired"
+
+                if outcome:
+                    signal.is_active = False
+
+                    # Calculate return percentage
+                    if signal.current_price and signal.current_price > 0:
+                        if is_buy:
+                            return_pct = (
+                                (current_price - signal.current_price) / signal.current_price * 100
+                            )
+                        else:
+                            return_pct = (
+                                (signal.current_price - current_price) / signal.current_price * 100
+                            )
+                    else:
+                        return_pct = None
+
+                    history = SignalHistory(
+                        signal_id=signal.id,
+                        outcome=outcome,
+                        exit_price=current_price,
+                        return_pct=return_pct,
+                        resolved_at=now,
+                    )
+                    db.add(history)
+
+                    if outcome == "hit_target":
+                        hit_target += 1
+                    elif outcome == "hit_stop":
+                        hit_stop += 1
+                    else:
+                        expired += 1
+
+                    logger.info(
+                        "Signal resolved: %s %s → %s (return=%.2f%%)",
+                        signal.symbol,
+                        signal.signal_type,
+                        outcome,
+                        float(return_pct) if return_pct else 0,
+                    )
 
             await db.commit()
 
-        return {"status": "ok", "resolved": resolved}
+        return {
+            "status": "ok",
+            "hit_target": hit_target,
+            "hit_stop": hit_stop,
+            "expired": expired,
+            "total_resolved": hit_target + hit_stop + expired,
+        }
     finally:
         await engine.dispose()
 
@@ -85,6 +161,6 @@ def generate_signals() -> dict:
 
 @celery_app.task(name="app.tasks.signal_tasks.resolve_expired")
 def resolve_expired() -> dict:
-    """Resolve expired signals and update signal history."""
-    logger.info("Resolving expired signals")
-    return asyncio.run(_resolve_expired_async())
+    """Check active signals against current prices — resolve hits, stops, and expiries."""
+    logger.info("Resolving signals against current prices")
+    return asyncio.run(_resolve_signals_async())

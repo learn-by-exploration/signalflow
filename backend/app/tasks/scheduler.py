@@ -22,9 +22,11 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 300.0,
     },
     # ── AI Engine ──
+    # Sentiment runs every 60 min (budget-sustainable).
+    # The task itself gates by market hours for stocks/forex.
     "run-sentiment-analysis": {
         "task": "app.tasks.ai_tasks.run_sentiment",
-        "schedule": 900.0,
+        "schedule": 3600.0,
     },
     # ── Signal Generation ──
     "generate-signals": {
@@ -40,11 +42,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "app.tasks.alert_tasks.evening_wrap",
         "schedule": crontab(hour=16, minute=0),
     },
-    # ── Maintenance ──
-    "resolve-expired-signals": {
+    # ── Signal Resolution (check targets/stops every 15 min) ──
+    "resolve-signals": {
         "task": "app.tasks.signal_tasks.resolve_expired",
-        "schedule": 3600.0,
+        "schedule": 900.0,
     },
+    # ── Maintenance ──
     "health-check": {
         "task": "app.tasks.data_tasks.health_check",
         "schedule": 300.0,
