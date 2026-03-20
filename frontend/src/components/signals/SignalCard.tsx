@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import type { Signal } from '@/lib/types';
-import { formatPrice, formatPercent, formatDate, shortSymbol } from '@/utils/formatters';
+import { formatPrice, formatPercent, formatDate, shortSymbol, formatTimeRemaining } from '@/utils/formatters';
 import { SIGNAL_COLORS, MARKET_LABELS } from '@/lib/constants';
 import { SignalBadge } from './SignalBadge';
 import { ConfidenceGauge } from './ConfidenceGauge';
 import { AIReasoningPanel } from './AIReasoningPanel';
 import { RiskCalculator } from './RiskCalculator';
 import { ShareButton } from './ShareButton';
+import { TargetProgressBar } from './TargetProgressBar';
 import { Sparkline } from '@/components/markets/Sparkline';
 import { IndicatorPill } from '@/components/shared/IndicatorPill';
 
@@ -27,11 +28,20 @@ export function SignalCard({ signal }: SignalCardProps) {
   const recentCloses = (signal.technical_data?.recent_closes ?? []) as number[];
   const isBuyish = signal.signal_type.includes('BUY');
 
+  // Expiry countdown
+  const expiresAt = signal.expires_at ? new Date(signal.expires_at).getTime() : null;
+  const timeRemaining = expiresAt ? expiresAt - Date.now() : null;
+  const isExpiringSoon = timeRemaining !== null && timeRemaining > 0 && timeRemaining < 24 * 3600000;
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-expanded={isExpanded}
       className="bg-bg-card border border-border-default rounded-xl p-4 hover:border-border-hover transition-all duration-200 cursor-pointer"
       style={{ borderLeftColor: color, borderLeftWidth: 3 }}
       onClick={() => setIsExpanded(!isExpanded)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(!isExpanded); } }}
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-2">
@@ -77,7 +87,15 @@ export function SignalCard({ signal }: SignalCardProps) {
         <span className="text-signal-sell">
           🛑 {formatPrice(signal.stop_loss, signal.market_type)}
         </span>
+        {timeRemaining !== null && timeRemaining > 0 && (
+          <span className={`ml-auto ${isExpiringSoon ? 'text-signal-sell' : 'text-text-muted'}`}>
+            ⏱ {formatTimeRemaining(timeRemaining)}
+          </span>
+        )}
       </div>
+
+      {/* Target progress bar */}
+      <TargetProgressBar signal={signal} />
 
       {/* Technical indicators (collapsed) */}
       {(rsi || macd || volume) && (

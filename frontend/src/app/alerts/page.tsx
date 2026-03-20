@@ -5,8 +5,7 @@ import { api } from '@/lib/api';
 import type { AlertConfig, PriceAlert, MarketType, SignalType } from '@/lib/types';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-
-const CHAT_ID = 1; // Placeholder — would come from auth in production
+import { useUserStore } from '@/store/userStore';
 
 const MARKET_OPTIONS: { value: MarketType; label: string; icon: string }[] = [
   { value: 'stock', label: 'Stocks', icon: '📈' },
@@ -23,6 +22,7 @@ const SIGNAL_OPTIONS: { value: SignalType; label: string }[] = [
 
 export default function AlertsPage() {
   const { toast } = useToast();
+  const chatId = useUserStore((s) => s.chatId) ?? 1;
   const [loading, setLoading] = useState(true);
 
   // Alert config state
@@ -45,9 +45,9 @@ export default function AlertsPage() {
     async function loadAll() {
       try {
         const [configRes, alertsRes, watchRes] = await Promise.allSettled([
-          api.getAlertConfig(CHAT_ID) as Promise<{ data: AlertConfig }>,
-          api.getPriceAlerts(CHAT_ID) as Promise<{ data: PriceAlert[] }>,
-          api.getWatchlist(CHAT_ID) as Promise<{ data: { watchlist: string[] } }>,
+          api.getAlertConfig(chatId) as Promise<{ data: AlertConfig }>,
+          api.getPriceAlerts(chatId) as Promise<{ data: PriceAlert[] }>,
+          api.getWatchlist(chatId) as Promise<{ data: { watchlist: string[] } }>,
         ]);
 
         if (configRes.status === 'fulfilled' && configRes.value?.data) {
@@ -83,7 +83,7 @@ export default function AlertsPage() {
         });
       } else {
         await api.createAlertConfig({
-          telegram_chat_id: CHAT_ID,
+          telegram_chat_id: chatId,
           markets,
           min_confidence: minConfidence,
           signal_types: signalTypes,
@@ -110,7 +110,7 @@ export default function AlertsPage() {
     const marketType = symbol.includes('USDT') ? 'crypto' : symbol.includes('/') ? 'forex' : 'stock';
     try {
       const res = (await api.createPriceAlert({
-        telegram_chat_id: CHAT_ID,
+        telegram_chat_id: chatId,
         symbol,
         market_type: marketType,
         condition: newAlertCondition,
@@ -140,7 +140,7 @@ export default function AlertsPage() {
     const symbol = newWatchSymbol.toUpperCase().trim();
     if (!symbol || watchlist.includes(symbol)) return;
     try {
-      await api.updateWatchlist(CHAT_ID, symbol, 'add');
+      await api.updateWatchlist(chatId, symbol, 'add');
       setWatchlist((prev) => [...prev, symbol]);
       setNewWatchSymbol('');
       toast(`${symbol} added to watchlist`, 'success');
@@ -151,7 +151,7 @@ export default function AlertsPage() {
 
   async function removeFromWatchlist(symbol: string) {
     try {
-      await api.updateWatchlist(CHAT_ID, symbol, 'remove');
+      await api.updateWatchlist(chatId, symbol, 'remove');
       setWatchlist((prev) => prev.filter((s) => s !== symbol));
       toast(`${symbol} removed`, 'success');
     } catch {

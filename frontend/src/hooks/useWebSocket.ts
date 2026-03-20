@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { SignalWebSocket } from '@/lib/websocket';
 import type { WSMessage, Signal, MarketSnapshot } from '@/lib/types';
+import type { ConnectionStatus } from '@/lib/websocket';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
 
@@ -13,6 +14,7 @@ import { useMarketStore } from '@/store/marketStore';
 export function useWebSocket(markets: string[] = ['stock', 'crypto', 'forex']) {
   const addSignal = useSignalStore((s) => s.addSignal);
   const updatePrice = useMarketStore((s) => s.updatePrice);
+  const setWsStatus = useMarketStore((s) => s.setWsStatus);
   const wsRef = useRef<SignalWebSocket | null>(null);
 
   const handleMessage = useCallback(
@@ -26,8 +28,15 @@ export function useWebSocket(markets: string[] = ['stock', 'crypto', 'forex']) {
     [addSignal, updatePrice],
   );
 
+  const handleStatusChange = useCallback(
+    (status: ConnectionStatus) => {
+      setWsStatus(status);
+    },
+    [setWsStatus],
+  );
+
   useEffect(() => {
-    const ws = new SignalWebSocket(handleMessage);
+    const ws = new SignalWebSocket(handleMessage, handleStatusChange);
     wsRef.current = ws;
     ws.connect(markets);
 
@@ -35,7 +44,7 @@ export function useWebSocket(markets: string[] = ['stock', 'crypto', 'forex']) {
       ws.disconnect();
       wsRef.current = null;
     };
-  }, [handleMessage, markets]);
+  }, [handleMessage, handleStatusChange, markets]);
 
   return wsRef;
 }

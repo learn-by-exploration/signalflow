@@ -5,6 +5,8 @@
 import { WS_URL } from './constants';
 import type { WSMessage } from './types';
 
+export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+
 export class SignalWebSocket {
   private ws: WebSocket | null = null;
   private reconnectInterval = 3000;
@@ -12,18 +14,22 @@ export class SignalWebSocket {
   private reconnectAttempts = 0;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private onMessage: (msg: WSMessage) => void;
+  private onStatusChange?: (status: ConnectionStatus) => void;
 
-  constructor(onMessage: (msg: WSMessage) => void) {
+  constructor(onMessage: (msg: WSMessage) => void, onStatusChange?: (status: ConnectionStatus) => void) {
     this.onMessage = onMessage;
+    this.onStatusChange = onStatusChange;
   }
 
   connect(markets: string[] = ['stock', 'crypto', 'forex']): void {
     if (this.ws?.readyState === WebSocket.OPEN) return;
 
+    this.onStatusChange?.('connecting');
     this.ws = new WebSocket(`${WS_URL}/ws/signals`);
 
     this.ws.onopen = () => {
       this.reconnectAttempts = 0;
+      this.onStatusChange?.('connected');
       // Subscribe to markets
       this.ws?.send(JSON.stringify({ type: 'subscribe', markets }));
       // Start pong responder
@@ -45,6 +51,11 @@ export class SignalWebSocket {
 
     this.ws.onclose = () => {
       this.stopPingHandler();
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.onStatusChange?.('reconnecting');
+      } else {
+        this.onStatusChange?.('disconnected');
+      }
       this.scheduleReconnect(markets);
     };
 
@@ -56,6 +67,7 @@ export class SignalWebSocket {
   disconnect(): void {
     this.stopPingHandler();
     this.reconnectAttempts = this.maxReconnectAttempts; // Prevent reconnect
+    this.onStatusChange?.('disconnected');
     this.ws?.close();
     this.ws = null;
   }

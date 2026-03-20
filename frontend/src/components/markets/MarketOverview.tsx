@@ -3,6 +3,7 @@
 import type { MarketSnapshot } from '@/lib/types';
 import { formatPrice, formatPercent, changeDirection, shortSymbol } from '@/utils/formatters';
 import { MARKET_LABELS } from '@/lib/constants';
+import { useMarketStore } from '@/store/marketStore';
 
 interface MarketOverviewProps {
   stocks: MarketSnapshot[];
@@ -11,6 +12,13 @@ interface MarketOverviewProps {
   isLoading: boolean;
   lastUpdated: string | null;
 }
+
+const STATUS_STYLES = {
+  connected: { dot: 'bg-signal-buy', label: 'Live' },
+  connecting: { dot: 'bg-signal-hold animate-pulse', label: 'Connecting' },
+  reconnecting: { dot: 'bg-signal-hold animate-pulse', label: 'Reconnecting' },
+  disconnected: { dot: 'bg-signal-sell', label: 'Offline' },
+} as const;
 
 function MarketTicker({ snapshot }: { snapshot: MarketSnapshot }) {
   const dir = changeDirection(snapshot.change_pct);
@@ -29,6 +37,12 @@ function MarketTicker({ snapshot }: { snapshot: MarketSnapshot }) {
 }
 
 export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }: MarketOverviewProps) {
+  const wsStatus = useMarketStore((s) => s.wsStatus);
+  const statusStyle = STATUS_STYLES[wsStatus];
+
+  // Detect stale data (>5 minutes old)
+  const isStale = lastUpdated && (Date.now() - new Date(lastUpdated).getTime()) > 5 * 60 * 1000;
+
   // Show top symbols from each market
   const topStocks = stocks.slice(0, 3);
   const topCrypto = crypto.slice(0, 3);
@@ -40,9 +54,15 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
     <div className="bg-bg-secondary/60 border-b border-border-default px-4 py-2">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2 shrink-0">
+          {/* Connection status dot */}
+          <div className="flex items-center gap-1" title={statusStyle.label}>
+            <span className={`inline-block w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+            <span className="text-[10px] text-text-muted font-mono">{statusStyle.label}</span>
+          </div>
           {lastUpdated && (
-            <span className="text-[10px] text-text-muted font-mono">
-              Updated {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <span className={`text-[10px] font-mono ${isStale ? 'text-signal-sell' : 'text-text-muted'}`}>
+              · {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {isStale && ' (stale)'}
             </span>
           )}
         </div>

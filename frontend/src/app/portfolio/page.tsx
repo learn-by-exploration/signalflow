@@ -5,8 +5,7 @@ import { api } from '@/lib/api';
 import type { PortfolioSummary, Trade } from '@/lib/types';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-
-const CHAT_ID = 1; // Placeholder
+import { useUserStore } from '@/store/userStore';
 
 interface PortfolioData {
   summary: PortfolioSummary | null;
@@ -17,6 +16,7 @@ interface PortfolioData {
 
 export default function PortfolioPage() {
   const { toast } = useToast();
+  const chatId = useUserStore((s) => s.chatId) ?? 1;
   const [data, setData] = useState<PortfolioData>({
     summary: null,
     trades: [],
@@ -35,8 +35,8 @@ export default function PortfolioPage() {
   async function loadData() {
     try {
       const [summaryRes, tradesRes] = await Promise.all([
-        api.getPortfolioSummary(CHAT_ID) as Promise<{ data: PortfolioSummary }>,
-        api.getTrades(CHAT_ID) as Promise<{ data: Trade[] }>,
+        api.getPortfolioSummary(chatId) as Promise<{ data: PortfolioSummary }>,
+        api.getTrades(chatId) as Promise<{ data: Trade[] }>,
       ]);
       setData({
         summary: summaryRes.data,
@@ -61,7 +61,7 @@ export default function PortfolioPage() {
     setSubmitting(true);
     try {
       await api.logTrade({
-        telegram_chat_id: CHAT_ID,
+        telegram_chat_id: chatId,
         symbol,
         market_type: marketType,
         side: tradeSide,

@@ -12,6 +12,7 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { WelcomeModal } from '@/components/shared/WelcomeModal';
+import { ChatIdPrompt } from '@/components/shared/ChatIdPrompt';
 
 export default function Dashboard() {
   const { signals, isLoading, error } = useSignalStore();
@@ -25,6 +26,7 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen pb-12">
       <WelcomeModal />
+      <ChatIdPrompt />
 
       {/* Market Overview Bar */}
       <ErrorBoundary>

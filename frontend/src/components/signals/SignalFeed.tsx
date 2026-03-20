@@ -13,6 +13,7 @@ interface SignalFeedProps {
 }
 
 type FilterType = 'all' | MarketType;
+type SortType = 'newest' | 'confidence' | 'reward';
 
 const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -21,8 +22,15 @@ const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
   { value: 'forex', label: 'Forex' },
 ];
 
+const SORT_OPTIONS: { value: SortType; label: string }[] = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'confidence', label: 'Confidence' },
+  { value: 'reward', label: 'Reward' },
+];
+
 export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
   const [filter, setFilter] = useState<FilterType>('all');
+  const [sortBy, setSortBy] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -34,28 +42,61 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
       const q = search.trim().toUpperCase();
       result = result.filter((s) => s.symbol.toUpperCase().includes(q));
     }
+    // Sort
+    result = [...result].sort((a, b) => {
+      if (sortBy === 'confidence') return b.confidence - a.confidence;
+      if (sortBy === 'reward') {
+        const rewardA = Math.abs((parseFloat(a.target_price) - parseFloat(a.current_price)) / parseFloat(a.current_price));
+        const rewardB = Math.abs((parseFloat(b.target_price) - parseFloat(b.current_price)) / parseFloat(b.current_price));
+        return rewardB - rewardA;
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
     return result;
-  }, [signals, filter, search]);
+  }, [signals, filter, search, sortBy]);
 
   return (
     <div className="space-y-4">
       {/* Header + Filters */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-display font-semibold">Active Signals</h2>
-        <div className="flex gap-2">
-          {FILTER_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setFilter(opt.value)}
-              className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                filter === opt.value
-                  ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
-                  : 'border-border-default text-text-secondary hover:border-border-hover'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          {/* Sort */}
+          <div className="flex gap-1">
+            {SORT_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setSortBy(opt.value)}
+                aria-label={`Sort by ${opt.label}`}
+                aria-pressed={sortBy === opt.value}
+                className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                  sortBy === opt.value
+                    ? 'border-accent-purple/50 text-accent-purple bg-accent-purple/10'
+                    : 'border-transparent text-text-muted hover:text-text-secondary'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {/* Market filter */}
+          <div className="flex gap-2">
+            {FILTER_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setFilter(opt.value)}
+                aria-label={`Filter by ${opt.label}`}
+                aria-pressed={filter === opt.value}
+                className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                  filter === opt.value
+                    ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
+                    : 'border-border-default text-text-secondary hover:border-border-hover'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

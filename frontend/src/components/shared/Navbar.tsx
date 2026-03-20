@@ -35,6 +35,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     isActive
                       ? 'text-accent-purple bg-accent-purple/10'

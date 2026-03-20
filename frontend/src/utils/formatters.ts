@@ -95,3 +95,19 @@ export function formatVolume(vol: string | number | null): string {
   if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
   return num.toString();
 }
+
+/**
+ * Format milliseconds remaining into a human-readable countdown.
+ * e.g. "5d 14h", "2h 30m", "45m"
+ */
+export function formatTimeRemaining(ms: number): string {
+  if (ms <= 0) return 'Expired';
+  const hours = Math.floor(ms / 3600000);
+  const days = Math.floor(hours / 24);
+  const remainHours = hours % 24;
+  const mins = Math.floor((ms % 3600000) / 60000);
+
+  if (days > 0) return `${days}d ${remainHours}h`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
