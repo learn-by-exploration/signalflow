@@ -25,6 +25,7 @@ from app.models.alert_config import AlertConfig
 from app.services.alerts.formatter import (
     format_market_snapshot,
     format_signals_list,
+    format_tutorial,
     format_welcome,
 )
 
@@ -56,6 +57,7 @@ class SignalFlowBot:
         app.add_handler(CommandHandler("markets", self._cmd_markets))
         app.add_handler(CommandHandler("config", self._cmd_config))
         app.add_handler(CommandHandler("history", self._cmd_history))
+        app.add_handler(CommandHandler("tutorial", self._cmd_tutorial))
         app.add_handler(CommandHandler("stop", self._cmd_stop))
         app.add_handler(CommandHandler("resume", self._cmd_resume))
         app.add_handler(CallbackQueryHandler(self._handle_callback))
@@ -97,6 +99,15 @@ class SignalFlowBot:
         await self._get_or_create_config(chat_id, username)
 
         await update.message.reply_text(format_welcome())
+        await update.message.reply_text(
+            "💡 New here? Try /tutorial to learn how to read trading signals!"
+        )
+
+    async def _cmd_tutorial(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /tutorial — guided onboarding for new users."""
+        if update.effective_chat is None:
+            return
+        await update.message.reply_text(format_tutorial())
 
     async def _cmd_signals(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /signals — show top active signals from database."""

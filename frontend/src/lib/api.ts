@@ -27,6 +27,9 @@ export const api = {
   getSignalHistory: (params?: URLSearchParams) =>
     apiFetch(`/api/v1/signals/history${params ? `?${params}` : ''}`),
 
+  getSignalStats: () =>
+    apiFetch('/api/v1/signals/stats'),
+
   getMarketOverview: () =>
     apiFetch('/api/v1/markets/overview'),
 

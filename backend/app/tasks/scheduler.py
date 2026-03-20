@@ -42,6 +42,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "app.tasks.alert_tasks.evening_wrap",
         "schedule": crontab(hour=16, minute=0),
     },
+    "weekly-digest": {
+        "task": "app.tasks.alert_tasks.weekly_digest",
+        "schedule": crontab(hour=18, minute=0, day_of_week=0),  # Sunday 6 PM IST
+    },
     # ── Signal Resolution (check targets/stops every 15 min) ──
     "resolve-signals": {
         "task": "app.tasks.signal_tasks.resolve_expired",

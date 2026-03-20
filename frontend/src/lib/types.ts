@@ -54,6 +54,17 @@ export interface SignalHistoryItem {
   created_at: string;
 }
 
+export interface SignalStats {
+  total_signals: number;
+  hit_target: number;
+  hit_stop: number;
+  expired: number;
+  pending: number;
+  win_rate: number;
+  avg_return_pct: number;
+  last_updated: string | null;
+}
+
 export interface WSMessage {
   type: 'signal' | 'market_update' | 'ping';
   data?: Signal | MarketSnapshot;

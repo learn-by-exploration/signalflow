@@ -62,3 +62,16 @@ class SignalHistoryResponse(BaseModel):
 
     data: list[SignalHistoryItem]
     meta: MetaResponse
+
+
+class SignalStatsResponse(BaseModel):
+    """Aggregate signal performance statistics."""
+
+    total_signals: int
+    hit_target: int
+    hit_stop: int
+    expired: int
+    pending: int
+    win_rate: float = Field(ge=0, le=100, description="Win rate percentage")
+    avg_return_pct: float
+    last_updated: datetime | None = None

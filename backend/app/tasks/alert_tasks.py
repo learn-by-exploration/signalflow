@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.services.ai_engine.briefing import BriefingGenerator
 from app.services.alerts.dispatcher import AlertDispatcher
-from app.services.alerts.formatter import format_morning_brief, format_evening_wrap
+from app.services.alerts.formatter import format_morning_brief, format_evening_wrap, format_weekly_digest
 from app.services.alerts.telegram_bot import send_telegram_message
 from app.tasks.celery_app import celery_app
 
@@ -145,3 +145,73 @@ def evening_wrap() -> dict:
     """Send evening market wrap via Telegram at 4:00 PM IST."""
     logger.info("Generating evening wrap")
     return asyncio.run(_evening_wrap_async())
+
+
+def _get_weekly_stats() -> dict:
+    """Fetch signal resolution stats for the past 7 days."""
+    settings = get_settings()
+    engine = create_engine(settings.database_url_sync, pool_pre_ping=True)
+    try:
+        with Session(engine) as session:
+            rows = session.execute(
+                text(
+                    "SELECT sh.outcome, sh.return_pct, s.symbol "
+                    "FROM signal_history sh "
+                    "JOIN signals s ON sh.signal_id = s.id "
+                    "WHERE sh.resolved_at >= NOW() - INTERVAL '7 days' "
+                    "AND sh.outcome != 'pending'"
+                )
+            ).fetchall()
+
+            if not rows:
+                return {"total": 0}
+
+            hit_target = sum(1 for r in rows if r[0] == "hit_target")
+            hit_stop = sum(1 for r in rows if r[0] == "hit_stop")
+            expired = sum(1 for r in rows if r[0] == "expired")
+            returns = [float(r[1]) for r in rows if r[1] is not None]
+            avg_return = sum(returns) / len(returns) if returns else 0.0
+            resolved = hit_target + hit_stop
+            win_rate = (hit_target / resolved * 100) if resolved > 0 else 0.0
+
+            # Top winner / loser
+            with_returns = [(r[2], float(r[1])) for r in rows if r[1] is not None]
+            top_winner = None
+            top_loser = None
+            if with_returns:
+                best = max(with_returns, key=lambda x: x[1])
+                top_winner = {"symbol": best[0], "return_pct": best[1]}
+                worst = min(with_returns, key=lambda x: x[1])
+                top_loser = {"symbol": worst[0], "return_pct": worst[1]}
+
+            return {
+                "total": len(rows),
+                "hit_target": hit_target,
+                "hit_stop": hit_stop,
+                "expired": expired,
+                "win_rate": win_rate,
+                "avg_return_pct": avg_return,
+                "top_winner": top_winner,
+                "top_loser": top_loser,
+            }
+    finally:
+        engine.dispose()
+
+
+async def _weekly_digest_async() -> dict:
+    """Generate and dispatch weekly digest."""
+    stats = _get_weekly_stats()
+    formatted = format_weekly_digest(stats)
+
+    subscribers = _get_active_subscribers()
+    dispatcher = AlertDispatcher(send_telegram_message)
+    sent = await dispatcher.dispatch_broadcast(formatted, subscribers)
+
+    return {"status": "ok", "sent": sent, "subscribers": len(subscribers)}
+
+
+@celery_app.task(name="app.tasks.alert_tasks.weekly_digest")
+def weekly_digest() -> dict:
+    """Send weekly performance digest every Sunday at 6:00 PM IST."""
+    logger.info("Generating weekly digest")
+    return asyncio.run(_weekly_digest_async())

@@ -150,8 +150,84 @@ def format_welcome() -> str:
         "/markets — Quick market snapshot\n"
         "/config — Alert preferences\n"
         "/history — Recent signal outcomes\n"
+        "/tutorial — Learn how to read signals\n"
         "/stop — Pause alerts\n"
         "/resume — Resume alerts\n\n"
         "⚠️ Disclaimer: This is AI-generated analysis, not financial advice. "
         "Always do your own research before trading."
+    )
+
+
+def format_weekly_digest(stats: dict) -> str:
+    """Format weekly performance digest for Telegram.
+
+    Args:
+        stats: Dict with total, hit_target, hit_stop, expired, win_rate,
+               avg_return_pct, top_winner, top_loser.
+    """
+    total = stats.get("total", 0)
+    if total == 0:
+        return (
+            "📊 Weekly Digest\n\n"
+            "No signals were resolved this week. "
+            "New signals are generated as market conditions evolve."
+        )
+
+    win_rate = stats.get("win_rate", 0)
+    bar = "█" * round(win_rate / 10) + "░" * (10 - round(win_rate / 10))
+    avg_ret = stats.get("avg_return_pct", 0)
+    sign = "+" if avg_ret >= 0 else ""
+
+    lines = [
+        "📊 Weekly Digest",
+        "",
+        f"Signals resolved: {total}",
+        f"🎯 Hit target: {stats.get('hit_target', 0)}",
+        f"🛑 Hit stop: {stats.get('hit_stop', 0)}",
+        f"⏰ Expired: {stats.get('expired', 0)}",
+        "",
+        f"Win rate: {bar} {win_rate:.1f}%",
+        f"Avg return: {sign}{avg_ret:.2f}%",
+    ]
+
+    top_winner = stats.get("top_winner")
+    if top_winner:
+        lines.append(f"\n🏆 Best: {top_winner['symbol']} ({'+' if top_winner['return_pct'] >= 0 else ''}{top_winner['return_pct']:.2f}%)")
+
+    top_loser = stats.get("top_loser")
+    if top_loser:
+        lines.append(f"📉 Worst: {top_loser['symbol']} ({'+' if top_loser['return_pct'] >= 0 else ''}{top_loser['return_pct']:.2f}%)")
+
+    lines.append("\nKeep learning! Every signal is a lesson. 📚")
+
+    return "\n".join(lines)
+
+
+def format_tutorial() -> str:
+    """Format the /tutorial guided onboarding message."""
+    return (
+        "📚 How to Read SignalFlow Signals\n\n"
+        "Each signal has these parts:\n\n"
+        "1️⃣ Signal Type\n"
+        "🟢 STRONG BUY — High confidence buy opportunity\n"
+        "🟢 BUY — Moderate buy opportunity\n"
+        "🟡 HOLD — Wait and watch\n"
+        "🔴 SELL — Consider exiting\n"
+        "🔴 STRONG SELL — High confidence exit\n\n"
+        "2️⃣ Confidence Score (0-100%)\n"
+        "Higher = stronger signal. We recommend acting on 70%+ signals.\n\n"
+        "3️⃣ Target & Stop-Loss\n"
+        "🎯 Target — Price where you take profit\n"
+        "🛑 Stop-Loss — Price where you exit to limit losses\n"
+        "Always respect the stop-loss!\n\n"
+        "4️⃣ AI Reasoning\n"
+        "🤖 Explains WHY the signal was generated — "
+        "which indicators and news drove the decision.\n\n"
+        "5️⃣ Technical Indicators\n"
+        "RSI — Momentum (>70 overbought, <30 oversold)\n"
+        "MACD — Trend direction (Bullish/Bearish)\n"
+        "Volume — Trading activity level\n\n"
+        "💡 Tip: Start with paper trading (simulated) before using real money. "
+        "Track your decisions in a journal.\n\n"
+        "⚠️ Remember: These are AI-generated signals, not financial advice."
     )

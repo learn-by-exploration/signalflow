@@ -1,7 +1,7 @@
 """Alert dispatcher — routes signals and briefs to Telegram subscribers.
 
 Checks each subscriber's alert config (markets, min confidence, signal types,
-quiet hours) before dispatching.
+quiet hours) before dispatching. Enforces a daily alert budget per subscriber.
 """
 
 import logging
@@ -15,21 +15,31 @@ logger = logging.getLogger(__name__)
 
 IST = ZoneInfo("Asia/Kolkata")
 
+# Maximum signal alerts per subscriber per day (broadcasts like briefs are exempt)
+DAILY_ALERT_BUDGET = 10
+
 
 class AlertDispatcher:
     """Route signal alerts to eligible Telegram subscribers.
 
     Args:
         bot_send_fn: Async function(chat_id, text) to send a Telegram message.
+        daily_counts: Optional dict mapping chat_id → alerts sent today.
+                      Passed in by the calling Celery task to persist across calls.
     """
 
-    def __init__(self, bot_send_fn: Any) -> None:
+    def __init__(self, bot_send_fn: Any, daily_counts: dict[int, int] | None = None) -> None:
         self.send = bot_send_fn
+        self._daily_counts: dict[int, int] = daily_counts if daily_counts is not None else {}
 
     async def dispatch_signal(
         self, signal: dict, subscribers: list[dict]
     ) -> int:
         """Send a signal alert to all eligible subscribers.
+
+        Signals are ranked by confidence and dispatched respecting the
+        daily budget (DAILY_ALERT_BUDGET per subscriber). Broadcasts
+        (morning brief, evening wrap, weekly digest) are NOT counted.
 
         Args:
             signal: Signal dict with all fields.
@@ -49,12 +59,21 @@ class AlertDispatcher:
             if self._in_quiet_hours(sub):
                 continue
 
+            chat_id = sub["telegram_chat_id"]
+            if self._daily_counts.get(chat_id, 0) >= DAILY_ALERT_BUDGET:
+                logger.debug(
+                    "Daily alert budget exhausted for chat_id=%s (%d/%d)",
+                    chat_id, self._daily_counts.get(chat_id, 0), DAILY_ALERT_BUDGET,
+                )
+                continue
+
             try:
-                await self.send(sub["telegram_chat_id"], message)
+                await self.send(chat_id, message)
+                self._daily_counts[chat_id] = self._daily_counts.get(chat_id, 0) + 1
                 sent += 1
             except Exception:
                 logger.exception(
-                    "Failed to send signal to chat_id=%s", sub["telegram_chat_id"]
+                    "Failed to send signal to chat_id=%s", chat_id
                 )
 
         logger.info("Dispatched signal %s to %d/%d subscribers", signal.get("symbol"), sent, len(subscribers))

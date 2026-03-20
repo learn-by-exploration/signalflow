@@ -10,6 +10,7 @@ interface MarketState {
   crypto: MarketSnapshot[];
   forex: MarketSnapshot[];
   isLoading: boolean;
+  lastUpdated: string | null;
   setMarkets: (data: { stocks: MarketSnapshot[]; crypto: MarketSnapshot[]; forex: MarketSnapshot[] }) => void;
   updatePrice: (snapshot: MarketSnapshot) => void;
   setLoading: (loading: boolean) => void;
@@ -20,7 +21,8 @@ export const useMarketStore = create<MarketState>((set) => ({
   crypto: [],
   forex: [],
   isLoading: false,
-  setMarkets: (data) => set({ ...data, isLoading: false }),
+  lastUpdated: null,
+  setMarkets: (data) => set({ ...data, isLoading: false, lastUpdated: new Date().toISOString() }),
   updatePrice: (snapshot) =>
     set((state) => {
       const key = snapshot.market_type === 'stock' ? 'stocks' : snapshot.market_type;
@@ -31,7 +33,7 @@ export const useMarketStore = create<MarketState>((set) => ({
       } else {
         list.push(snapshot);
       }
-      return { [key]: list };
+      return { [key]: list, lastUpdated: new Date().toISOString() };
     }),
   setLoading: (isLoading) => set({ isLoading }),
 }));

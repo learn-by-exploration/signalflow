@@ -2,6 +2,7 @@
 
 import { MarketOverview } from '@/components/markets/MarketOverview';
 import { SignalFeed } from '@/components/signals/SignalFeed';
+import { WinRateCard } from '@/components/signals/WinRateCard';
 import { AlertTimeline } from '@/components/alerts/AlertTimeline';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
@@ -12,7 +13,7 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 
 export default function Dashboard() {
   const { signals, isLoading, error } = useSignalStore();
-  const { stocks, crypto, forex, isLoading: marketsLoading } = useMarketStore();
+  const { stocks, crypto, forex, isLoading: marketsLoading, lastUpdated } = useMarketStore();
 
   // Fetch initial data via REST, subscribe to real-time via WebSocket
   useSignals();
@@ -23,7 +24,7 @@ export default function Dashboard() {
     <main className="min-h-screen pb-12">
       {/* Market Overview Bar */}
       <ErrorBoundary>
-        <MarketOverview stocks={stocks} crypto={crypto} forex={forex} isLoading={marketsLoading} />
+        <MarketOverview stocks={stocks} crypto={crypto} forex={forex} isLoading={marketsLoading} lastUpdated={lastUpdated} />
       </ErrorBoundary>
 
       {/* Main Content */}
@@ -37,7 +38,10 @@ export default function Dashboard() {
           </div>
 
           {/* Alert Timeline */}
-          <div>
+          <div className="space-y-6">
+            <ErrorBoundary>
+              <WinRateCard />
+            </ErrorBoundary>
             <ErrorBoundary>
               <AlertTimeline signals={signals} />
             </ErrorBoundary>

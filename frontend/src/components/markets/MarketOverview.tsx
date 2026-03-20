@@ -9,6 +9,7 @@ interface MarketOverviewProps {
   crypto: MarketSnapshot[];
   forex: MarketSnapshot[];
   isLoading: boolean;
+  lastUpdated: string | null;
 }
 
 function MarketTicker({ snapshot }: { snapshot: MarketSnapshot }) {
@@ -27,7 +28,7 @@ function MarketTicker({ snapshot }: { snapshot: MarketSnapshot }) {
   );
 }
 
-export function MarketOverview({ stocks, crypto, forex, isLoading }: MarketOverviewProps) {
+export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }: MarketOverviewProps) {
   // Show top symbols from each market
   const topStocks = stocks.slice(0, 3);
   const topCrypto = crypto.slice(0, 3);
@@ -38,9 +39,16 @@ export function MarketOverview({ stocks, crypto, forex, isLoading }: MarketOverv
   return (
     <div className="sticky top-0 z-10 bg-bg-secondary/90 backdrop-blur-sm border-b border-border-default px-4 py-2.5">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <h1 className="text-lg font-display font-semibold text-accent-purple shrink-0">
-          SignalFlow AI
-        </h1>
+        <div className="flex items-center gap-2 shrink-0">
+          <h1 className="text-lg font-display font-semibold text-accent-purple">
+            SignalFlow AI
+          </h1>
+          {lastUpdated && (
+            <span className="text-[10px] text-text-muted font-mono hidden sm:inline">
+              Updated {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
 
         {isLoading && !hasData ? (
           <div className="flex gap-4 text-xs text-text-muted animate-pulse">
