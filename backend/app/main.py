@@ -1,0 +1,85 @@
+"""FastAPI application entrypoint."""
+
+import logging
+from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
+from datetime import datetime, timezone
+
+import structlog
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.router import api_router
+from app.api.websocket import router as ws_router
+from app.config import get_settings
+
+settings = get_settings()
+
+# ── Structured logging ──
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.dev.ConsoleRenderer() if settings.environment == "development"
+        else structlog.processors.JSONRenderer(),
+    ],
+    wrapper_class=structlog.make_filtering_bound_logger(
+        logging.getLevelName(settings.log_level)
+    ),
+    context_class=dict,
+    logger_factory=structlog.PrintLoggerFactory(),
+)
+
+logger = structlog.get_logger()
+
+# ── Track startup time ──
+_startup_time: datetime | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Application lifespan: startup and shutdown hooks."""
+    global _startup_time
+    _startup_time = datetime.now(timezone.utc)
+    logger.info("signalflow_starting", environment=settings.environment)
+
+    # Sentry init (if DSN provided)
+    if settings.sentry_dsn:
+        import sentry_sdk
+        sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0.1)
+
+    yield
+
+    logger.info("signalflow_shutting_down")
+
+
+app = FastAPI(
+    title="SignalFlow AI",
+    description="AI-Powered Trading Signal Platform",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# ── CORS ──
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"] if settings.environment == "development" else [],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ── Routers ──
+app.include_router(api_router)
+app.include_router(ws_router)
+
+
+@app.get("/health")
+async def health_check() -> dict:
+    """Health check endpoint for monitoring."""
+    return {
+        "status": "healthy",
+        "uptime": str(datetime.now(timezone.utc) - _startup_time) if _startup_time else "unknown",
+        "environment": settings.environment,
+    }

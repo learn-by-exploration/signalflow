@@ -1,0 +1,64 @@
+"""Signal-related Pydantic schemas for API request/response."""
+
+from datetime import datetime
+from decimal import Decimal
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+
+class SignalResponse(BaseModel):
+    """Single signal response."""
+
+    id: UUID
+    symbol: str
+    market_type: str
+    signal_type: str
+    confidence: int = Field(ge=0, le=100)
+    current_price: Decimal
+    target_price: Decimal
+    stop_loss: Decimal
+    timeframe: str | None = None
+    ai_reasoning: str
+    technical_data: dict
+    sentiment_data: dict | None = None
+    is_active: bool
+    created_at: datetime
+    expires_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class MetaResponse(BaseModel):
+    """Metadata for list responses."""
+
+    timestamp: datetime
+    count: int
+
+
+class SignalListResponse(BaseModel):
+    """Paginated list of signals."""
+
+    data: list[SignalResponse]
+    meta: MetaResponse
+
+
+class SignalHistoryItem(BaseModel):
+    """Single signal history entry."""
+
+    id: UUID
+    signal_id: UUID
+    outcome: str | None = None
+    exit_price: Decimal | None = None
+    return_pct: Decimal | None = None
+    resolved_at: datetime | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SignalHistoryResponse(BaseModel):
+    """List of signal history entries."""
+
+    data: list[SignalHistoryItem]
+    meta: MetaResponse

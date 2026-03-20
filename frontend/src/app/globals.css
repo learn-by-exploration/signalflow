@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #0A0B0F;
+  --bg-secondary: #12131A;
+  --text-primary: #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --accent-purple: #6366F1;
+  --signal-buy: #00E676;
+  --signal-sell: #FF5252;
+  --signal-hold: #FFD740;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+}
