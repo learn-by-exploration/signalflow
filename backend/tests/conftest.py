@@ -7,18 +7,9 @@ from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from app.database import Base, get_db
-from app.main import app
-
 
 # Use an in-memory SQLite for fast unit tests (swap for test PG in CI)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
-
-test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-test_session = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
 
 
 @pytest.fixture(scope="session")
@@ -29,31 +20,39 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     loop.close()
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def setup_db() -> AsyncGenerator[None, None]:
-    """Create all tables before each test, drop after."""
-    async with test_engine.begin() as conn:
+@pytest_asyncio.fixture
+async def db_session() -> AsyncGenerator:
+    """Provide a test database session.
+
+    Only used by integration tests that import this fixture explicitly.
+    Requires PostgreSQL (or a JSONB-capable backend).
+    """
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+    from app.database import Base
+
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-
-@pytest_asyncio.fixture
-async def db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Provide a test database session."""
-    async with test_session() as session:
+    async with session_factory() as session:
         yield session
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Provide an async HTTP test client with DB override."""
+async def client() -> AsyncGenerator:
+    """Provide an async HTTP test client with DB override.
 
-    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
-        yield db_session
+    Only used by API integration tests.
+    """
+    from httpx import ASGITransport, AsyncClient
 
-    app.dependency_overrides[get_db] = override_get_db
+    from app.database import get_db
+    from app.main import app
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
