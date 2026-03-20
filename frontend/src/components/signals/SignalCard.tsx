@@ -8,6 +8,7 @@ import { SignalBadge } from './SignalBadge';
 import { ConfidenceGauge } from './ConfidenceGauge';
 import { AIReasoningPanel } from './AIReasoningPanel';
 import { RiskCalculator } from './RiskCalculator';
+import { ShareButton } from './ShareButton';
 import { Sparkline } from '@/components/markets/Sparkline';
 import { IndicatorPill } from '@/components/shared/IndicatorPill';
 
@@ -110,6 +111,13 @@ export function SignalCard({ signal }: SignalCardProps) {
 
       {/* Risk Calculator (expanded) */}
       {isExpanded && <RiskCalculator signal={signal} />}
+
+      {/* Share button (expanded) */}
+      {isExpanded && (
+        <div className="flex justify-end mt-2" onClick={(e) => e.stopPropagation()}>
+          <ShareButton signalId={signal.id} />
+        </div>
+      )}
 
       {/* Expand indicator */}
       <div className="flex justify-center mt-2">

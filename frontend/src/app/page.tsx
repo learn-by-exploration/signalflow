@@ -3,6 +3,7 @@
 import { MarketOverview } from '@/components/markets/MarketOverview';
 import { SignalFeed } from '@/components/signals/SignalFeed';
 import { WinRateCard } from '@/components/signals/WinRateCard';
+import { AskAI } from '@/components/signals/AskAI';
 import { AlertTimeline } from '@/components/alerts/AlertTimeline';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
@@ -41,6 +42,9 @@ export default function Dashboard() {
           <div className="space-y-6">
             <ErrorBoundary>
               <WinRateCard />
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <AskAI />
             </ErrorBoundary>
             <ErrorBoundary>
               <AlertTimeline signals={signals} />

@@ -1,12 +1,14 @@
 """Telegram bot for SignalFlow AI.
 
-Handles /start, /signals, /config, /markets, /history, /stop, /resume commands.
+Handles /start, /signals, /config, /markets, /history, /stop, /resume,
+/tutorial, /watchlist, /ask, /alert, /trade, /portfolio commands.
 Uses python-telegram-bot 20.x async API.
 
 Registration and preferences are persisted to PostgreSQL via direct DB access.
 """
 
 import logging
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 import httpx
@@ -22,8 +24,12 @@ from telegram.ext import (
 
 from app.config import get_settings
 from app.models.alert_config import AlertConfig
+from app.models.price_alert import PriceAlert
+from app.models.trade import Trade
 from app.services.alerts.formatter import (
     format_market_snapshot,
+    format_portfolio_summary,
+    format_price_alert_created,
     format_signals_list,
     format_tutorial,
     format_welcome,
@@ -59,6 +65,10 @@ class SignalFlowBot:
         app.add_handler(CommandHandler("history", self._cmd_history))
         app.add_handler(CommandHandler("tutorial", self._cmd_tutorial))
         app.add_handler(CommandHandler("watchlist", self._cmd_watchlist))
+        app.add_handler(CommandHandler("ask", self._cmd_ask))
+        app.add_handler(CommandHandler("alert", self._cmd_alert))
+        app.add_handler(CommandHandler("trade", self._cmd_trade))
+        app.add_handler(CommandHandler("portfolio", self._cmd_portfolio))
         app.add_handler(CommandHandler("stop", self._cmd_stop))
         app.add_handler(CommandHandler("resume", self._cmd_resume))
         app.add_handler(CallbackQueryHandler(self._handle_callback))
@@ -250,7 +260,220 @@ class SignalFlowBot:
                 "market_type": market_type,
             })
         return snapshots[:5]
-        await update.message.reply_text(text)
+
+    async def _cmd_ask(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /ask <symbol> <question> — AI-powered Q&A about a symbol.
+
+        Usage: /ask HDFCBANK Is it a good time to buy?
+        """
+        if update.effective_chat is None:
+            return
+        args = context.args or []
+        if len(args) < 2:
+            await update.message.reply_text(
+                "Usage: /ask <SYMBOL> <your question>\n"
+                "Example: /ask HDFCBANK Is it a good time to buy?"
+            )
+            return
+
+        symbol = args[0].upper().strip()
+        question = " ".join(args[1:])
+
+        await update.message.reply_text(f"🤖 Analyzing {symbol}...")
+
+        settings = get_settings()
+        try:
+            async with httpx.AsyncClient(timeout=35.0) as client:
+                resp = await client.post(
+                    f"http://localhost:{settings.api_port}/api/v1/ai/ask",
+                    json={"symbol": symbol, "question": question},
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                answer = data.get("data", {}).get("answer", "No answer available.")
+        except Exception:
+            logger.exception("Failed to call AI Q&A for %s", symbol)
+            answer = f"Sorry, I couldn't analyze {symbol} right now. Try again later."
+
+        await update.message.reply_text(f"🤖 {symbol}\n\n{answer}")
+
+    async def _cmd_alert(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /alert — set price alerts.
+
+        Usage:
+            /alert                      — list active alerts
+            /alert BTCUSDT above 100000 — set an alert
+        """
+        if update.effective_chat is None:
+            return
+        chat_id = update.effective_chat.id
+        args = context.args or []
+
+        if len(args) == 0:
+            # List existing alerts
+            async with self._session_factory() as session:
+                result = await session.execute(
+                    select(PriceAlert)
+                    .where(PriceAlert.telegram_chat_id == chat_id)
+                    .where(PriceAlert.is_active.is_(True))
+                    .where(PriceAlert.is_triggered.is_(False))
+                )
+                alerts = result.scalars().all()
+
+            if not alerts:
+                await update.message.reply_text(
+                    "🔔 No active price alerts.\n\n"
+                    "Set one: /alert BTCUSDT above 100000"
+                )
+            else:
+                lines = ["🔔 Active Price Alerts", ""]
+                for a in alerts:
+                    sym = str(a.symbol).replace(".NS", "").replace("USDT", "")
+                    lines.append(f"  {sym} {a.condition} {a.threshold}")
+                await update.message.reply_text("\n".join(lines))
+            return
+
+        if len(args) != 3 or args[1].lower() not in ("above", "below"):
+            await update.message.reply_text(
+                "Usage: /alert <SYMBOL> <above|below> <price>\n"
+                "Example: /alert BTCUSDT above 100000"
+            )
+            return
+
+        symbol = args[0].upper().strip()
+        condition = args[1].lower()
+        try:
+            threshold = Decimal(args[2])
+        except InvalidOperation:
+            await update.message.reply_text("Invalid price. Use a number like: 100000 or 1678.50")
+            return
+
+        async with self._session_factory() as session:
+            alert = PriceAlert(
+                telegram_chat_id=chat_id,
+                symbol=symbol,
+                market_type="crypto" if "USDT" in symbol else "forex" if "/" in symbol else "stock",
+                condition=condition,
+                threshold=threshold,
+            )
+            session.add(alert)
+            await session.commit()
+
+        await update.message.reply_text(
+            format_price_alert_created(symbol, condition, str(threshold))
+        )
+
+    async def _cmd_trade(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /trade — log a buy or sell trade.
+
+        Usage: /trade buy HDFCBANK 10 1678.90
+        """
+        if update.effective_chat is None:
+            return
+        chat_id = update.effective_chat.id
+        args = context.args or []
+
+        if len(args) < 4:
+            await update.message.reply_text(
+                "Usage: /trade <buy|sell> <SYMBOL> <QTY> <PRICE>\n"
+                "Example: /trade buy HDFCBANK 10 1678.90"
+            )
+            return
+
+        side = args[0].lower()
+        if side not in ("buy", "sell"):
+            await update.message.reply_text("First argument must be 'buy' or 'sell'.")
+            return
+
+        symbol = args[1].upper().strip()
+
+        try:
+            quantity = Decimal(args[2])
+            price = Decimal(args[3])
+        except InvalidOperation:
+            await update.message.reply_text("Invalid quantity or price. Use numbers.")
+            return
+
+        market_type = "crypto" if "USDT" in symbol else "forex" if "/" in symbol else "stock"
+
+        async with self._session_factory() as session:
+            trade = Trade(
+                telegram_chat_id=chat_id,
+                symbol=symbol,
+                market_type=market_type,
+                side=side,
+                quantity=quantity,
+                price=price,
+            )
+            session.add(trade)
+            await session.commit()
+
+        emoji = "🟢" if side == "buy" else "🔴"
+        total = quantity * price
+        await update.message.reply_text(
+            f"{emoji} Trade logged!\n\n"
+            f"{side.upper()} {quantity} × {symbol} @ {price}\n"
+            f"Total: {total:,.2f}\n\n"
+            f"View your portfolio: /portfolio"
+        )
+
+    async def _cmd_portfolio(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /portfolio — view current positions and P&L."""
+        if update.effective_chat is None:
+            return
+        chat_id = update.effective_chat.id
+
+        async with self._session_factory() as session:
+            from sqlalchemy import case, func
+
+            result = await session.execute(
+                select(
+                    Trade.symbol,
+                    Trade.market_type,
+                    func.sum(
+                        case(
+                            (Trade.side == "buy", Trade.quantity),
+                            else_=-Trade.quantity,
+                        )
+                    ).label("net_qty"),
+                    func.sum(
+                        case(
+                            (Trade.side == "buy", Trade.quantity * Trade.price),
+                            else_=-Trade.quantity * Trade.price,
+                        )
+                    ).label("net_cost"),
+                )
+                .where(Trade.telegram_chat_id == chat_id)
+                .group_by(Trade.symbol, Trade.market_type)
+            )
+            rows = result.all()
+
+        if not rows:
+            await update.message.reply_text(
+                "📊 No trades logged yet.\n\n"
+                "Log your first trade: /trade buy HDFCBANK 10 1678.90"
+            )
+            return
+
+        positions = []
+        for row in rows:
+            net_qty = float(row.net_qty or 0)
+            if net_qty <= 0:
+                continue
+            net_cost = float(row.net_cost or 0)
+            avg_price = net_cost / net_qty if net_qty > 0 else 0
+            positions.append({
+                "symbol": row.symbol,
+                "quantity": net_qty,
+                "avg_price": avg_price,
+                "total_cost": net_cost,
+            })
+
+        if not positions:
+            await update.message.reply_text("📊 All positions are closed. No open holdings.")
+            return
+
+        await update.message.reply_text(format_portfolio_summary(positions))
 
     async def _cmd_config(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /config — show current prefs + inline keyboard to modify."""

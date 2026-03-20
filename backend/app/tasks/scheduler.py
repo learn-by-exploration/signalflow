@@ -51,6 +51,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "app.tasks.signal_tasks.resolve_expired",
         "schedule": 900.0,
     },
+    # ── Price Alerts ──
+    "check-price-alerts": {
+        "task": "app.tasks.price_alert_tasks.check_price_alerts",
+        "schedule": 60.0,
+    },
     # ── Maintenance ──
     "health-check": {
         "task": "app.tasks.data_tasks.health_check",

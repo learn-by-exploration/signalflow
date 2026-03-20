@@ -50,4 +50,42 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ symbol, action }),
     }),
+
+  // ── P3: Price Alerts ──
+  getPriceAlerts: (chatId: number) =>
+    apiFetch(`/api/v1/alerts/price?telegram_chat_id=${chatId}`),
+
+  createPriceAlert: (data: { telegram_chat_id: number; symbol: string; market_type: string; condition: string; threshold: string }) =>
+    apiFetch('/api/v1/alerts/price', { method: 'POST', body: JSON.stringify(data) }),
+
+  deletePriceAlert: (alertId: string) =>
+    apiFetch(`/api/v1/alerts/price/${alertId}`, { method: 'DELETE' }),
+
+  // ── P3: Portfolio ──
+  getTrades: (chatId: number, symbol?: string) =>
+    apiFetch(`/api/v1/portfolio/trades?telegram_chat_id=${chatId}${symbol ? `&symbol=${symbol}` : ''}`),
+
+  logTrade: (data: { telegram_chat_id: number; symbol: string; market_type: string; side: string; quantity: string; price: string; notes?: string }) =>
+    apiFetch('/api/v1/portfolio/trades', { method: 'POST', body: JSON.stringify(data) }),
+
+  getPortfolioSummary: (chatId: number) =>
+    apiFetch(`/api/v1/portfolio/summary?telegram_chat_id=${chatId}`),
+
+  // ── P3: Signal Sharing ──
+  shareSignal: (signalId: string) =>
+    apiFetch(`/api/v1/signals/${signalId}/share`, { method: 'POST' }),
+
+  getSharedSignal: (shareId: string) =>
+    apiFetch(`/api/v1/signals/shared/${shareId}`),
+
+  // ── P3: AI Q&A ──
+  askAboutSymbol: (symbol: string, question: string) =>
+    apiFetch('/api/v1/ai/ask', { method: 'POST', body: JSON.stringify({ symbol, question }) }),
+
+  // ── P3: Backtesting ──
+  startBacktest: (data: { symbol: string; market_type: string; days?: number }) =>
+    apiFetch('/api/v1/backtest/run', { method: 'POST', body: JSON.stringify(data) }),
+
+  getBacktest: (backtestId: string) =>
+    apiFetch(`/api/v1/backtest/${backtestId}`),
 };

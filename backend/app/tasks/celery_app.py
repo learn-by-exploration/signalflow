@@ -16,6 +16,8 @@ celery_app = Celery(
         "app.tasks.ai_tasks",
         "app.tasks.signal_tasks",
         "app.tasks.alert_tasks",
+        "app.tasks.price_alert_tasks",
+        "app.tasks.backtest_tasks",
     ],
 )
 

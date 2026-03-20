@@ -149,6 +149,10 @@ def format_welcome() -> str:
         "/signals — Current active signals\n"
         "/markets — Quick market snapshot\n"
         "/watchlist — Manage your symbol watchlist\n"
+        "/ask — Ask AI about any symbol\n"
+        "/alert — Set price alerts\n"
+        "/trade — Log a trade\n"
+        "/portfolio — View your portfolio\n"
         "/config — Alert preferences\n"
         "/history — Recent signal outcomes\n"
         "/tutorial — Learn how to read signals\n"
@@ -232,3 +236,37 @@ def format_tutorial() -> str:
         "Track your decisions in a journal.\n\n"
         "⚠️ Remember: These are AI-generated signals, not financial advice."
     )
+
+
+def format_price_alert_created(symbol: str, condition: str, threshold: str) -> str:
+    """Format confirmation when a price alert is set."""
+    emoji = "📈" if condition == "above" else "📉"
+    clean = symbol.replace(".NS", "").replace("USDT", "")
+    return (
+        f"🔔 Price Alert Set!\n\n"
+        f"{emoji} {clean} — notify when {condition} {threshold}\n\n"
+        f"View alerts: /alert\n"
+        f"You'll be notified when the price crosses this level."
+    )
+
+
+def format_portfolio_summary(positions: list[dict]) -> str:
+    """Format portfolio summary for Telegram /portfolio command.
+
+    Args:
+        positions: List of dicts with symbol, quantity, avg_price, total_cost.
+    """
+    lines = ["📊 Your Portfolio", ""]
+    total_cost = 0.0
+    for p in positions:
+        sym = p["symbol"].replace(".NS", "").replace("USDT", "")
+        qty = p["quantity"]
+        avg = p["avg_price"]
+        cost = p["total_cost"]
+        total_cost += cost
+        lines.append(f"  {sym}: {qty:.4g} × {avg:,.2f} = {cost:,.2f}")
+
+    lines.append("")
+    lines.append(f"Total invested: {total_cost:,.2f}")
+    lines.append("\nLog trades: /trade buy SYMBOL QTY PRICE")
+    return "\n".join(lines)

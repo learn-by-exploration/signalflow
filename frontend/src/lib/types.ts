@@ -69,3 +69,74 @@ export interface WSMessage {
   type: 'signal' | 'market_update' | 'ping';
   data?: Signal | MarketSnapshot;
 }
+
+// ── P3: Future Features ──
+
+export interface PriceAlert {
+  id: string;
+  telegram_chat_id: number;
+  symbol: string;
+  market_type: MarketType;
+  condition: 'above' | 'below';
+  threshold: string;
+  is_triggered: boolean;
+  is_active: boolean;
+  triggered_at: string | null;
+  created_at: string;
+}
+
+export interface Trade {
+  id: string;
+  telegram_chat_id: number;
+  symbol: string;
+  market_type: MarketType;
+  side: 'buy' | 'sell';
+  quantity: string;
+  price: string;
+  notes: string | null;
+  signal_id: string | null;
+  created_at: string;
+}
+
+export interface PortfolioPosition {
+  symbol: string;
+  market_type: MarketType;
+  quantity: string;
+  avg_price: string;
+  current_price: string;
+  value: string;
+  pnl: string;
+  pnl_pct: number;
+}
+
+export interface PortfolioSummary {
+  total_invested: string;
+  current_value: string;
+  total_pnl: string;
+  total_pnl_pct: number;
+  positions: PortfolioPosition[];
+}
+
+export interface BacktestRun {
+  id: string;
+  symbol: string;
+  market_type: MarketType;
+  start_date: string;
+  end_date: string;
+  total_signals: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  avg_return_pct: number;
+  total_return_pct: number;
+  max_drawdown_pct: number;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface AskResponse {
+  answer: string;
+  source: 'claude' | 'fallback';
+}
