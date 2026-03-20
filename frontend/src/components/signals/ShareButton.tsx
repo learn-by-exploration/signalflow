@@ -27,7 +27,7 @@ export function ShareButton({ signalId }: ShareButtonProps) {
 
   if (shareUrl) {
     return (
-      <span className="text-xs text-[var(--signal-buy)]">
+      <span className="text-xs text-signal-buy">
         Link copied!
       </span>
     );
@@ -37,7 +37,7 @@ export function ShareButton({ signalId }: ShareButtonProps) {
     <button
       onClick={handleShare}
       disabled={loading}
-      className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-purple)] transition-colors disabled:opacity-50"
+      className="text-xs text-text-muted hover:text-accent-purple transition-colors disabled:opacity-50"
     >
       {loading ? '...' : '🔗 Share'}
     </button>

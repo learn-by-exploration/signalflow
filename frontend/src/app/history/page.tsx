@@ -40,16 +40,6 @@ export default function HistoryPage() {
 
   return (
     <main className="min-h-screen pb-12">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-bg-secondary/90 backdrop-blur-sm border-b border-border-default px-4 py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-lg font-display font-semibold text-accent-purple hover:opacity-80">
-            ← SignalFlow AI
-          </Link>
-          <span className="text-sm text-text-secondary font-display">Signal History</span>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-display font-semibold mb-6">Signal History</h1>
 

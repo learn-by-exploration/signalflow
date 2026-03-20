@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-
 const INDICATOR_WEIGHTS = [
   { name: 'SMA Crossover', weight: 25, description: 'When short-term moving average crosses above long-term, it signals bullish momentum.' },
   { name: 'MACD', weight: 25, description: 'Moving Average Convergence Divergence tracks trend strength and direction.' },
@@ -21,16 +19,6 @@ const SIGNAL_TYPES = [
 export default function HowItWorksPage() {
   return (
     <main className="min-h-screen pb-12">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-bg-secondary/90 backdrop-blur-sm border-b border-border-default px-4 py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-lg font-display font-semibold text-accent-purple hover:opacity-80">
-            ← SignalFlow AI
-          </Link>
-          <span className="text-sm text-text-secondary font-display">How It Works</span>
-        </div>
-      </div>
-
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
         {/* Hero */}
         <div>

@@ -37,14 +37,11 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
   const hasData = topStocks.length + topCrypto.length + topForex.length > 0;
 
   return (
-    <div className="sticky top-0 z-10 bg-bg-secondary/90 backdrop-blur-sm border-b border-border-default px-4 py-2.5">
+    <div className="bg-bg-secondary/60 border-b border-border-default px-4 py-2">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2 shrink-0">
-          <h1 className="text-lg font-display font-semibold text-accent-purple">
-            SignalFlow AI
-          </h1>
           {lastUpdated && (
-            <span className="text-[10px] text-text-muted font-mono hidden sm:inline">
+            <span className="text-[10px] text-text-muted font-mono">
               Updated {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
