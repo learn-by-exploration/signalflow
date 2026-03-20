@@ -45,10 +45,14 @@ export function WinRateCard() {
   const winColor = stats.win_rate >= 60 ? 'text-signal-buy' : stats.win_rate >= 40 ? 'text-signal-hold' : 'text-signal-sell';
   const returnColor = stats.avg_return_pct >= 0 ? 'text-signal-buy' : 'text-signal-sell';
   const resolved = stats.hit_target + stats.hit_stop;
+  const winRateLabel = stats.win_rate >= 60 ? 'Strong' : stats.win_rate >= 40 ? 'Average' : 'Below avg';
 
   return (
     <div className="bg-bg-card border border-border-default rounded-xl p-4 space-y-3">
-      <h3 className="text-sm font-display font-medium text-text-secondary">Signal Performance</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-display font-medium text-text-secondary">Signal Performance</h3>
+        <span className="text-[10px] text-text-muted font-mono" title="Number of resolved signals this stats is based on">Sample: {resolved} signals</span>
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         {/* Win Rate */}
@@ -57,6 +61,7 @@ export function WinRateCard() {
             {stats.win_rate.toFixed(1)}%
           </div>
           <div className="text-[10px] text-text-muted uppercase tracking-wider mt-0.5">Win Rate</div>
+          <div className="text-[10px] mt-0.5" style={{ color: stats.win_rate >= 60 ? '#00E676' : stats.win_rate >= 40 ? '#FFD740' : '#FF5252' }}>{winRateLabel}</div>
         </div>
 
         {/* Avg Return */}
@@ -76,15 +81,15 @@ export function WinRateCard() {
         </div>
       </div>
 
-      {/* Outcome Breakdown */}
+      {/* Outcome Legend */}
       <div className="flex items-center gap-2 text-xs font-mono">
-        <span className="text-signal-buy">🎯 {stats.hit_target}</span>
+        <span className="text-signal-buy" title="Signal hit target price">🎯 {stats.hit_target}</span>
         <span className="text-text-muted">•</span>
-        <span className="text-signal-sell">🛑 {stats.hit_stop}</span>
+        <span className="text-signal-sell" title="Signal hit stop-loss">🛑 {stats.hit_stop}</span>
         <span className="text-text-muted">•</span>
-        <span className="text-signal-hold">⏰ {stats.expired}</span>
+        <span className="text-signal-hold" title="Signal expired without hitting target or stop">⏰ {stats.expired}</span>
         <span className="text-text-muted">•</span>
-        <span className="text-text-muted">⏳ {stats.pending}</span>
+        <span className="text-text-muted" title="Signal still active, awaiting resolution">⏳ {stats.pending}</span>
       </div>
 
       {/* Win Rate Bar */}

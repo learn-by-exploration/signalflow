@@ -11,6 +11,7 @@ import { useSignals } from '@/hooks/useSignals';
 import { useMarketData } from '@/hooks/useMarketData';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { WelcomeModal } from '@/components/shared/WelcomeModal';
 
 export default function Dashboard() {
   const { signals, isLoading, error } = useSignalStore();
@@ -23,6 +24,8 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen pb-12">
+      <WelcomeModal />
+
       {/* Market Overview Bar */}
       <ErrorBoundary>
         <MarketOverview stocks={stocks} crypto={crypto} forex={forex} isLoading={marketsLoading} lastUpdated={lastUpdated} />

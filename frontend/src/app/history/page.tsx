@@ -48,15 +48,17 @@ export default function HistoryPage() {
             <LoadingSpinner size="lg" />
           </div>
         ) : history.length === 0 ? (
-          <div className="bg-bg-card border border-border-default rounded-xl p-8 text-center">
-            <p className="text-text-muted">
-              No signal history yet. Signals will appear here once they are resolved.
+          <div className="bg-bg-card border border-border-default rounded-xl p-8 text-center space-y-3">
+            <p className="text-3xl">📜</p>
+            <p className="text-text-secondary text-sm">
+              No signal history yet. Signals appear here once they hit their target, stop-loss, or expire.
             </p>
+            <Link href="/" className="text-xs text-accent-purple hover:underline">← View active signals on the dashboard</Link>
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Table header */}
-            <div className="grid grid-cols-6 gap-4 px-4 py-2 text-xs text-text-muted font-display uppercase tracking-wider">
+            {/* Table header — desktop only */}
+            <div className="hidden sm:grid grid-cols-6 gap-4 px-4 py-2 text-xs text-text-muted font-display uppercase tracking-wider">
               <span>Symbol</span>
               <span>Signal</span>
               <span>Outcome</span>
@@ -72,44 +74,89 @@ export default function HistoryPage() {
               return (
                 <div
                   key={item.id}
-                  className="grid grid-cols-6 gap-4 bg-bg-card border border-border-default rounded-lg px-4 py-3 items-center hover:border-border-hover transition-colors"
+                  className="bg-bg-card border border-border-default rounded-lg px-4 py-3 hover:border-border-hover transition-colors"
                 >
-                  <span className="text-sm font-display font-medium text-text-primary">
-                    {item.signal ? shortSymbol(item.signal.symbol) : '—'}
-                  </span>
-                  <span>
-                    {item.signal ? (
-                      <span
-                        className="text-xs font-mono font-semibold"
-                        style={{ color: SIGNAL_COLORS[item.signal.signal_type] }}
-                      >
-                        {item.signal.signal_type.replace('_', ' ')}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span>{outcome.emoji}</span>
-                    <span className="text-xs" style={{ color: outcome.color }}>
-                      {outcome.label}
+                  {/* Desktop: grid row */}
+                  <div className="hidden sm:grid grid-cols-6 gap-4 items-center">
+                    <span className="text-sm font-display font-medium text-text-primary">
+                      {item.signal ? shortSymbol(item.signal.symbol) : '—'}
                     </span>
-                  </span>
-                  <span className="text-right font-mono text-sm">
-                    {returnPct !== null ? (
-                      <span className={returnPct >= 0 ? 'text-signal-buy' : 'text-signal-sell'}>
-                        {formatPercent(returnPct)}
+                    <span>
+                      {item.signal ? (
+                        <span
+                          className="text-xs font-mono font-semibold"
+                          style={{ color: SIGNAL_COLORS[item.signal.signal_type] }}
+                        >
+                          {item.signal.signal_type.replace('_', ' ')}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span>{outcome.emoji}</span>
+                      <span className="text-xs" style={{ color: outcome.color }}>
+                        {outcome.label}
                       </span>
-                    ) : (
-                      <span className="text-text-muted">—</span>
-                    )}
-                  </span>
-                  <span className="text-right font-mono text-sm text-text-secondary">
-                    {item.exit_price ? formatPrice(item.exit_price) : '—'}
-                  </span>
-                  <span className="text-right text-xs text-text-muted">
-                    {item.resolved_at ? formatDate(item.resolved_at) : '—'}
-                  </span>
+                    </span>
+                    <span className="text-right font-mono text-sm">
+                      {returnPct !== null ? (
+                        <span className={returnPct >= 0 ? 'text-signal-buy' : 'text-signal-sell'}>
+                          {formatPercent(returnPct)}
+                        </span>
+                      ) : (
+                        <span className="text-text-muted">—</span>
+                      )}
+                    </span>
+                    <span className="text-right font-mono text-sm text-text-secondary">
+                      {item.exit_price ? formatPrice(item.exit_price) : '—'}
+                    </span>
+                    <span className="text-right text-xs text-text-muted">
+                      {item.resolved_at ? formatDate(item.resolved_at) : '—'}
+                    </span>
+                  </div>
+
+                  {/* Mobile: card layout */}
+                  <div className="sm:hidden space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-display font-medium text-text-primary">
+                          {item.signal ? shortSymbol(item.signal.symbol) : '—'}
+                        </span>
+                        {item.signal && (
+                          <span
+                            className="text-xs font-mono font-semibold"
+                            style={{ color: SIGNAL_COLORS[item.signal.signal_type] }}
+                          >
+                            {item.signal.signal_type.replace('_', ' ')}
+                          </span>
+                        )}
+                      </div>
+                      <span className="flex items-center gap-1">
+                        <span>{outcome.emoji}</span>
+                        <span className="text-xs" style={{ color: outcome.color }}>
+                          {outcome.label}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-text-muted">
+                        {item.resolved_at ? formatDate(item.resolved_at) : 'Pending'}
+                      </span>
+                      <div className="flex gap-3">
+                        {returnPct !== null && (
+                          <span className={returnPct >= 0 ? 'text-signal-buy' : 'text-signal-sell'}>
+                            {formatPercent(returnPct)}
+                          </span>
+                        )}
+                        {item.exit_price && (
+                          <span className="text-text-secondary">
+                            Exit: {formatPrice(item.exit_price)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })}

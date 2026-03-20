@@ -16,7 +16,7 @@ export function ConfidenceGauge({ confidence, signalType, size = 56 }: Confidenc
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
+      <svg width={size} height={size} className="-rotate-90" role="img" aria-label={`${confidence}% confidence`}>
         {/* Background track */}
         <circle
           cx={center}

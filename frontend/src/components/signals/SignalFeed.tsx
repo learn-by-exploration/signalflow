@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import type { Signal, MarketType } from '@/lib/types';
 import { SignalCard } from './SignalCard';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import Link from 'next/link';
 
 interface SignalFeedProps {
   signals: Signal[];
@@ -65,8 +66,9 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search symbol (e.g. HDFC, BTC, EUR)..."
-          className="w-full bg-bg-card border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple/50 font-mono"
+          className="w-full bg-bg-card border border-border-default rounded-lg pl-8 pr-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple/50 font-mono"
         />
+        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-xs">🔍</span>
         {search && (
           <button
             onClick={() => setSearch('')}
@@ -76,6 +78,12 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
           </button>
         )}
       </div>
+      {search && (
+        <p className="text-xs text-text-muted -mt-2">
+          {filtered.length} result{filtered.length !== 1 ? 's' : ''} for &ldquo;{search}&rdquo;
+          {filtered.length === 0 && <span> — try a shorter name or switch market filter</span>}
+        </p>
+      )}
 
       {/* Content */}
       {isLoading && (
@@ -91,10 +99,18 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
       )}
 
       {!isLoading && !error && filtered.length === 0 && (
-        <div className="bg-bg-card border border-border-default rounded-xl p-8 text-center">
-          <p className="text-text-muted text-sm">
-            No {filter === 'all' ? '' : filter + ' '}signals right now. New signals are generated every 5 minutes.
+        <div className="bg-bg-card border border-border-default rounded-xl p-8 text-center space-y-4">
+          <p className="text-3xl">📡</p>
+          <p className="text-text-secondary text-sm">
+            No {filter === 'all' ? '' : filter + ' '}signals right now. Signals are generated every 5 minutes.
           </p>
+          <div className="flex flex-wrap justify-center gap-3 text-xs">
+            <a href="/how-it-works" className="text-accent-purple hover:underline">💡 Learn how signals work</a>
+            <span className="text-text-muted">•</span>
+            <a href="/alerts" className="text-accent-purple hover:underline">🔔 Set up alert preferences</a>
+            <span className="text-text-muted">•</span>
+            <a href="/history" className="text-accent-purple hover:underline">📜 View past signals</a>
+          </div>
         </div>
       )}
 

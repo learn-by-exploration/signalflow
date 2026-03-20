@@ -12,6 +12,7 @@ const PRESET_AMOUNTS = [10000, 25000, 50000, 100000];
 
 export function RiskCalculator({ signal }: RiskCalculatorProps) {
   const [amount, setAmount] = useState(10000);
+  const [customInput, setCustomInput] = useState('');
 
   const price = parseFloat(signal.current_price);
   const target = parseFloat(signal.target_price);
@@ -40,9 +41,9 @@ export function RiskCalculator({ signal }: RiskCalculatorProps) {
         {PRESET_AMOUNTS.map((preset) => (
           <button
             key={preset}
-            onClick={(e) => { e.stopPropagation(); setAmount(preset); }}
+            onClick={(e) => { e.stopPropagation(); setAmount(preset); setCustomInput(''); }}
             className={`px-2 py-0.5 text-xs font-mono rounded border transition-colors ${
-              amount === preset
+              amount === preset && !customInput
                 ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                 : 'border-border-default text-text-muted hover:border-border-hover'
             }`}
@@ -50,6 +51,18 @@ export function RiskCalculator({ signal }: RiskCalculatorProps) {
             {currencySymbol}{(preset / 1000).toFixed(0)}K
           </button>
         ))}
+        <input
+          type="number"
+          value={customInput}
+          placeholder="Custom"
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            setCustomInput(e.target.value);
+            const v = parseFloat(e.target.value);
+            if (v > 0) setAmount(v);
+          }}
+          className="w-20 px-2 py-0.5 text-xs font-mono rounded border border-border-default text-text-primary bg-bg-secondary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
+        />
       </div>
 
       {/* Risk/Reward display */}

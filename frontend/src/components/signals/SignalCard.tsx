@@ -29,7 +29,7 @@ export function SignalCard({ signal }: SignalCardProps) {
 
   return (
     <div
-      className="bg-bg-card border border-border-default rounded-xl p-4 hover:border-border-hover transition-all cursor-pointer"
+      className="bg-bg-card border border-border-default rounded-xl p-4 hover:border-border-hover transition-all duration-200 cursor-pointer"
       style={{ borderLeftColor: color, borderLeftWidth: 3 }}
       onClick={() => setIsExpanded(!isExpanded)}
     >
@@ -108,6 +108,30 @@ export function SignalCard({ signal }: SignalCardProps) {
 
       {/* AI Reasoning (expanded) */}
       <AIReasoningPanel reasoning={signal.ai_reasoning} isExpanded={isExpanded} />
+
+      {/* Quick Action Guide (expanded) */}
+      {isExpanded && (
+        <div className="mt-3 pt-3 border-t border-border-default">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-base">💡</span>
+            <p className="text-xs font-display font-medium text-accent-purple">What To Do</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-text-secondary">
+            <div className="flex items-start gap-1.5">
+              <span className="text-accent-purple font-bold">1.</span>
+              <span>Use the risk calculator below to decide your position size</span>
+            </div>
+            <div className="flex items-start gap-1.5">
+              <span className="text-accent-purple font-bold">2.</span>
+              <span>Set your stop-loss at <span className="text-signal-sell font-mono">{formatPrice(signal.stop_loss, signal.market_type)}</span> to limit downside</span>
+            </div>
+            <div className="flex items-start gap-1.5">
+              <span className="text-accent-purple font-bold">3.</span>
+              <span>Watch for target at <span className="text-signal-buy font-mono">{formatPrice(signal.target_price, signal.market_type)}</span> — {signal.timeframe ?? 'check back regularly'}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Risk Calculator (expanded) */}
       {isExpanded && <RiskCalculator signal={signal} />}
