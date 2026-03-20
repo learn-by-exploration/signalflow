@@ -534,6 +534,18 @@ export default function SignalCard({ signal, expanded, onToggle }: any) {
 - **No TODO comments without an associated GitHub issue**
 - **All API responses must use consistent envelope**: `{ data: ..., meta: { timestamp, count } }`
 
+### Pre-Commit Testing Rule (MANDATORY)
+
+**Before every git commit, ALL existing tests must pass.** This is non-negotiable:
+
+1. **Run the full test suite** before staging/committing any changes
+2. **If any existing test fails**, fix the code or the test before committing — never commit with failing tests
+3. **If new code is added**, write corresponding tests for it in the same commit
+4. **If existing code is modified**, verify related tests still pass and update them if behavior changed intentionally
+5. **New features without tests will not be committed** — every service, utility, and API endpoint must have test coverage
+6. **Test command**: `python -m pytest tests/ -v --override-ini="asyncio_mode=auto"` (from `backend/` directory)
+7. **Minimum bar**: All tests green (0 failures) before any commit is made
+
 ---
 
 ## API Contract
@@ -958,6 +970,7 @@ tests/
 - **Mock external APIs**: Claude API, Binance, Yahoo Finance — never call real APIs in tests
 - **Integration tests** must test the full pipeline: data → indicators → AI → signal → delivery
 - **Tester agent writes tests alongside features**, not after
+- **Pre-commit gate**: The full test suite MUST pass before every commit. No exceptions. If code changes break existing tests, fix them before committing. If new code is added, include matching tests in the same commit. See "Pre-Commit Testing Rule" under Coding Standards for details.
 
 ---
 
