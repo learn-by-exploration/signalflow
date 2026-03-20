@@ -7,6 +7,8 @@ import { SIGNAL_COLORS, MARKET_LABELS } from '@/lib/constants';
 import { SignalBadge } from './SignalBadge';
 import { ConfidenceGauge } from './ConfidenceGauge';
 import { AIReasoningPanel } from './AIReasoningPanel';
+import { RiskCalculator } from './RiskCalculator';
+import { Sparkline } from '@/components/markets/Sparkline';
 import { IndicatorPill } from '@/components/shared/IndicatorPill';
 
 interface SignalCardProps {
@@ -21,6 +23,8 @@ export function SignalCard({ signal }: SignalCardProps) {
   const rsi = technicalData?.rsi;
   const macd = technicalData?.macd;
   const volume = technicalData?.volume;
+  const recentCloses = (signal.technical_data?.recent_closes ?? []) as number[];
+  const isBuyish = signal.signal_type.includes('BUY');
 
   return (
     <div
@@ -49,13 +53,18 @@ export function SignalCard({ signal }: SignalCardProps) {
           </div>
         </div>
 
-        <div className="text-right">
-          <p className="text-sm font-mono text-text-primary">
-            {formatPrice(signal.current_price, signal.market_type)}
-          </p>
-          <p className="text-xs text-text-muted">
-            {signal.timeframe ?? '—'}
-          </p>
+        <div className="text-right flex items-center gap-2">
+          {recentCloses.length >= 2 && (
+            <Sparkline data={recentCloses} positive={isBuyish} width={50} height={18} />
+          )}
+          <div>
+            <p className="text-sm font-mono text-text-primary">
+              {formatPrice(signal.current_price, signal.market_type)}
+            </p>
+            <p className="text-xs text-text-muted">
+              {signal.timeframe ?? '—'}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -98,6 +107,9 @@ export function SignalCard({ signal }: SignalCardProps) {
 
       {/* AI Reasoning (expanded) */}
       <AIReasoningPanel reasoning={signal.ai_reasoning} isExpanded={isExpanded} />
+
+      {/* Risk Calculator (expanded) */}
+      {isExpanded && <RiskCalculator signal={signal} />}
 
       {/* Expand indicator */}
       <div className="flex justify-center mt-2">

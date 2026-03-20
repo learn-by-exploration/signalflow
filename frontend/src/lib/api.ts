@@ -41,4 +41,13 @@ export const api = {
 
   updateAlertConfig: (id: string, data: Record<string, unknown>) =>
     apiFetch(`/api/v1/alerts/config/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  getWatchlist: (chatId: number) =>
+    apiFetch(`/api/v1/alerts/watchlist?telegram_chat_id=${chatId}`),
+
+  updateWatchlist: (chatId: number, symbol: string, action: 'add' | 'remove') =>
+    apiFetch(`/api/v1/alerts/watchlist?telegram_chat_id=${chatId}`, {
+      method: 'POST',
+      body: JSON.stringify({ symbol, action }),
+    }),
 };

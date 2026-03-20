@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.alert_config import AlertConfig
-from app.schemas.alert import AlertConfigCreate, AlertConfigData, AlertConfigUpdate
+from app.schemas.alert import AlertConfigCreate, AlertConfigData, AlertConfigUpdate, WatchlistUpdate
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -67,3 +67,50 @@ async def update_alert_config(
     await db.flush()
     await db.refresh(config)
     return {"data": AlertConfigData.model_validate(config)}
+
+
+@router.get("/watchlist", response_model=dict)
+async def get_watchlist(
+    telegram_chat_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Get a user's watchlist by chat ID."""
+    result = await db.execute(
+        select(AlertConfig).where(AlertConfig.telegram_chat_id == telegram_chat_id)
+    )
+    config = result.scalar_one_or_none()
+    if not config:
+        raise HTTPException(status_code=404, detail="Alert config not found")
+    watchlist = config.watchlist if isinstance(config.watchlist, list) else []
+    return {"data": watchlist}
+
+
+@router.post("/watchlist", response_model=dict)
+async def update_watchlist(
+    telegram_chat_id: int,
+    payload: WatchlistUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Add or remove a symbol from a user's watchlist."""
+    result = await db.execute(
+        select(AlertConfig).where(AlertConfig.telegram_chat_id == telegram_chat_id)
+    )
+    config = result.scalar_one_or_none()
+    if not config:
+        raise HTTPException(status_code=404, detail="Alert config not found")
+
+    watchlist = list(config.watchlist) if isinstance(config.watchlist, list) else []
+    symbol_upper = payload.symbol.upper().strip()
+
+    if payload.action == "add":
+        if symbol_upper not in watchlist:
+            watchlist.append(symbol_upper)
+    elif payload.action == "remove":
+        watchlist = [s for s in watchlist if s != symbol_upper]
+    else:
+        raise HTTPException(status_code=400, detail="action must be 'add' or 'remove'")
+
+    config.watchlist = watchlist
+    await db.flush()
+    await db.refresh(config)
+    return {"data": watchlist}

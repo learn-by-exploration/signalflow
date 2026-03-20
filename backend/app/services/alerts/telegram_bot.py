@@ -58,6 +58,7 @@ class SignalFlowBot:
         app.add_handler(CommandHandler("config", self._cmd_config))
         app.add_handler(CommandHandler("history", self._cmd_history))
         app.add_handler(CommandHandler("tutorial", self._cmd_tutorial))
+        app.add_handler(CommandHandler("watchlist", self._cmd_watchlist))
         app.add_handler(CommandHandler("stop", self._cmd_stop))
         app.add_handler(CommandHandler("resume", self._cmd_resume))
         app.add_handler(CallbackQueryHandler(self._handle_callback))
@@ -108,6 +109,74 @@ class SignalFlowBot:
         if update.effective_chat is None:
             return
         await update.message.reply_text(format_tutorial())
+
+    async def _cmd_watchlist(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle /watchlist — view, add, or remove symbols.
+
+        Usage:
+            /watchlist            — show current watchlist
+            /watchlist add HDFC   — add symbol
+            /watchlist remove BTC — remove symbol
+        """
+        if update.effective_chat is None:
+            return
+        chat_id = update.effective_chat.id
+
+        config = await self._get_or_create_config(chat_id)
+        watchlist = list(config.watchlist) if isinstance(config.watchlist, list) else []
+
+        args = context.args or []
+
+        if len(args) == 0:
+            if not watchlist:
+                await update.message.reply_text(
+                    "📋 Your watchlist is empty.\n\n"
+                    "Add symbols with:\n/watchlist add HDFCBANK\n/watchlist add BTCUSDT"
+                )
+            else:
+                symbols = ", ".join(watchlist)
+                await update.message.reply_text(
+                    f"📋 Your Watchlist ({len(watchlist)} symbols)\n\n{symbols}\n\n"
+                    "Manage: /watchlist add SYMBOL or /watchlist remove SYMBOL"
+                )
+            return
+
+        if len(args) < 2 or args[0].lower() not in ("add", "remove"):
+            await update.message.reply_text(
+                "Usage:\n/watchlist add HDFCBANK\n/watchlist remove BTCUSDT"
+            )
+            return
+
+        action = args[0].lower()
+        symbol = args[1].upper().strip()
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(AlertConfig).where(AlertConfig.telegram_chat_id == chat_id)
+            )
+            db_config = result.scalar_one_or_none()
+            if not db_config:
+                await update.message.reply_text("Please /start first.")
+                return
+
+            current = list(db_config.watchlist) if isinstance(db_config.watchlist, list) else []
+
+            if action == "add":
+                if symbol in current:
+                    await update.message.reply_text(f"{symbol} is already on your watchlist.")
+                    return
+                current.append(symbol)
+                db_config.watchlist = current
+                await session.commit()
+                await update.message.reply_text(f"✅ Added {symbol} to your watchlist.")
+            else:
+                if symbol not in current:
+                    await update.message.reply_text(f"{symbol} is not on your watchlist.")
+                    return
+                current.remove(symbol)
+                db_config.watchlist = current
+                await session.commit()
+                await update.message.reply_text(f"🗑 Removed {symbol} from your watchlist.")
 
     async def _cmd_signals(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /signals — show top active signals from database."""

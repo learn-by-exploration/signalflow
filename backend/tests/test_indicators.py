@@ -239,7 +239,7 @@ class TestFullAnalysis:
     def test_full_analysis_returns_all_keys(self) -> None:
         df = _make_ohlcv(250)
         result = TechnicalAnalyzer(df).full_analysis()
-        assert set(result.keys()) == {"rsi", "macd", "bollinger", "volume", "sma_cross", "atr"}
+        assert set(result.keys()) == {"rsi", "macd", "bollinger", "volume", "sma_cross", "atr", "recent_closes"}
 
     def test_full_analysis_with_sufficient_data(self) -> None:
         df = _make_ohlcv(250, trend="up")

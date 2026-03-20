@@ -372,8 +372,12 @@ class TechnicalAnalyzer:
         """Run all indicators and return a combined analysis dict.
 
         Returns:
-            Dict with keys: rsi, macd, bollinger, volume, sma_cross, atr.
+            Dict with keys: rsi, macd, bollinger, volume, sma_cross, atr, recent_closes.
         """
+        # Last 20 close prices for sparkline rendering
+        closes = self.df["close"].dropna().tail(20).tolist()
+        recent_closes = [round(float(c), 4) for c in closes]
+
         return {
             "rsi": self.compute_rsi(),
             "macd": self.compute_macd(),
@@ -381,4 +385,5 @@ class TechnicalAnalyzer:
             "volume": self.compute_volume_ratio(),
             "sma_cross": self.compute_sma_cross(),
             "atr": self.compute_atr(),
+            "recent_closes": recent_closes,
         }

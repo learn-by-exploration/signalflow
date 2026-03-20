@@ -148,6 +148,7 @@ def format_welcome() -> str:
         "Commands:\n"
         "/signals — Current active signals\n"
         "/markets — Quick market snapshot\n"
+        "/watchlist — Manage your symbol watchlist\n"
         "/config — Alert preferences\n"
         "/history — Recent signal outcomes\n"
         "/tutorial — Learn how to read signals\n"

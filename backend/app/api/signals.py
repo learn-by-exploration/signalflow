@@ -18,6 +18,7 @@ router = APIRouter(prefix="/signals", tags=["signals"])
 async def list_signals(
     market: str | None = None,
     signal_type: str | None = None,
+    symbol: str | None = None,
     min_confidence: int = Query(default=0, ge=0, le=100),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -30,6 +31,8 @@ async def list_signals(
         query = query.where(Signal.market_type == market)
     if signal_type:
         query = query.where(Signal.signal_type == signal_type)
+    if symbol:
+        query = query.where(Signal.symbol.ilike(f"%{symbol}%"))
     if min_confidence > 0:
         query = query.where(Signal.confidence >= min_confidence)
 

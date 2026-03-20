@@ -22,16 +22,24 @@ const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
 
 export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
   const [filter, setFilter] = useState<FilterType>('all');
+  const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return signals;
-    return signals.filter((s) => s.market_type === filter);
-  }, [signals, filter]);
+    let result = signals;
+    if (filter !== 'all') {
+      result = result.filter((s) => s.market_type === filter);
+    }
+    if (search.trim()) {
+      const q = search.trim().toUpperCase();
+      result = result.filter((s) => s.symbol.toUpperCase().includes(q));
+    }
+    return result;
+  }, [signals, filter, search]);
 
   return (
     <div className="space-y-4">
       {/* Header + Filters */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-display font-semibold">Active Signals</h2>
         <div className="flex gap-2">
           {FILTER_OPTIONS.map((opt) => (
@@ -48,6 +56,25 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Symbol Search */}
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search symbol (e.g. HDFC, BTC, EUR)..."
+          className="w-full bg-bg-card border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple/50 font-mono"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary text-xs"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Content */}

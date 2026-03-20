@@ -25,6 +25,14 @@ class AlertConfigUpdate(BaseModel):
     signal_types: list[str] | None = None
     quiet_hours: dict | None = None
     is_active: bool | None = None
+    watchlist: list[str] | None = None
+
+
+class WatchlistUpdate(BaseModel):
+    """Request schema for adding/removing watchlist symbols."""
+
+    symbol: str
+    action: str = Field(description="'add' or 'remove'")
 
 
 class AlertConfigData(BaseModel):
@@ -37,6 +45,7 @@ class AlertConfigData(BaseModel):
     min_confidence: int
     signal_types: list[str]
     quiet_hours: dict | None = None
+    watchlist: list[str] | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
