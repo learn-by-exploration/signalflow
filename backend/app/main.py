@@ -62,9 +62,14 @@ app = FastAPI(
 )
 
 # ── CORS ──
+_cors_origins = (
+    [settings.frontend_url]
+    if settings.environment == "development"
+    else [settings.frontend_url] if settings.frontend_url else []
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"] if settings.environment == "development" else [],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,4 +87,5 @@ async def health_check() -> dict:
         "status": "healthy",
         "uptime": str(datetime.now(timezone.utc) - _startup_time) if _startup_time else "unknown",
         "environment": settings.environment,
+        "disclaimer": "SignalFlow AI generates AI-powered signals for educational purposes. Not financial advice.",
     }

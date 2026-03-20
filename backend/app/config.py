@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    frontend_url: str = "http://localhost:3000"
 
     # ── Database ──
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/signalflow"

@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+    build-essential curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -11,6 +11,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Non-root user for production
+RUN addgroup --system --gid 1001 appgroup \
+    && adduser --system --uid 1001 --ingroup appgroup appuser
+
+ENV PYTHONPATH=/app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 EXPOSE 8000
 
-CMD ["bash", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Run migrations then start with appropriate worker count
+CMD ["bash", "-c", "PYTHONPATH=/app alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-2}"]
