@@ -1,5 +1,6 @@
 """WebSocket endpoint for real-time signal streaming."""
 
+import asyncio
 import json
 import logging
 from collections.abc import Set
@@ -63,6 +64,21 @@ manager = ConnectionManager()
 async def websocket_signals(websocket: WebSocket) -> None:
     """WebSocket endpoint for real-time signal and market updates."""
     await manager.connect(websocket)
+
+    async def send_pings() -> None:
+        """Send heartbeat pings every 30 seconds."""
+        try:
+            while True:
+                await asyncio.sleep(30)
+                try:
+                    await websocket.send_json({"type": "ping"})
+                except Exception:
+                    break
+        except asyncio.CancelledError:
+            pass
+
+    ping_task = asyncio.create_task(send_pings())
+
     try:
         while True:
             data = await websocket.receive_text()
@@ -78,4 +94,7 @@ async def websocket_signals(websocket: WebSocket) -> None:
             elif msg_type == "pong":
                 pass  # Client heartbeat acknowledgment
     except WebSocketDisconnect:
+        pass
+    finally:
+        ping_task.cancel()
         manager.disconnect(websocket)

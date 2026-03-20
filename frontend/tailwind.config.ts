@@ -34,9 +34,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['Outfit', 'sans-serif'],
-        body: ['Outfit', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        display: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
+        body: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
+        mono: ['var(--font-jetbrains)', 'JetBrains Mono', 'monospace'],
       },
     },
   },

@@ -3,12 +3,13 @@
 import logging
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
+from app.rate_limit import limiter
 from app.schemas.p3 import AskQuestion
 from app.services.ai_engine.cost_tracker import CostTracker
 from app.services.ai_engine.prompts import SYMBOL_QA_PROMPT
@@ -18,7 +19,9 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 
 @router.post("/ask", response_model=dict)
+@limiter.limit("5/minute")
 async def ask_about_symbol(
+    request: Request,
     payload: AskQuestion,
     db: AsyncSession = Depends(get_db),
 ) -> dict:

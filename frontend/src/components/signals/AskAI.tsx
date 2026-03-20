@@ -8,6 +8,7 @@ export function AskAI() {
   const [symbol, setSymbol] = useState('');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
+  const [source, setSource] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleAsk(e: React.FormEvent) {
@@ -16,11 +17,19 @@ export function AskAI() {
 
     setLoading(true);
     setAnswer(null);
+    setSource(null);
     try {
       const res = (await api.askAboutSymbol(symbol.trim(), question.trim())) as { data: AskResponse };
       setAnswer(res.data.answer);
-    } catch {
-      setAnswer('Failed to get a response. Try again later.');
+      setSource(res.data.source ?? 'claude');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 429) {
+        setAnswer('Too many questions — please wait a minute and try again.');
+      } else {
+        setAnswer('Could not reach AI right now. Try again shortly.');
+      }
+      setSource('error');
     } finally {
       setLoading(false);
     }
@@ -47,16 +56,28 @@ export function AskAI() {
             className="flex-1 bg-bg-secondary border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
           />
         </div>
-        <button
-          type="submit"
-          disabled={loading || !symbol.trim() || !question.trim()}
-          className="w-full bg-accent-purple text-white py-2 rounded-lg text-sm font-medium hover:bg-accent-purple/90 transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Thinking...' : 'Ask'}
-        </button>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-text-muted">{question.length}/500</span>
+          <button
+            type="submit"
+            disabled={loading || !symbol.trim() || !question.trim()}
+            className="px-4 py-1.5 bg-accent-purple text-white rounded-lg text-sm font-medium hover:bg-accent-purple/90 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Thinking...' : 'Ask'}
+          </button>
+        </div>
       </form>
       {answer && (
-        <div className="mt-3 p-3 bg-bg-secondary rounded-lg text-sm text-text-secondary leading-relaxed">
+        <div className={`mt-3 p-3 rounded-lg text-sm leading-relaxed ${
+          source === 'error'
+            ? 'bg-signal-sell/10 text-signal-sell'
+            : source === 'fallback'
+              ? 'bg-signal-hold/10 text-text-secondary'
+              : 'bg-bg-secondary text-text-secondary'
+        }`}>
+          {source === 'fallback' && (
+            <p className="text-[10px] text-signal-hold mb-1">⚠️ AI budget exhausted — showing cached data</p>
+          )}
           {answer}
         </div>
       )}
