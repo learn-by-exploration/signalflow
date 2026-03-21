@@ -7,16 +7,19 @@ import type { ConnectionStatus } from '@/lib/websocket';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
 
+const DEFAULT_MARKETS = ['stock', 'crypto', 'forex'];
+
 /**
  * Hook that manages WebSocket connection for real-time signal and market updates.
  * Automatically connects on mount and disconnects on unmount.
  */
-export function useWebSocket(markets: string[] = ['stock', 'crypto', 'forex']) {
+export function useWebSocket(markets: string[] = DEFAULT_MARKETS) {
   const addSignal = useSignalStore((s) => s.addSignal);
   const incrementUnseen = useSignalStore((s) => s.incrementUnseen);
   const updatePrice = useMarketStore((s) => s.updatePrice);
   const setWsStatus = useMarketStore((s) => s.setWsStatus);
   const wsRef = useRef<SignalWebSocket | null>(null);
+  const marketsKey = JSON.stringify(markets);
 
   const handleMessage = useCallback(
     (msg: WSMessage) => {
@@ -49,7 +52,8 @@ export function useWebSocket(markets: string[] = ['stock', 'crypto', 'forex']) {
       ws.disconnect();
       wsRef.current = null;
     };
-  }, [handleMessage, handleStatusChange, markets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleMessage, handleStatusChange, marketsKey]);
 
   return wsRef;
 }

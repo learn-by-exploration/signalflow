@@ -100,7 +100,7 @@ async def health_check() -> dict:
 
     # Database check
     try:
-        from app.database import async_engine, async_session
+        from app.database import engine as async_engine, async_session
         from sqlalchemy import text as sql_text
         async with async_engine.connect() as conn:
             await conn.execute(sql_text("SELECT 1"))
