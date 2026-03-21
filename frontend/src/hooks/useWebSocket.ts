@@ -13,6 +13,7 @@ import { useMarketStore } from '@/store/marketStore';
  */
 export function useWebSocket(markets: string[] = ['stock', 'crypto', 'forex']) {
   const addSignal = useSignalStore((s) => s.addSignal);
+  const incrementUnseen = useSignalStore((s) => s.incrementUnseen);
   const updatePrice = useMarketStore((s) => s.updatePrice);
   const setWsStatus = useMarketStore((s) => s.setWsStatus);
   const wsRef = useRef<SignalWebSocket | null>(null);
@@ -21,11 +22,15 @@ export function useWebSocket(markets: string[] = ['stock', 'crypto', 'forex']) {
     (msg: WSMessage) => {
       if (msg.type === 'signal' && msg.data) {
         addSignal(msg.data as Signal);
+        // Increment unseen if not on dashboard
+        if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+          incrementUnseen();
+        }
       } else if (msg.type === 'market_update' && msg.data) {
         updatePrice(msg.data as MarketSnapshot);
       }
     },
-    [addSignal, updatePrice],
+    [addSignal, incrementUnseen, updatePrice],
   );
 
   const handleStatusChange = useCallback(

@@ -5,6 +5,7 @@ import type { MarketSnapshot } from '@/lib/types';
 import { formatPrice, formatPercent, changeDirection, shortSymbol } from '@/utils/formatters';
 import { MARKET_LABELS } from '@/lib/constants';
 import { useMarketStore } from '@/store/marketStore';
+import { getMarketBadge } from '@/utils/market-hours';
 
 interface MarketOverviewProps {
   stocks: MarketSnapshot[];
@@ -89,28 +90,13 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
         ) : (
           <div className="flex items-center gap-6 overflow-x-auto scrollbar-none">
             {topStocks.length > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] text-text-muted uppercase tracking-wider">{MARKET_LABELS.stock}</span>
-                {topStocks.map((s) => (
-                  <MarketTicker key={s.symbol} snapshot={s} />
-                ))}
-              </div>
+              <MarketSection label={MARKET_LABELS.stock} marketType="stock" snapshots={topStocks} />
             )}
             {topCrypto.length > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] text-text-muted uppercase tracking-wider">{MARKET_LABELS.crypto}</span>
-                {topCrypto.map((s) => (
-                  <MarketTicker key={s.symbol} snapshot={s} />
-                ))}
-              </div>
+              <MarketSection label={MARKET_LABELS.crypto} marketType="crypto" snapshots={topCrypto} />
             )}
             {topForex.length > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] text-text-muted uppercase tracking-wider">{MARKET_LABELS.forex}</span>
-                {topForex.map((s) => (
-                  <MarketTicker key={s.symbol} snapshot={s} />
-                ))}
-              </div>
+              <MarketSection label={MARKET_LABELS.forex} marketType="forex" snapshots={topForex} />
             )}
           </div>
         )}
@@ -120,6 +106,21 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
           <p className="text-[10px] text-signal-hold">⚠️ {fetchError}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function MarketSection({ label, marketType, snapshots }: { label: string; marketType: string; snapshots: MarketSnapshot[] }) {
+  const badge = getMarketBadge(marketType);
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1" title={badge.hint ?? undefined}>
+        <span className="text-[10px] text-text-muted uppercase tracking-wider">{label}</span>
+        <span className="text-[9px]">{badge.badge}</span>
+      </div>
+      {snapshots.map((s) => (
+        <MarketTicker key={s.symbol} snapshot={s} />
+      ))}
     </div>
   );
 }

@@ -64,3 +64,35 @@ export function getMarketStatus(marketType: string): { isOpen: boolean; label: s
       return { isOpen: false, label: 'Unknown' };
   }
 }
+
+/**
+ * Get a short status badge and next-open hint for each market.
+ */
+export function getMarketBadge(marketType: string): { isOpen: boolean; badge: string; hint: string | null } {
+  switch (marketType) {
+    case 'stock': {
+      const open = isNSEOpen();
+      if (open) return { isOpen: true, badge: '🟢 Open', hint: null };
+      // Find next open: Mon-Fri 9:15 AM IST
+      const now = getISTDate();
+      const day = now.getDay();
+      const daysUntilMon = day === 0 ? 1 : day === 6 ? 2 : 0;
+      if (daysUntilMon > 0) {
+        return { isOpen: false, badge: '🔴 Closed', hint: `Opens ${daysUntilMon === 1 ? 'Mon' : 'Mon'} 9:15 AM IST` };
+      }
+      // Weekday but after hours
+      const time = now.getHours() * 60 + now.getMinutes();
+      if (time < 9 * 60 + 15) return { isOpen: false, badge: '🔴 Closed', hint: 'Opens 9:15 AM IST' };
+      return { isOpen: false, badge: '🔴 Closed', hint: 'Opens tomorrow 9:15 AM IST' };
+    }
+    case 'crypto':
+      return { isOpen: true, badge: '🟢 24/7', hint: null };
+    case 'forex': {
+      const open = isForexOpen();
+      if (open) return { isOpen: true, badge: '🟢 Open', hint: null };
+      return { isOpen: false, badge: '🔴 Closed', hint: 'Opens Sun 5:30 PM IST' };
+    }
+    default:
+      return { isOpen: false, badge: '⚪ Unknown', hint: null };
+  }
+}

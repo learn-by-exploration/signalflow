@@ -15,15 +15,20 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { WelcomeModal } from '@/components/shared/WelcomeModal';
 import { ChatIdPrompt } from '@/components/shared/ChatIdPrompt';
+import { useEffect } from 'react';
 
 export default function Dashboard() {
   const { signals, isLoading, error } = useSignalStore();
   const { stocks, crypto, forex, isLoading: marketsLoading, lastUpdated } = useMarketStore();
+  const resetUnseen = useSignalStore((s) => s.resetUnseen);
 
   // Fetch initial data via REST, subscribe to real-time via WebSocket
   useSignals();
   useMarketData();
   useWebSocket();
+
+  // Reset notification badge when dashboard is viewed
+  useEffect(() => { resetUnseen(); }, [resetUnseen]);
 
   return (
     <main className="min-h-screen pb-12">

@@ -22,6 +22,8 @@ const OUTCOME_LABELS: Record<string, { emoji: string; label: string; color: stri
 
 type OutcomeFilter = 'all' | 'hit_target' | 'hit_stop' | 'expired' | 'pending';
 type MarketFilter = 'all' | 'stock' | 'crypto' | 'forex';
+type SortCol = 'return' | 'resolved' | null;
+type SortDir = 'asc' | 'desc';
 
 const OUTCOME_FILTERS: { value: OutcomeFilter; label: string; emoji: string }[] = [
   { value: 'all', label: 'All', emoji: '📜' },
@@ -43,6 +45,8 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>('all');
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
+  const [sortCol, setSortCol] = useState<SortCol>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   useEffect(() => {
     async function fetchHistory() {
@@ -66,8 +70,23 @@ export default function HistoryPage() {
     if (marketFilter !== 'all') {
       items = items.filter((item) => item.signal?.market_type === marketFilter);
     }
+    if (sortCol) {
+      items = [...items].sort((a, b) => {
+        let cmp = 0;
+        if (sortCol === 'return') {
+          const aVal = a.return_pct ? parseFloat(a.return_pct) : -Infinity;
+          const bVal = b.return_pct ? parseFloat(b.return_pct) : -Infinity;
+          cmp = aVal - bVal;
+        } else if (sortCol === 'resolved') {
+          const aVal = a.resolved_at ? new Date(a.resolved_at).getTime() : 0;
+          const bVal = b.resolved_at ? new Date(b.resolved_at).getTime() : 0;
+          cmp = aVal - bVal;
+        }
+        return sortDir === 'desc' ? -cmp : cmp;
+      });
+    }
     return items;
-  }, [history, outcomeFilter, marketFilter]);
+  }, [history, outcomeFilter, marketFilter, sortCol, sortDir]);
 
   // Summary stats
   const stats = useMemo(() => {
@@ -79,6 +98,15 @@ export default function HistoryPage() {
     const winRate = resolved > 0 ? (hitTarget / resolved) * 100 : 0;
     return { hitTarget, hitStop, expired, pending, winRate, total: history.length };
   }, [history]);
+
+  function toggleSort(col: SortCol) {
+    if (sortCol === col) {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortCol(col);
+      setSortDir('desc');
+    }
+  }
 
   return (
     <main className="min-h-screen pb-12">
@@ -173,9 +201,9 @@ export default function HistoryPage() {
               <span>Symbol</span>
               <span>Signal</span>
               <span>Outcome</span>
-              <span className="text-right">Return</span>
+              <SortableHeader label="Return" col="return" currentCol={sortCol} dir={sortDir} onSort={toggleSort} className="text-right" />
               <span className="text-right">Exit Price</span>
-              <span className="text-right">Resolved</span>
+              <SortableHeader label="Resolved" col="resolved" currentCol={sortCol} dir={sortDir} onSort={toggleSort} className="text-right" />
             </div>
 
             {filtered.map((item) => {
@@ -279,5 +307,27 @@ export default function HistoryPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function SortableHeader({ label, col, currentCol, dir, onSort, className }: {
+  label: string;
+  col: SortCol;
+  currentCol: SortCol;
+  dir: SortDir;
+  onSort: (col: SortCol) => void;
+  className?: string;
+}) {
+  const isActive = currentCol === col;
+  return (
+    <button
+      onClick={() => onSort(col)}
+      className={`flex items-center gap-0.5 hover:text-text-primary transition-colors ${className ?? ''} ${isActive ? 'text-accent-purple' : ''}`}
+    >
+      {label}
+      <span className="text-[8px]">
+        {isActive ? (dir === 'desc' ? '▼' : '▲') : '⇅'}
+      </span>
+    </button>
   );
 }

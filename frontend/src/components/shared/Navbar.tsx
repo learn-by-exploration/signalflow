@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSignalStore } from '@/store/signalStore';
 
 const NAV_LINKS = [
   { href: '/', label: 'Dashboard', icon: '📊' },
@@ -16,6 +17,7 @@ const NAV_LINKS = [
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const unseenCount = useSignalStore((s) => s.unseenCount);
 
   return (
     <nav className="sticky top-0 z-50 bg-bg-secondary/95 backdrop-blur-md border-b border-border-default">
@@ -31,18 +33,24 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
+              const showBadge = link.href === '/' && unseenCount > 0 && !isActive;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  className={`relative px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     isActive
                       ? 'text-accent-purple bg-accent-purple/10'
                       : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.03]'
                   }`}
                 >
                   {link.label}
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center bg-signal-sell text-white text-[9px] font-mono font-bold rounded-full px-1">
+                      {unseenCount > 9 ? '9+' : unseenCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -70,6 +78,7 @@ export function Navbar() {
         <div className="md:hidden border-t border-border-default bg-bg-secondary">
           {NAV_LINKS.map((link) => {
             const isActive = pathname === link.href;
+            const showBadge = link.href === '/' && unseenCount > 0 && !isActive;
             return (
               <Link
                 key={link.href}
@@ -83,6 +92,11 @@ export function Navbar() {
               >
                 <span className="mr-2">{link.icon}</span>
                 {link.label}
+                {showBadge && (
+                  <span className="ml-2 inline-flex items-center justify-center min-w-[16px] h-4 bg-signal-sell text-white text-[9px] font-mono font-bold rounded-full px-1">
+                    {unseenCount > 9 ? '9+' : unseenCount}
+                  </span>
+                )}
               </Link>
             );
           })}
