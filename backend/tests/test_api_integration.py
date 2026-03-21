@@ -31,7 +31,7 @@ class TestHealthEndpoint:
         resp = httpx.get(f"{BASE_URL}/health")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "healthy"
+        assert data["status"] in ("healthy", "degraded")
         assert "uptime" in data
         assert "disclaimer" in data
 

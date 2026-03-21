@@ -1,5 +1,6 @@
 """Backtesting endpoints — kick off a run, check status/results."""
 
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -25,9 +26,12 @@ async def start_backtest(
     """
     from app.tasks.backtest_tasks import run_backtest
 
+    now = datetime.now(timezone.utc)
     backtest = BacktestRun(
         symbol=payload.symbol.upper().strip(),
         market_type=payload.market_type,
+        start_date=now - timedelta(days=payload.days),
+        end_date=now,
         status="pending",
     )
     db.add(backtest)
