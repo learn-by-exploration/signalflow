@@ -24,8 +24,8 @@ export function TargetProgressBar({ signal, livePrice }: TargetProgressBarProps)
   return (
     <div className="mt-2">
       <div className="flex items-center justify-between text-[10px] font-mono text-text-muted mb-0.5">
-        <span className="text-signal-sell">🛑 Stop</span>
-        <span className="text-signal-buy">🎯 Target</span>
+        <span className="text-signal-sell">Stop</span>
+        <span className="text-signal-buy">Target</span>
       </div>
       <div className="relative w-full h-1.5 rounded-full bg-bg-secondary overflow-visible">
         {/* Gradient bar: red on left, green on right */}

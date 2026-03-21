@@ -32,10 +32,6 @@ export default function RootLayout({
         <ToastProvider>
           <Navbar />
           {children}
-          <footer className="fixed bottom-0 w-full text-center py-2.5 px-4 text-xs bg-bg-secondary/90 backdrop-blur-sm border-t border-border-default">
-            <span className="text-signal-hold/80">⚠️ This is AI-generated analysis, not financial advice.</span>
-            <span className="text-text-muted"> Always do your own research before making investment decisions.</span>
-          </footer>
         </ToastProvider>
       </body>
     </html>

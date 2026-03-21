@@ -1,19 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/userStore';
 
 /**
  * Modal prompt that asks the user for their Telegram Chat ID.
- * Shown when chatId is null (first visit after onboarding).
+ * Delayed until the 3rd session to avoid overwhelming new users.
  */
 export function ChatIdPrompt() {
   const { chatId, setChatId } = useUserStore();
   const [input, setInput] = useState('');
   const [dismissed, setDismissed] = useState(false);
+  const [shouldShow, setShouldShow] = useState(false);
 
-  // Don't show if already set or dismissed this session
-  if (chatId || dismissed) return null;
+  // Track visit count — only show on 3rd+ visit
+  useEffect(() => {
+    const key = 'signalflow_visit_count';
+    const count = parseInt(localStorage.getItem(key) ?? '0', 10) + 1;
+    localStorage.setItem(key, String(count));
+    if (count >= 3) setShouldShow(true);
+  }, []);
+
+  // Don't show if already set, dismissed, or too early
+  if (chatId || dismissed || !shouldShow) return null;
 
   function handleSave() {
     const num = parseInt(input.trim(), 10);

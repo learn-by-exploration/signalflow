@@ -15,8 +15,12 @@ export function ConfidenceGauge({ confidence, signalType, size = 56 }: Confidenc
   const center = size / 2;
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" role="img" aria-label={`${confidence}% confidence`}>
+    <div
+      className="relative flex items-center justify-center group"
+      style={{ width: size, height: size }}
+      title={`Signal Strength ${confidence}% — measures how strongly technical indicators and AI sentiment agree. Higher = stronger consensus, not probability of profit.`}
+    >
+      <svg width={size} height={size} className="-rotate-90" role="img" aria-label={`Signal strength ${confidence}%`}>
         {/* Background track */}
         <circle
           cx={center}
@@ -42,10 +46,10 @@ export function ConfidenceGauge({ confidence, signalType, size = 56 }: Confidenc
         />
       </svg>
       <span
-        className="absolute text-xs font-mono font-bold"
+        className="absolute text-[10px] font-mono font-bold"
         style={{ color }}
       >
-        {confidence}
+        {confidence}%
       </span>
     </div>
   );

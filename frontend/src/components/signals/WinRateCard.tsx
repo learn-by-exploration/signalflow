@@ -28,9 +28,8 @@ export function WinRateCard() {
 
   if (isLoading) {
     return (
-      <div className="bg-bg-card border border-border-default rounded-xl p-4 animate-pulse">
-        <div className="h-4 bg-bg-secondary rounded w-24 mb-3" />
-        <div className="h-8 bg-bg-secondary rounded w-16" />
+      <div className="bg-bg-card border border-border-default rounded-lg p-3 animate-pulse">
+        <div className="h-4 bg-bg-secondary rounded w-48" />
       </div>
     );
   }
@@ -38,9 +37,8 @@ export function WinRateCard() {
   if (!stats || stats.total_signals === 0) {
     if (error) {
       return (
-        <div className="bg-bg-card border border-signal-hold/30 rounded-xl p-4">
-          <h3 className="text-sm font-display font-medium text-text-muted mb-1">Signal Performance</h3>
-          <p className="text-xs text-signal-hold mb-2">⚠️ Couldn&apos;t load stats</p>
+        <div className="bg-bg-card border border-signal-hold/30 rounded-lg p-3 flex items-center justify-between">
+          <span className="text-xs text-text-muted">Signal Performance</span>
           <button
             onClick={() => { setIsLoading(true); setError(null); api.getSignalStats().then((res) => { setStats(res as SignalStats); setError(null); }).catch(() => setError('Failed to load signal stats')).finally(() => setIsLoading(false)); }}
             className="text-xs text-accent-purple hover:underline"
@@ -51,8 +49,7 @@ export function WinRateCard() {
       );
     }
     return (
-      <div className="bg-bg-card border border-border-default rounded-xl p-4">
-        <h3 className="text-sm font-display font-medium text-text-muted mb-1">Signal Performance</h3>
+      <div className="bg-bg-card border border-border-default rounded-lg p-3">
         <p className="text-xs text-text-muted">No resolved signals yet. Stats will appear once signals are tracked.</p>
       </div>
     );
@@ -61,68 +58,46 @@ export function WinRateCard() {
   const winColor = stats.win_rate >= 60 ? 'text-signal-buy' : stats.win_rate >= 40 ? 'text-signal-hold' : 'text-signal-sell';
   const returnColor = stats.avg_return_pct >= 0 ? 'text-signal-buy' : 'text-signal-sell';
   const resolved = stats.hit_target + stats.hit_stop;
-  const winRateLabel = stats.win_rate >= 60 ? 'Strong' : stats.win_rate >= 40 ? 'Average' : 'Below avg';
 
   return (
-    <div className="bg-bg-card border border-border-default rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-display font-medium text-text-secondary">Signal Performance</h3>
-        <span className="text-[10px] text-text-muted font-mono" title="Number of resolved signals this stats is based on">Sample: {resolved} signals</span>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        {/* Win Rate */}
-        <div className="text-center">
-          <div className={`text-2xl font-mono font-bold ${winColor}`}>
-            {stats.win_rate.toFixed(1)}%
+    <div className="bg-bg-card border border-border-default rounded-lg px-4 py-3">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-6">
+          {/* Win Rate */}
+          <div className="flex items-baseline gap-1.5">
+            <span className={`text-lg font-mono font-bold ${winColor}`}>
+              {stats.win_rate.toFixed(1)}%
+            </span>
+            <span className="text-[10px] text-text-muted uppercase tracking-wider">Win Rate</span>
           </div>
-          <div className="text-[10px] text-text-muted uppercase tracking-wider mt-0.5">Win Rate</div>
-          <div className="text-[10px] mt-0.5" style={{ color: stats.win_rate >= 60 ? '#00E676' : stats.win_rate >= 40 ? '#FFD740' : '#FF5252' }}>{winRateLabel}</div>
+
+          {/* Avg Return */}
+          <div className="flex items-baseline gap-1.5">
+            <span className={`text-lg font-mono font-bold ${returnColor}`}>
+              {stats.avg_return_pct >= 0 ? '+' : ''}{stats.avg_return_pct.toFixed(2)}%
+            </span>
+            <span className="text-[10px] text-text-muted uppercase tracking-wider">Avg Return</span>
+          </div>
+
+          {/* Total */}
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-lg font-mono font-bold text-text-primary">
+              {stats.total_signals}
+            </span>
+            <span className="text-[10px] text-text-muted uppercase tracking-wider">Signals</span>
+          </div>
         </div>
 
-        {/* Avg Return */}
-        <div className="text-center">
-          <div className={`text-2xl font-mono font-bold ${returnColor}`}>
-            {stats.avg_return_pct >= 0 ? '+' : ''}{stats.avg_return_pct.toFixed(2)}%
-          </div>
-          <div className="text-[10px] text-text-muted uppercase tracking-wider mt-0.5">Avg Return</div>
-        </div>
-
-        {/* Total Signals */}
-        <div className="text-center">
-          <div className="text-2xl font-mono font-bold text-text-primary">
-            {stats.total_signals}
-          </div>
-          <div className="text-[10px] text-text-muted uppercase tracking-wider mt-0.5">Total</div>
+        {/* Compact outcome counts + link */}
+        <div className="flex items-center gap-3 text-xs font-mono">
+          <span className="text-signal-buy" title="Hit target">{stats.hit_target} hit</span>
+          <span className="text-text-muted">·</span>
+          <span className="text-signal-sell" title="Hit stop-loss">{stats.hit_stop} stopped</span>
+          {resolved > 0 && (
+            <a href="/history" className="text-accent-purple hover:underline text-[10px]">View trend →</a>
+          )}
         </div>
       </div>
-
-      {/* Outcome Legend */}
-      <div className="flex items-center gap-2 text-xs font-mono">
-        <span className="text-signal-buy" title="Signal hit target price">🎯 {stats.hit_target}</span>
-        <span className="text-text-muted">•</span>
-        <span className="text-signal-sell" title="Signal hit stop-loss">🛑 {stats.hit_stop}</span>
-        <span className="text-text-muted">•</span>
-        <span className="text-signal-hold" title="Signal expired without hitting target or stop">⏰ {stats.expired}</span>
-        <span className="text-text-muted">•</span>
-        <span className="text-text-muted" title="Signal still active, awaiting resolution">⏳ {stats.pending}</span>
-      </div>
-
-      {/* Win Rate Bar */}
-      {resolved > 0 && (
-        <div className="w-full bg-signal-sell/20 rounded-full h-1.5 overflow-hidden">
-          <div
-            className="bg-signal-buy h-full rounded-full transition-all duration-500"
-            style={{ width: `${stats.win_rate}%` }}
-          />
-        </div>
-      )}
-
-      {stats.last_updated && (
-        <div className="text-[10px] text-text-muted">
-          Last resolved: {new Date(stats.last_updated).toLocaleDateString()}
-        </div>
-      )}
     </div>
   );
 }

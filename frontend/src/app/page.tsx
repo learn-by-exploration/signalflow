@@ -1,12 +1,8 @@
 'use client';
 
 import { MarketOverview } from '@/components/markets/MarketOverview';
-import { MarketHeatmap } from '@/components/markets/MarketHeatmap';
 import { SignalFeed } from '@/components/signals/SignalFeed';
 import { WinRateCard } from '@/components/signals/WinRateCard';
-import { AccuracyChart } from '@/components/signals/AccuracyChart';
-import { AskAI } from '@/components/signals/AskAI';
-import { AlertTimeline } from '@/components/alerts/AlertTimeline';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
 import { useSignals } from '@/hooks/useSignals';
@@ -14,7 +10,6 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { WelcomeModal } from '@/components/shared/WelcomeModal';
-import { ChatIdPrompt } from '@/components/shared/ChatIdPrompt';
 import { useEffect } from 'react';
 
 export default function Dashboard() {
@@ -31,9 +26,8 @@ export default function Dashboard() {
   useEffect(() => { resetUnseen(); }, [resetUnseen]);
 
   return (
-    <main className="min-h-screen pb-12">
+    <main className="min-h-screen pb-8">
       <WelcomeModal />
-      <ChatIdPrompt />
 
       {/* Market Overview Bar */}
       <ErrorBoundary name="Market Overview">
@@ -41,33 +35,23 @@ export default function Dashboard() {
       </ErrorBoundary>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Signal Feed */}
-          <div className="lg:col-span-2">
-            <ErrorBoundary name="Signal Feed">
-              <SignalFeed signals={signals} isLoading={isLoading} error={error} />
-            </ErrorBoundary>
-          </div>
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        {/* Performance Summary (compact inline bar) */}
+        <ErrorBoundary name="Signal Performance">
+          <WinRateCard />
+        </ErrorBoundary>
 
-          {/* Alert Timeline */}
-          <div className="space-y-6">
-            <ErrorBoundary name="Signal Performance">
-              <WinRateCard />
-            </ErrorBoundary>
-            <ErrorBoundary name="Accuracy Trend">
-              <AccuracyChart />
-            </ErrorBoundary>
-            <ErrorBoundary name="Market Heatmap">
-              <MarketHeatmap />
-            </ErrorBoundary>
-            <ErrorBoundary name="Ask AI">
-              <AskAI />
-            </ErrorBoundary>
-            <ErrorBoundary name="Alert Timeline">
-              <AlertTimeline signals={signals} />
-            </ErrorBoundary>
-          </div>
+        {/* Signal Feed (full width) */}
+        <div className="mt-6">
+          <ErrorBoundary name="Signal Feed">
+            <SignalFeed signals={signals} isLoading={isLoading} error={error} />
+          </ErrorBoundary>
+        </div>
+
+        {/* Inline disclaimer */}
+        <div className="mt-8 text-center text-xs text-text-muted py-4 border-t border-border-default">
+          <span className="text-signal-hold/60">This is AI-generated analysis, not financial advice.</span>
+          {' '}Always do your own research before making investment decisions.
         </div>
       </div>
     </main>

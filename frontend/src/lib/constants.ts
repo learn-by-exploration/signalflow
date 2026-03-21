@@ -6,11 +6,11 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000
 export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 
 export const SIGNAL_COLORS = {
-  STRONG_BUY: '#00E676',
+  STRONG_BUY: '#00C853',
   BUY: '#00E676',
   HOLD: '#FFD740',
   SELL: '#FF5252',
-  STRONG_SELL: '#FF5252',
+  STRONG_SELL: '#D50000',
 } as const;
 
 export const CONFIDENCE_THRESHOLDS = {

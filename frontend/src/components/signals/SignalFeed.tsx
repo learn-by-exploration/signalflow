@@ -34,7 +34,7 @@ const SORT_OPTIONS: { value: SortType; label: string }[] = [
 
 export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
   const [filter, setFilter] = useState<FilterType>('all');
-  const [sortBy, setSortBy] = useState<SortType>('newest');
+  const [sortBy, setSortBy] = useState<SortType>('confidence');
   const [search, setSearch] = useState('');
   const [loadingMore, setLoadingMore] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -103,7 +103,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
                 onClick={() => setSortBy(opt.value)}
                 aria-label={`Sort by ${opt.label}`}
                 aria-pressed={sortBy === opt.value}
-                className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                className={`px-3 py-1.5 text-xs rounded border transition-colors ${
                   sortBy === opt.value
                     ? 'border-accent-purple/50 text-accent-purple bg-accent-purple/10'
                     : 'border-transparent text-text-muted hover:text-text-secondary'
@@ -121,7 +121,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
                 onClick={() => setFilter(opt.value)}
                 aria-label={`Filter by ${opt.label}`}
                 aria-pressed={filter === opt.value}
-                className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
                   filter === opt.value
                     ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                     : 'border-border-default text-text-secondary hover:border-border-hover'

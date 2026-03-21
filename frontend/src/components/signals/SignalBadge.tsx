@@ -5,16 +5,16 @@ interface SignalBadgeProps {
   signalType: SignalType;
 }
 
-const BADGE_LABELS: Record<SignalType, { emoji: string; label: string }> = {
-  STRONG_BUY: { emoji: '🟢', label: 'STRONG BUY' },
-  BUY: { emoji: '🟢', label: 'BUY' },
-  HOLD: { emoji: '🟡', label: 'HOLD' },
-  SELL: { emoji: '🔴', label: 'SELL' },
-  STRONG_SELL: { emoji: '🔴', label: 'STRONG SELL' },
+const BADGE_LABELS: Record<SignalType, string> = {
+  STRONG_BUY: 'STRONG BUY',
+  BUY: 'BUY',
+  HOLD: 'HOLD',
+  SELL: 'SELL',
+  STRONG_SELL: 'STRONG SELL',
 };
 
 export function SignalBadge({ signalType }: SignalBadgeProps) {
-  const { emoji, label } = BADGE_LABELS[signalType];
+  const label = BADGE_LABELS[signalType];
   const color = SIGNAL_COLORS[signalType];
 
   return (
@@ -22,7 +22,6 @@ export function SignalBadge({ signalType }: SignalBadgeProps) {
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-display font-semibold"
       style={{ backgroundColor: `${color}20`, color }}
     >
-      <span>{emoji}</span>
       {label}
     </span>
   );
