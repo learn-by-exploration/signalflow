@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import type { Signal } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { Signal, SymbolTrackRecord } from '@/lib/types';
 import { formatPrice, formatPercent, formatDate, shortSymbol, formatTimeRemaining } from '@/utils/formatters';
 import { SIGNAL_COLORS, MARKET_LABELS } from '@/lib/constants';
 import { useMarketStore } from '@/store/marketStore';
+import { api } from '@/lib/api';
 import { SignalBadge } from './SignalBadge';
 import { ConfidenceGauge } from './ConfidenceGauge';
 import { AIReasoningPanel } from './AIReasoningPanel';
@@ -20,6 +21,7 @@ interface SignalCardProps {
 
 export function SignalCard({ signal }: SignalCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [trackRecord, setTrackRecord] = useState<SymbolTrackRecord | null>(null);
   const color = SIGNAL_COLORS[signal.signal_type];
 
   const technicalData = signal.technical_data as Record<string, Record<string, unknown>>;
@@ -54,6 +56,21 @@ export function SignalCard({ signal }: SignalCardProps) {
   const expiresAt = signal.expires_at ? new Date(signal.expires_at).getTime() : null;
   const timeRemaining = expiresAt ? expiresAt - Date.now() : null;
   const isExpiringSoon = timeRemaining !== null && timeRemaining > 0 && timeRemaining < 24 * 3600000;
+
+  // Signal age warning
+  const ageHours = (Date.now() - new Date(signal.created_at).getTime()) / 3600000;
+  const ageDays = Math.floor(ageHours / 24);
+
+  // Lazy fetch track record when expanded
+  useEffect(() => {
+    if (!isExpanded || trackRecord) return;
+    api.getSymbolTrackRecord(signal.symbol)
+      .then((res) => {
+        const data = (res as { data?: SymbolTrackRecord })?.data ?? (res as SymbolTrackRecord);
+        if (data && typeof data.total_signals_30d === 'number') setTrackRecord(data);
+      })
+      .catch(() => { /* non-critical */ });
+  }, [isExpanded, signal.symbol, trackRecord]);
 
   return (
     <div
@@ -122,7 +139,16 @@ export function SignalCard({ signal }: SignalCardProps) {
       </div>
 
       {/* Target progress bar */}
-      <TargetProgressBar signal={signal} />
+      <TargetProgressBar signal={signal} livePrice={livePrice ?? undefined} />
+
+      {/* Signal age warning */}
+      {ageHours > 48 && (
+        <p className="text-xs mt-1.5 text-signal-hold">
+          {ageHours > 120
+            ? `⚠️ Signal is ${ageDays}d old — expiring soon, verify before acting`
+            : `⚠️ Signal is ${ageDays}d old — check if conditions still apply`}
+        </p>
+      )}
 
       {/* Technical indicators + sentiment (collapsed) */}
       {(rsi || macd || volume || sentimentLabel) && (
@@ -202,6 +228,24 @@ export function SignalCard({ signal }: SignalCardProps) {
 
       {/* Risk Calculator (expanded) */}
       {isExpanded && <RiskCalculator signal={signal} />}
+
+      {/* Symbol Track Record (expanded) */}
+      {isExpanded && trackRecord && trackRecord.total_signals_30d > 0 && (
+        <div className="mt-2 px-1">
+          <p className={`text-xs font-mono ${
+            trackRecord.win_rate >= 60
+              ? 'text-signal-buy'
+              : trackRecord.win_rate >= 40
+                ? 'text-signal-hold'
+                : 'text-signal-sell'
+          }`}>
+            📊 {shortSymbol(signal.symbol)} track record (30d): {trackRecord.hit_target}/{trackRecord.hit_target + trackRecord.hit_stop + trackRecord.expired} hit target ({trackRecord.win_rate.toFixed(1)}%)
+            {trackRecord.avg_return_pct !== 0 && (
+              <span> · avg {trackRecord.avg_return_pct >= 0 ? '+' : ''}{trackRecord.avg_return_pct.toFixed(2)}%</span>
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Share button (expanded) */}
       {isExpanded && (

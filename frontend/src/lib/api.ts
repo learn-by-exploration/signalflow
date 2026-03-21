@@ -30,6 +30,9 @@ export const api = {
   getSignalStats: () =>
     apiFetch('/api/v1/signals/stats'),
 
+  getSymbolTrackRecord: (symbol: string) =>
+    apiFetch(`/api/v1/signals/${encodeURIComponent(symbol)}/track-record`),
+
   getMarketOverview: () =>
     apiFetch('/api/v1/markets/overview'),
 

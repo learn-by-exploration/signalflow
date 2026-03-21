@@ -67,9 +67,11 @@ async def _resolve_signals_async() -> dict:
 
             for signal in active_signals:
                 # Get the latest price for this symbol
+                # Strip .NS suffix — Indian stock fetcher stores without it
+                query_symbol = signal.symbol.replace(".NS", "")
                 price_stmt = (
                     select(MarketData.close)
-                    .where(MarketData.symbol == signal.symbol)
+                    .where(MarketData.symbol == query_symbol)
                     .order_by(MarketData.timestamp.desc())
                     .limit(1)
                 )

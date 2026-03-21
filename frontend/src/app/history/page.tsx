@@ -21,6 +21,7 @@ const OUTCOME_LABELS: Record<string, { emoji: string; label: string; color: stri
 };
 
 type OutcomeFilter = 'all' | 'hit_target' | 'hit_stop' | 'expired' | 'pending';
+type MarketFilter = 'all' | 'stock' | 'crypto' | 'forex';
 
 const OUTCOME_FILTERS: { value: OutcomeFilter; label: string; emoji: string }[] = [
   { value: 'all', label: 'All', emoji: '📜' },
@@ -30,10 +31,18 @@ const OUTCOME_FILTERS: { value: OutcomeFilter; label: string; emoji: string }[] 
   { value: 'pending', label: 'Pending', emoji: '⏳' },
 ];
 
+const MARKET_FILTERS: { value: MarketFilter; label: string }[] = [
+  { value: 'all', label: 'All Markets' },
+  { value: 'stock', label: 'Stocks' },
+  { value: 'crypto', label: 'Crypto' },
+  { value: 'forex', label: 'Forex' },
+];
+
 export default function HistoryPage() {
   const [history, setHistory] = useState<(SignalHistoryItem & { signal?: Signal })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>('all');
+  const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
 
   useEffect(() => {
     async function fetchHistory() {
@@ -50,9 +59,15 @@ export default function HistoryPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    if (outcomeFilter === 'all') return history;
-    return history.filter((item) => item.outcome === outcomeFilter);
-  }, [history, outcomeFilter]);
+    let items = history;
+    if (outcomeFilter !== 'all') {
+      items = items.filter((item) => item.outcome === outcomeFilter);
+    }
+    if (marketFilter !== 'all') {
+      items = items.filter((item) => item.signal?.market_type === marketFilter);
+    }
+    return items;
+  }, [history, outcomeFilter, marketFilter]);
 
   // Summary stats
   const stats = useMemo(() => {
@@ -93,7 +108,7 @@ export default function HistoryPage() {
 
         {/* Outcome filter pills */}
         {!isLoading && stats.total > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-3">
             {OUTCOME_FILTERS.map((opt) => (
               <button
                 key={opt.value}
@@ -106,6 +121,26 @@ export default function HistoryPage() {
                 }`}
               >
                 {opt.emoji} {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Market type filter pills */}
+        {!isLoading && stats.total > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {MARKET_FILTERS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setMarketFilter(opt.value)}
+                aria-pressed={marketFilter === opt.value}
+                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                  marketFilter === opt.value
+                    ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
+                    : 'border-border-default text-text-muted hover:border-border-hover'
+                }`}
+              >
+                {opt.label}
               </button>
             ))}
           </div>

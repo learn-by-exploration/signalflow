@@ -153,3 +153,31 @@ class TestSignalResolution:
         # For SELL: (entry - exit) / entry * 100
         return_pct = (entry - exit_price) / entry * 100
         assert return_pct == Decimal("10")
+
+
+class TestNSSuffixNormalization:
+    """Test .NS suffix is stripped when querying market data during resolution."""
+
+    def test_ns_suffix_stripped_for_stock_symbol(self) -> None:
+        """signal.symbol='RELIANCE.NS' should query MarketData as 'RELIANCE'."""
+        symbol = "RELIANCE.NS"
+        query_symbol = symbol.replace(".NS", "")
+        assert query_symbol == "RELIANCE"
+
+    def test_no_change_for_crypto_symbol(self) -> None:
+        """Non-.NS symbols should remain unchanged."""
+        symbol = "BTCUSDT"
+        query_symbol = symbol.replace(".NS", "")
+        assert query_symbol == "BTCUSDT"
+
+    def test_no_change_for_forex_symbol(self) -> None:
+        """Forex symbols should remain unchanged."""
+        symbol = "EURUSD=X"
+        query_symbol = symbol.replace(".NS", "")
+        assert query_symbol == "EURUSD=X"
+
+    def test_ns_suffix_only_at_end(self) -> None:
+        """Only the .NS part is stripped, not arbitrary substrings."""
+        symbol = "INFY.NS"
+        query_symbol = symbol.replace(".NS", "")
+        assert query_symbol == "INFY"

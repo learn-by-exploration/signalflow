@@ -70,6 +70,16 @@ export interface WSMessage {
   data?: Signal | MarketSnapshot;
 }
 
+export interface SymbolTrackRecord {
+  symbol: string;
+  total_signals_30d: number;
+  hit_target: number;
+  hit_stop: number;
+  expired: number;
+  win_rate: number;
+  avg_return_pct: number;
+}
+
 // ── P3: Future Features ──
 
 export interface PriceAlert {

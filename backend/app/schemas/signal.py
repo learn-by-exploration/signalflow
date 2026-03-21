@@ -90,3 +90,15 @@ class SignalStatsResponse(BaseModel):
     win_rate: float = Field(ge=0, le=100, description="Win rate percentage")
     avg_return_pct: float
     last_updated: datetime | None = None
+
+
+class SymbolTrackRecord(BaseModel):
+    """Per-symbol signal performance over the last 30 days."""
+
+    symbol: str
+    total_signals_30d: int
+    hit_target: int
+    hit_stop: int
+    expired: int
+    win_rate: float = Field(ge=0, le=100)
+    avg_return_pct: float

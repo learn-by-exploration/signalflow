@@ -1,6 +1,6 @@
 """Signal history and stats endpoints."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.database import get_db
+from app.models.signal import Signal
 from app.models.signal_history import SignalHistory
 from app.schemas.signal import (
     MetaResponse,
@@ -15,6 +16,7 @@ from app.schemas.signal import (
     SignalHistoryResponse,
     SignalStatsResponse,
     SignalSummary,
+    SymbolTrackRecord,
 )
 
 router = APIRouter(prefix="/signals", tags=["signals"])
@@ -92,4 +94,44 @@ async def get_signal_stats(
         win_rate=round(win_rate, 1),
         avg_return_pct=round(float(row.avg_return or 0), 2),
         last_updated=row.last_resolved,
+    )
+
+
+@router.get("/{symbol}/track-record", response_model=SymbolTrackRecord)
+async def get_symbol_track_record(
+    symbol: str,
+    db: AsyncSession = Depends(get_db),
+) -> SymbolTrackRecord:
+    """Get per-symbol signal performance over the last 30 days."""
+    since = datetime.now(timezone.utc) - timedelta(days=30)
+
+    stmt = (
+        select(
+            func.count(SignalHistory.id).label("total"),
+            func.count(SignalHistory.id).filter(SignalHistory.outcome == "hit_target").label("hit_target"),
+            func.count(SignalHistory.id).filter(SignalHistory.outcome == "hit_stop").label("hit_stop"),
+            func.count(SignalHistory.id).filter(SignalHistory.outcome == "expired").label("expired"),
+            func.avg(SignalHistory.return_pct).label("avg_return"),
+        )
+        .join(Signal, Signal.id == SignalHistory.signal_id)
+        .where(Signal.symbol == symbol)
+        .where(SignalHistory.created_at >= since)
+    )
+    result = await db.execute(stmt)
+    row = result.one()
+
+    total = row.total or 0
+    ht = row.hit_target or 0
+    hs = row.hit_stop or 0
+    resolved = ht + hs
+    win_rate = (ht / resolved * 100) if resolved > 0 else 0.0
+
+    return SymbolTrackRecord(
+        symbol=symbol,
+        total_signals_30d=total,
+        hit_target=ht,
+        hit_stop=hs,
+        expired=row.expired or 0,
+        win_rate=round(win_rate, 1),
+        avg_return_pct=round(float(row.avg_return or 0), 2),
     )
