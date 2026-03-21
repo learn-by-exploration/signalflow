@@ -96,272 +96,215 @@ Transform raw market noise into clear, actionable signals — backed by AI reaso
 
 ---
 
-## Development Methodology — Ruflo Multi-Agent Swarm
+## Development Methodology
 
-This project is built using **Ruflo (v3.5+)** for multi-agent orchestration and **Claude Code** as the primary coding engine. The developer acts as the **architect and orchestrator**, not a line-by-line coder.
+This project was built using **Claude Code** (Anthropic's AI coding agent) as the primary development engine. The developer acts as the **architect and orchestrator**, directing Claude through phased development.
 
-### Ruflo Setup
+### Workflow
 
-```bash
-# Initialize Ruflo in project root
-npx ruflo@latest init
+1. **Architecture-first**: This CLAUDE.md serves as the master spec. All implementation follows the architecture defined here.
+2. **Phase-based development**: Built in 5 phases (Foundation → Analysis → Dashboard → Integration → Polish), plus 10 iterative sprints.
+3. **Test-driven**: Every feature includes tests. 480+ tests pass before each commit.
+4. **Review cycles**: Multi-expert AI reviews (architect, UI experts, finance professionals, PMs) were used for UI iteration rounds.
 
-# Verify installation
-npx ruflo doctor
-
-# Initialize hierarchical swarm
-npx ruflo swarm init \
-  --topology hierarchical \
-  --max-agents 6 \
-  --strategy specialized
-```
-
-### Agent Swarm Definition
-
-We use a **hierarchical swarm** with 1 queen (Architect) and 5 specialized workers:
-
-| Agent Name | Ruflo Type | Role | File Scope |
-|-----------|-----------|------|-----------|
-| `sf-architect` | architect | Queen — decomposes tasks, coordinates agents, resolves conflicts | CLAUDE.md, architecture decisions, API contracts |
-| `sf-backend` | coder | FastAPI, services, models, Celery tasks, database | `backend/**` |
-| `sf-frontend` | coder | Next.js dashboard, React components, Tailwind, Zustand | `frontend/**` |
-| `sf-ai-engineer` | coder | Claude API integration, prompts, sentiment pipeline | `backend/app/services/ai_engine/**` |
-| `sf-tester` | tester | Unit tests, integration tests, API tests, load tests | `backend/app/tests/**`, `frontend/**/*.test.*` |
-| `sf-reviewer` | reviewer | Code review, security audit, performance checks | All files (read-only review) |
-
-### Spawning the Swarm
+### Development Commands
 
 ```bash
-npx ruflo agent spawn -t architect --name sf-architect
-npx ruflo agent spawn -t coder --name sf-backend
-npx ruflo agent spawn -t coder --name sf-frontend
-npx ruflo agent spawn -t coder --name sf-ai-engineer
-npx ruflo agent spawn -t tester --name sf-tester
-npx ruflo agent spawn -t reviewer --name sf-reviewer
+# Start all services
+make init          # Build + start + migrate (first time)
+make up            # Start services
+make down          # Stop services
+
+# Development
+make test          # Run backend test suite
+make lint          # Lint backend + frontend
+make format        # Auto-format backend code
+make logs          # Follow all logs
+make backend-shell # Shell into backend container
+make db-shell      # PostgreSQL interactive shell
+
+# Database
+make migrate                        # Apply migrations
+make migrate-gen msg="description"  # Generate new migration
+
+# Frontend
+make frontend-dev     # Start Next.js dev server
+make frontend-install # Install npm dependencies
 ```
 
-### Agent Coordination Rules
+### Pre-Commit Testing Rule (MANDATORY)
 
-1. **Handoff protocol**: When `sf-backend` completes an API endpoint → `sf-tester` auto-receives it for test writing → `sf-reviewer` checks both implementation and tests.
-2. **Shared context**: All agents read this CLAUDE.md file. Schema changes by `sf-backend` must be reflected here immediately so `sf-frontend` stays in sync.
-3. **File scope enforcement**: `sf-backend` ONLY modifies files in `backend/`. `sf-frontend` ONLY modifies files in `frontend/`. Cross-boundary changes require `sf-architect` coordination.
-4. **Conflict resolution**: If two agents need to modify the same file, `sf-architect` arbitrates. In practice, clear scope boundaries prevent this.
-5. **Human checkpoints**: After each phase milestone, the human developer reviews all swarm output before greenlighting the next phase.
-6. **Memory persistence**: Successful patterns are stored in Ruflo's AgentDB. If an agent discovers how to handle a Binance WebSocket reconnection, that pattern persists for future sessions.
+**Before every git commit, ALL existing tests must pass.** This is non-negotiable:
 
-### Swarm Commands Reference
-
-```bash
-# Check swarm status
-npx ruflo hive-mind status
-
-# Spawn a task to the swarm
-npx ruflo hive-mind spawn "Build the RSI indicator service" --queen-type strategic
-
-# Check agent performance metrics
-npx ruflo hive-mind metrics
-
-# Store a learning in AgentDB
-npx ruflo memory store binance_ws "Use ping/pong frames every 30s to keep Binance WebSocket alive" \
-  --namespace backend --reasoningbank
-
-# Query agent memory
-npx ruflo memory query "Binance WebSocket" --namespace backend --reasoningbank
-```
-
-### Custom Slash Commands
-
-Create these in `.claude/commands/` for rapid iteration:
-
-| Command | What It Does |
-|---------|-------------|
-| `/signal-test <symbol>` | Run the full signal generation pipeline for one symbol end-to-end |
-| `/swarm-status` | Check all agent statuses and current tasks |
-| `/deploy` | Trigger Railway deployment from current branch |
-| `/db-reset` | Reset local dev database and re-run migrations |
-| `/run-all-tests` | Execute full backend + frontend test suite |
-| `/fetch-check` | Verify all three market data fetchers are pulling live data |
-| `/ai-cost` | Check current month's Claude API usage and cost |
+1. Run the full test suite before staging/committing any changes
+2. If any existing test fails, fix before committing
+3. New code must include corresponding tests
+4. **Test command**: `python -m pytest tests/ -v --override-ini="asyncio_mode=auto"` (from `backend/` directory)
+5. **Minimum bar**: All tests green (0 failures) before any commit
 
 ---
 
-## Project Structure
+## Project Structure (as of v1.0.0)
 
 ```
-signalflow-ai/
-├── .claude/                        # Ruflo agent configs
-│   ├── agents/                     # Agent definitions
-│   │   ├── sf-architect.json
-│   │   ├── sf-backend.json
-│   │   ├── sf-frontend.json
-│   │   ├── sf-ai-engineer.json
-│   │   ├── sf-tester.json
-│   │   └── sf-reviewer.json
-│   ├── commands/                   # Custom slash commands
-│   │   ├── signal-test.md
-│   │   ├── swarm-status.md
-│   │   ├── deploy.md
-│   │   └── run-all-tests.md
-│   └── settings.json               # Ruflo settings, hooks, learning
-│
+signalflow/
 ├── CLAUDE.md                        # THIS FILE — master instructions
+├── README.md                        # Project readme with setup guide
+├── Makefile                         # Development shortcuts (make up/test/lint)
+├── docker-compose.yml               # Local dev: 5 services
+├── docker-compose.prod.yml          # Production overrides
+├── railway.toml                     # Railway PaaS deployment config
+├── start.sh                         # Service bootstrap script
+├── .env.example                     # 19 environment variables template
 │
 ├── backend/
 │   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py                  # FastAPI app, CORS, lifespan, routers
-│   │   ├── config.py                # pydantic-settings, all env vars
-│   │   ├── database.py              # SQLAlchemy async engine + session
+│   │   ├── main.py                  # FastAPI app, CORS, health endpoint, rate limiting
+│   │   ├── config.py                # Settings: 21 env vars + 31 tracked symbols
+│   │   ├── database.py              # SQLAlchemy async (pool=20, overflow=10)
+│   │   ├── rate_limit.py            # Slowapi rate limiting config
 │   │   │
-│   │   ├── models/                  # SQLAlchemy ORM models
-│   │   │   ├── __init__.py
-│   │   │   ├── market_data.py       # TimescaleDB hypertable
-│   │   │   ├── signal.py            # Signal model
-│   │   │   ├── alert_config.py      # User alert preferences
-│   │   │   └── signal_history.py    # Signal outcome tracking
+│   │   ├── models/                  # 8 SQLAlchemy ORM models
+│   │   │   ├── market_data.py       # TimescaleDB hypertable (OHLCV)
+│   │   │   ├── signal.py            # Signal + SignalHistory
+│   │   │   ├── alert_config.py      # Alert preferences + watchlist
+│   │   │   └── p3_models.py         # PriceAlert, Trade, SignalShare, BacktestRun
 │   │   │
-│   │   ├── schemas/                 # Pydantic request/response schemas
-│   │   │   ├── __init__.py
-│   │   │   ├── signal.py
-│   │   │   ├── market.py
-│   │   │   └── alert.py
+│   │   ├── schemas/                 # Pydantic v2 request/response schemas
+│   │   │   ├── signal.py            # Signal, History, Stats, TrackRecord, WeeklyTrend
+│   │   │   ├── market.py            # MarketSnapshot, MarketOverview
+│   │   │   ├── alert.py             # AlertConfig request/response
+│   │   │   └── p3.py                # PriceAlert, Backtest, Portfolio schemas
 │   │   │
-│   │   ├── api/                     # FastAPI route handlers
-│   │   │   ├── __init__.py
+│   │   ├── api/                     # ~25 REST endpoints + 1 WebSocket
 │   │   │   ├── router.py            # Main router aggregator
 │   │   │   ├── signals.py           # GET /signals, GET /signals/{id}
 │   │   │   ├── markets.py           # GET /markets/overview
-│   │   │   ├── alerts.py            # GET/POST/PUT /alerts/config
-│   │   │   ├── history.py           # GET /signals/history
+│   │   │   ├── alerts.py            # CRUD /alerts/config, watchlist
+│   │   │   ├── history.py           # GET /signals/history, /stats, /track-record
+│   │   │   ├── portfolio.py         # GET/POST /portfolio/trades, /summary
+│   │   │   ├── price_alerts.py      # CRUD /price-alerts
+│   │   │   ├── sharing.py           # POST /signals/{id}/share, GET /shared/{id}
+│   │   │   ├── ai_qa.py             # POST /ai/ask
+│   │   │   ├── backtest.py          # POST /backtest, GET /backtest/{id}
 │   │   │   └── websocket.py         # WS /ws/signals
 │   │   │
-│   │   ├── services/                # Business logic (core of the app)
-│   │   │   ├── __init__.py
-│   │   │   │
-│   │   │   ├── data_ingestion/      # Market data fetchers
-│   │   │   │   ├── __init__.py
+│   │   ├── services/                # Business logic
+│   │   │   ├── data_ingestion/      # 3 market fetchers + market hours
 │   │   │   │   ├── base.py          # Abstract base fetcher
-│   │   │   │   ├── indian_stocks.py # yfinance + NSE APIs
-│   │   │   │   ├── crypto.py        # Binance WS + CoinGecko REST
-│   │   │   │   └── forex.py         # Alpha Vantage + Twelve Data
+│   │   │   │   ├── indian_stocks.py # yfinance (15 NSE symbols)
+│   │   │   │   ├── crypto.py        # Binance WebSocket (10 pairs)
+│   │   │   │   ├── forex.py         # Alpha Vantage (6 pairs)
+│   │   │   │   └── market_hours.py  # NSE/Forex/Crypto schedule awareness
 │   │   │   │
 │   │   │   ├── analysis/            # Technical indicators
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── indicators.py    # TechnicalAnalyzer class
-│   │   │   │   └── utils.py         # Shared analysis utilities
+│   │   │   │   ├── indicators.py    # TechnicalAnalyzer: RSI, MACD, BB, Vol, SMA, ATR
+│   │   │   │   └── utils.py         # DataFrame validation
 │   │   │   │
 │   │   │   ├── ai_engine/           # Claude AI integration
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── sentiment.py     # News sentiment scoring
+│   │   │   │   ├── sentiment.py     # News → Claude → sentiment score (cached 15m)
 │   │   │   │   ├── reasoner.py      # Signal reasoning generator
-│   │   │   │   ├── briefing.py      # Morning/evening digest
+│   │   │   │   ├── briefing.py      # Morning/evening/weekly briefs
+│   │   │   │   ├── news_fetcher.py  # Google/Bing/RSS news aggregation
 │   │   │   │   ├── prompts.py       # All Claude prompts (centralized)
-│   │   │   │   └── cost_tracker.py  # API cost monitoring
+│   │   │   │   └── cost_tracker.py  # $30/month budget enforcement
 │   │   │   │
-│   │   │   ├── signal_gen/          # Signal generation
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── generator.py     # SignalGenerator class
-│   │   │   │   ├── scorer.py        # Scoring algorithm
-│   │   │   │   └── targets.py       # Target/stop-loss calculator
+│   │   │   ├── signal_gen/          # Signal generation pipeline
+│   │   │   │   ├── generator.py     # SignalGenerator: data → analysis → AI → signal
+│   │   │   │   ├── scorer.py        # Scoring: tech×0.6 + sentiment×0.4
+│   │   │   │   └── targets.py       # ATR-based target/stop-loss (1:2 R:R)
 │   │   │   │
 │   │   │   └── alerts/              # Alert dispatch
-│   │   │       ├── __init__.py
-│   │   │       ├── telegram_bot.py  # Telegram bot + commands
-│   │   │       ├── formatter.py     # Message formatting
-│   │   │       └── dispatcher.py    # Alert routing logic
+│   │   │       ├── telegram_bot.py  # 10 commands (/start, /signals, /config, etc.)
+│   │   │       ├── formatter.py     # 11 message formatters
+│   │   │       └── dispatcher.py    # Alert routing + retry logic
 │   │   │
-│   │   └── tasks/                   # Celery tasks
-│   │       ├── __init__.py
+│   │   └── tasks/                   # 12+ Celery scheduled tasks
 │   │       ├── celery_app.py        # Celery app config
 │   │       ├── scheduler.py         # Beat schedule definition
-│   │       ├── data_tasks.py        # Fetch market data tasks
-│   │       ├── analysis_tasks.py    # Run indicators task
+│   │       ├── data_tasks.py        # 3 market fetcher tasks
+│   │       ├── analysis_tasks.py    # Technical analysis task
 │   │       ├── ai_tasks.py          # Sentiment analysis task
-│   │       ├── signal_tasks.py      # Signal generation task
-│   │       └── alert_tasks.py       # Morning brief, evening wrap
+│   │       ├── signal_tasks.py      # Signal generation + resolution
+│   │       ├── alert_tasks.py       # Morning brief, evening wrap, weekly digest
+│   │       ├── price_alert_tasks.py # Price alert checking
+│   │       └── backtest_tasks.py    # On-demand backtesting
 │   │
-│   ├── migrations/                  # Alembic migrations
-│   │   ├── env.py
+│   ├── migrations/                  # 3 Alembic migrations
 │   │   └── versions/
+│   │       ├── b0396d5bb542_initial_schema.py
+│   │       ├── c4a8f2d1e3b5_add_watchlist_column.py
+│   │       └── d5b9e3f4a6c7_add_p3_tables.py
 │   │
-│   ├── tests/                       # Backend test suite
+│   ├── tests/                       # 40 test files, 480+ passing tests
 │   │   ├── conftest.py              # Fixtures: test DB, test client, mocks
-│   │   ├── test_indicators.py       # Unit tests for each indicator
-│   │   ├── test_signal_gen.py       # Signal generation tests
-│   │   ├── test_ai_engine.py        # AI engine tests (mocked Claude API)
-│   │   ├── test_api_signals.py      # API endpoint integration tests
-│   │   ├── test_api_markets.py
+│   │   ├── test_indicators*.py      # Technical indicator tests
+│   │   ├── test_signal_*.py         # Signal gen, scorer, resolution tests
+│   │   ├── test_ai_*.py             # AI engine, budget, cost tracker tests
+│   │   ├── test_api_*.py            # 10 endpoint test files
 │   │   ├── test_websocket.py        # WebSocket delivery tests
-│   │   └── test_telegram.py         # Telegram bot tests
+│   │   ├── test_pipeline_*.py       # Integration pipeline tests
+│   │   └── test_sprint*_*.py        # Sprint regression tests
 │   │
-│   ├── alembic.ini
 │   ├── requirements.txt
-│   ├── Dockerfile
-│   └── pyproject.toml
+│   ├── pyproject.toml
+│   └── Dockerfile
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── app/                     # Next.js App Router
-│   │   │   ├── layout.tsx           # Root layout (fonts, theme)
-│   │   │   ├── page.tsx             # Dashboard page
-│   │   │   ├── history/
-│   │   │   │   └── page.tsx         # Signal history page
-│   │   │   └── globals.css          # Tailwind + custom CSS vars
+│   │   ├── app/                     # 8 pages (Next.js App Router)
+│   │   │   ├── layout.tsx           # Root layout (Outfit + JetBrains Mono fonts)
+│   │   │   ├── page.tsx             # Dashboard: MarketOverview → WinRate → SignalFeed
+│   │   │   ├── signal/[id]/page.tsx # Signal detail: chart, indicators, risk calc
+│   │   │   ├── history/page.tsx     # Signal history with outcome filters
+│   │   │   ├── portfolio/page.tsx   # Trade log, positions, P&L
+│   │   │   ├── alerts/page.tsx      # Alert config, watchlist
+│   │   │   ├── backtest/page.tsx    # Historical backtesting
+│   │   │   ├── how-it-works/page.tsx# Educational guide
+│   │   │   ├── shared/[id]/page.tsx # Public shared signal view
+│   │   │   └── globals.css          # Tailwind + dark theme CSS vars
 │   │   │
-│   │   ├── components/
-│   │   │   ├── signals/
-│   │   │   │   ├── SignalFeed.tsx        # Main signal list with filters
-│   │   │   │   ├── SignalCard.tsx        # Expandable signal card
-│   │   │   │   ├── SignalBadge.tsx       # BUY/SELL/HOLD badge
-│   │   │   │   ├── ConfidenceGauge.tsx   # Circular SVG gauge
-│   │   │   │   └── AIReasoningPanel.tsx  # Expandable AI explanation
-│   │   │   │
-│   │   │   ├── markets/
-│   │   │   │   ├── MarketOverview.tsx    # Sticky top bar with live prices
-│   │   │   │   └── Sparkline.tsx         # Mini price chart
-│   │   │   │
-│   │   │   ├── alerts/
-│   │   │   │   ├── AlertTimeline.tsx     # Chronological alert feed
-│   │   │   │   └── AlertConfig.tsx       # Settings modal
-│   │   │   │
-│   │   │   └── shared/
-│   │   │       ├── IndicatorPill.tsx     # RSI/MACD/Volume display
-│   │   │       ├── LoadingSpinner.tsx
-│   │   │       └── ErrorBoundary.tsx
+│   │   ├── components/              # 19 React components
+│   │   │   ├── signals/             # SignalFeed, SignalCard, SignalBadge,
+│   │   │   │                        # ConfidenceGauge, AIReasoningPanel,
+│   │   │   │                        # TargetProgressBar, RiskCalculator,
+│   │   │   │                        # WinRateCard, AccuracyChart, ShareButton, AskAI
+│   │   │   ├── markets/             # MarketOverview, MarketHeatmap, Sparkline
+│   │   │   ├── alerts/              # AlertTimeline, AlertConfig
+│   │   │   └── shared/              # Navbar, WelcomeModal, ChatIdPrompt,
+│   │   │                            # LoadingSpinner, ErrorBoundary,
+│   │   │                            # KeyboardHelpModal, Toast, IndicatorPill
 │   │   │
-│   │   ├── hooks/
-│   │   │   ├── useWebSocket.ts          # WebSocket connection + reconnect
-│   │   │   ├── useSignals.ts            # Signal data fetching
-│   │   │   └── useMarketData.ts         # Market overview data
+│   │   ├── hooks/                   # 4 custom hooks
+│   │   │   ├── useSignals.ts        # REST signal fetching
+│   │   │   ├── useMarketData.ts     # Market data fetching
+│   │   │   ├── useWebSocket.ts      # WebSocket + auto-reconnect
+│   │   │   └── useKeyboardShortcuts.ts # Global keyboard shortcuts
 │   │   │
-│   │   ├── store/
-│   │   │   ├── signalStore.ts           # Zustand: signals state
-│   │   │   ├── marketStore.ts           # Zustand: market overview
-│   │   │   └── alertStore.ts            # Zustand: alert config
+│   │   ├── store/                   # 3 Zustand stores
+│   │   │   ├── signalStore.ts       # Signals, filters, unseen count
+│   │   │   ├── marketStore.ts       # Market snapshots, WS status
+│   │   │   └── userStore.ts         # Telegram chat ID (localStorage)
 │   │   │
-│   │   ├── lib/
-│   │   │   ├── api.ts                   # Axios/fetch client for REST API
-│   │   │   ├── websocket.ts             # WebSocket client class
-│   │   │   ├── types.ts                 # Shared TypeScript types
-│   │   │   └── constants.ts             # Colors, thresholds, market config
+│   │   ├── lib/                     # Shared utilities
+│   │   │   ├── api.ts               # REST client for /api/v1
+│   │   │   ├── websocket.ts         # WebSocket client class
+│   │   │   ├── types.ts             # 15+ TypeScript interfaces
+│   │   │   └── constants.ts         # Colors, thresholds, badge labels
 │   │   │
 │   │   └── utils/
-│   │       ├── formatters.ts            # Price, percentage, date formatting
-│   │       └── market-hours.ts          # Market open/close logic
+│   │       ├── formatters.ts        # Price, %, date, time formatting
+│   │       └── market-hours.ts      # Market open/close detection
 │   │
-│   ├── public/
 │   ├── package.json
-│   ├── tsconfig.json
-│   ├── tailwind.config.ts
-│   ├── next.config.js
+│   ├── tsconfig.json                # strict: true, @/* path alias
+│   ├── tailwind.config.ts           # Dark theme color tokens
 │   └── Dockerfile
 │
-├── docker-compose.yml               # Local dev: all services
-├── docker-compose.prod.yml          # Production overrides
-├── .env.example                     # Template for environment variables
-├── .gitignore
-├── Makefile                         # Common commands shortcut
-└── README.md
+└── docs/
+    ├── design/                      # Spec documents (v1–v4)
+    ├── review/                      # Code review findings
+    └── api.md                       # Full API reference
 ```
 
 ---
@@ -746,7 +689,7 @@ CELERY_BEAT_SCHEDULE = {
     # ── AI Engine ──
     "run-sentiment-analysis": {
         "task": "tasks.ai_tasks.run_sentiment",
-        "schedule": 900.0,                              # Every 15 min
+        "schedule": 3600.0,                              # Every 1 hour
     },
 
     # ── Signal Generation ──
@@ -765,14 +708,22 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=16, minute=0),         # 4:00 PM IST daily
     },
 
-    # ── Maintenance ──
-    "resolve-expired-signals": {
-        "task": "tasks.signal_tasks.resolve_expired",
-        "schedule": 3600.0,                             # Every 1 hour
-    },
-    "health-check": {
-        "task": "tasks.health_check",
+    # ── Signal Resolution ──
+    "resolve-signals": {
+        "task": "tasks.signal_tasks.resolve_signals",
         "schedule": 300.0,                              # Every 5 min
+    },
+
+    # ── User Alerts ──
+    "check-price-alerts": {
+        "task": "tasks.price_alert_tasks.check_price_alerts",
+        "schedule": 300.0,                              # Every 5 min
+    },
+
+    # ── Digests (continued) ──
+    "weekly-digest": {
+        "task": "tasks.alert_tasks.weekly_digest",
+        "schedule": crontab(hour=12, minute=30, day_of_week=0),  # Sun 6:00 PM IST
     },
 }
 ```
@@ -1046,38 +997,48 @@ tests/
 
 ---
 
-## Ruflo Phase Execution Plan
+## Project History & Current State
 
-Use these commands to execute each development phase via the swarm:
+### Version: v1.0.0 (Released 21 March 2026)
 
-### Phase 1: Foundation (Days 1-4)
-```bash
-npx ruflo hive-mind spawn \
-  "Phase 1 - Foundation: Bootstrap FastAPI + Next.js project, set up Docker, create database schema, build all three market data fetchers (Indian stocks via yfinance, Crypto via Binance WebSocket, Forex via Alpha Vantage), implement Celery Beat scheduler. See CLAUDE.md for full architecture and schema." \
-  --queen-type strategic
-```
+### Development Phases
 
-### Phase 2: Analysis Engine (Days 5-8)
-```bash
-npx ruflo hive-mind spawn \
-  "Phase 2 - Analysis: Build TechnicalAnalyzer class with RSI, MACD, Bollinger Bands, Volume analysis, SMA crossovers, ATR. Then build Claude AI sentiment engine with news fetching, sentiment scoring, and signal reasoning generation. Finally build the signal generation algorithm with the scoring formula from CLAUDE.md." \
-  --queen-type strategic
-```
+| Phase | Commits | What Was Built |
+|-------|---------|----------------|
+| Phase 1 | `5ce7ea0` | Project scaffold, Docker, DB schema, 3 market fetchers, Celery Beat |
+| Phase 2 | `550ce72` | TechnicalAnalyzer (RSI, MACD, BB, Vol, SMA, ATR), AI sentiment, signal pipeline |
+| Phase 3 | `cb672d8` | Dashboard components, Telegram bot (10 commands), alert system |
+| Phase 4 | `511aab6` | Integration testing, deployment config, end-to-end pipeline |
+| Phase 5 P0 | `dfd3282` | Launch blockers: WebSocket fix, health endpoint, rate limiting |
+| Phase 5 P1 | `c9a6ab7` | Trust features: signal history, win rate tracking, resolution |
+| Phase 5 P2 | `c82bbfc` | Enhancements: market heatmap, accuracy charts, keyboard shortcuts |
+| Phase 5 P3 | `4d83c10` | Future features: backtesting, AI Q&A, portfolio, signal sharing |
+| Sprint 1–10 | `8cbc471`–`2cdf2dd` | 10 iterative sprints fixing UX, adding detail pages, mobile fixes |
+| V1 UI | `dbec9da` | First UI simplification (20→8 data points per card) |
+| V2 UI | `c3fe1ab` | Second UI simplification (8→6 data points, 3-section expand) |
 
-### Phase 3: Dashboard & Alerts (Days 9-14)
-```bash
-npx ruflo hive-mind spawn \
-  "Phase 3 - Dashboard & Alerts: Build Next.js dashboard with dark trading terminal theme (see CLAUDE.md design system). Components: MarketOverview, SignalFeed, SignalCard, ConfidenceGauge, AlertTimeline, AlertConfig. Build Telegram bot with all commands. Wire WebSocket real-time delivery. See CLAUDE.md for full component specs and Telegram message format." \
-  --queen-type strategic
-```
+### Key Metrics
 
-### Phase 4: Integration & Deploy (Days 15-21)
-```bash
-npx ruflo hive-mind spawn \
-  "Phase 4 - Integration: Run full end-to-end tests (data → analysis → AI → signals → dashboard + Telegram). Fix any integration issues. Build comprehensive test suite. Prepare Railway deployment config. See CLAUDE.md for testing strategy and deployment checklist." \
-  --queen-type strategic
-```
+| Metric | Count |
+|--------|-------|
+| Backend Python files | ~30 (6,000+ lines) |
+| Frontend TypeScript files | 46 |
+| API endpoints | ~25 REST + 1 WebSocket |
+| Database tables | 8 |
+| Tracked symbols | 31 (15 stocks, 10 crypto, 6 forex) |
+| Test files | 40 |
+| Passing tests | 480+ |
+| React components | 19 |
+| Zustand stores | 3 |
+| Celery scheduled tasks | 12+ |
+| Alembic migrations | 3 |
+| Git tags | v0.0.1, v1.0.0 |
+
+### Known Issues
+
+- 4 test failures in `test_ai_engine.py` — related to environment config for AI budget checking, not functional bugs
+- `origin/feature/phase4-integration-deploy` remote branch still exists (was GitHub default branch; needs manual GitHub settings change to delete)
 
 ---
 
-*Last updated: March 2026 | SignalFlow AI v1.0 MVP*
+*Last updated: 21 March 2026 | SignalFlow AI v1.0.0*
