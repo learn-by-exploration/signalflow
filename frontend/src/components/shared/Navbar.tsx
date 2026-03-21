@@ -5,11 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSignalStore } from '@/store/signalStore';
 
-const NAV_LINKS = [
-  { href: '/', label: 'Dashboard', icon: '📊' },
-  { href: '/history', label: 'History', icon: '📜' },
+const PRIMARY_LINKS = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/history', label: 'Track Record' },
+  { href: '/alerts', label: 'Alerts' },
+];
+
+const MORE_LINKS = [
   { href: '/portfolio', label: 'Portfolio', icon: '💼' },
-  { href: '/alerts', label: 'Alerts', icon: '🔔' },
   { href: '/backtest', label: 'Backtest', icon: '🧪' },
   { href: '/how-it-works', label: 'How It Works', icon: '💡' },
 ];
@@ -17,6 +20,7 @@ const NAV_LINKS = [
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const unseenCount = useSignalStore((s) => s.unseenCount);
 
   return (
@@ -31,7 +35,7 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((link) => {
+            {PRIMARY_LINKS.map((link) => {
               const isActive = pathname === link.href;
               const showBadge = link.href === '/' && unseenCount > 0 && !isActive;
               return (
@@ -54,6 +58,34 @@ export function Navbar() {
                 </Link>
               );
             })}
+
+            {/* More dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setMoreOpen(!moreOpen)}
+                className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-white/[0.03] rounded-lg transition-colors"
+              >
+                More
+              </button>
+              {moreOpen && (
+                <div className="absolute right-0 mt-1 bg-bg-secondary border border-border-default rounded-lg shadow-lg py-1 min-w-[160px] z-50">
+                  {MORE_LINKS.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMoreOpen(false)}
+                      className={`block px-4 py-2 text-sm transition-colors ${
+                        pathname === link.href
+                          ? 'text-accent-purple bg-accent-purple/5'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.03]'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile hamburger */}
@@ -76,7 +108,7 @@ export function Navbar() {
       {/* Mobile dropdown */}
       {mobileOpen && (
         <div className="md:hidden border-t border-border-default bg-bg-secondary">
-          {NAV_LINKS.map((link) => {
+          {[...PRIMARY_LINKS, ...MORE_LINKS].map((link) => {
             const isActive = pathname === link.href;
             const showBadge = link.href === '/' && unseenCount > 0 && !isActive;
             return (
@@ -90,7 +122,6 @@ export function Navbar() {
                     : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.02]'
                 }`}
               >
-                <span className="mr-2">{link.icon}</span>
                 {link.label}
                 {showBadge && (
                   <span className="ml-2 inline-flex items-center justify-center min-w-[16px] h-4 bg-signal-sell text-white text-[9px] font-mono font-bold rounded-full px-1">

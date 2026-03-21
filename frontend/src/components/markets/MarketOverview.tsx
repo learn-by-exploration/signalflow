@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import type { MarketSnapshot } from '@/lib/types';
 import { formatPrice, formatPercent, changeDirection, shortSymbol } from '@/utils/formatters';
 import { MARKET_LABELS } from '@/lib/constants';
 import { useMarketStore } from '@/store/marketStore';
-import { getMarketBadge } from '@/utils/market-hours';
 
 interface MarketOverviewProps {
   stocks: MarketSnapshot[];
@@ -46,19 +44,6 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
   // Detect stale data (>5 minutes old)
   const isStale = lastUpdated && (Date.now() - new Date(lastUpdated).getTime()) > 5 * 60 * 1000;
 
-  // Refresh countdown (30s poll cycle)
-  const [countdown, setCountdown] = useState(30);
-  useEffect(() => {
-    if (!lastUpdated) return;
-    const tick = () => {
-      const elapsed = Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 1000);
-      setCountdown(Math.max(0, 30 - (elapsed % 30)));
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [lastUpdated]);
-
   // Show top symbol from each market (reduce clutter)
   const topStocks = stocks.slice(0, 1);
   const topCrypto = crypto.slice(0, 1);
@@ -73,11 +58,10 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
           {/* Connection status dot */}
           <div className="flex items-center gap-1" title={statusStyle.label}>
             <span className={`inline-block w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
-            <span className="text-[10px] text-text-muted font-mono">{statusStyle.label}</span>
           </div>
           {lastUpdated && (
             <span className={`text-[10px] font-mono ${isStale ? 'text-signal-sell' : 'text-text-muted'}`}>
-              · {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               {isStale && ' (stale)'}
             </span>
           )}
@@ -90,34 +74,30 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
         ) : (
           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-6 overflow-x-auto scrollbar-none">
             {topStocks.length > 0 && (
-              <MarketSection label={MARKET_LABELS.stock} marketType="stock" snapshots={topStocks} />
+              <MarketSection label={MARKET_LABELS.stock} snapshots={topStocks} />
             )}
             {topCrypto.length > 0 && (
-              <MarketSection label={MARKET_LABELS.crypto} marketType="crypto" snapshots={topCrypto} />
+              <MarketSection label={MARKET_LABELS.crypto} snapshots={topCrypto} />
             )}
             {topForex.length > 0 && (
-              <MarketSection label={MARKET_LABELS.forex} marketType="forex" snapshots={topForex} />
+              <MarketSection label={MARKET_LABELS.forex} snapshots={topForex} />
             )}
           </div>
         )}
       </div>
       {fetchError && (
         <div className="max-w-7xl mx-auto px-4 py-1">
-          <p className="text-[10px] text-signal-hold">⚠️ {fetchError}</p>
+          <p className="text-[10px] text-signal-hold">{fetchError}</p>
         </div>
       )}
     </div>
   );
 }
 
-function MarketSection({ label, marketType, snapshots }: { label: string; marketType: string; snapshots: MarketSnapshot[] }) {
-  const badge = getMarketBadge(marketType);
+function MarketSection({ label, snapshots }: { label: string; snapshots: MarketSnapshot[] }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-1" title={badge.hint ?? undefined}>
-        <span className="text-[10px] text-text-muted uppercase tracking-wider">{label}</span>
-        <span className="text-[9px]">{badge.badge}</span>
-      </div>
+      <span className="text-[10px] text-text-muted uppercase tracking-wider">{label}</span>
       {snapshots.map((s) => (
         <MarketTicker key={s.symbol} snapshot={s} />
       ))}

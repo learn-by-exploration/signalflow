@@ -1,20 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import type { Signal, SymbolTrackRecord } from '@/lib/types';
-import { formatPrice, formatPercent, formatDate, shortSymbol, formatTimeRemaining } from '@/utils/formatters';
-import { SIGNAL_COLORS, MARKET_LABELS } from '@/lib/constants';
+import type { Signal } from '@/lib/types';
+import { formatPrice, formatDate, shortSymbol, formatTimeRemaining } from '@/utils/formatters';
+import { SIGNAL_COLORS, MARKET_LABELS, BADGE_LABELS } from '@/lib/constants';
 import { useMarketStore } from '@/store/marketStore';
-import { api } from '@/lib/api';
-import { SignalBadge } from './SignalBadge';
-import { ConfidenceGauge } from './ConfidenceGauge';
 import { AIReasoningPanel } from './AIReasoningPanel';
-import { RiskCalculator } from './RiskCalculator';
-import { ShareButton } from './ShareButton';
 import { TargetProgressBar } from './TargetProgressBar';
-import { Sparkline } from '@/components/markets/Sparkline';
-import { IndicatorPill } from '@/components/shared/IndicatorPill';
 
 interface SignalCardProps {
   signal: Signal;
@@ -22,25 +15,7 @@ interface SignalCardProps {
 
 export function SignalCard({ signal }: SignalCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [trackRecord, setTrackRecord] = useState<SymbolTrackRecord | null>(null);
   const color = SIGNAL_COLORS[signal.signal_type];
-
-  const technicalData = signal.technical_data as Record<string, Record<string, unknown>>;
-  const rsi = technicalData?.rsi;
-  const macd = technicalData?.macd;
-  const volume = technicalData?.volume;
-  const recentCloses = (signal.technical_data?.recent_closes ?? []) as number[];
-  const isBuyish = signal.signal_type.includes('BUY');
-
-  // Sentiment from AI engine
-  const sentimentData = signal.sentiment_data as Record<string, unknown> | null;
-  const marketImpact = sentimentData?.market_impact as string | undefined;
-  const sentimentScore = sentimentData?.sentiment_score as number | undefined;
-  const sentimentLabel = marketImpact
-    ? `${marketImpact === 'positive' ? 'Bullish' : marketImpact === 'negative' ? 'Bearish' : 'Neutral'}${sentimentScore != null ? ` (${sentimentScore})` : ''}`
-    : null;
-  const sentimentSignal: 'buy' | 'sell' | 'neutral' =
-    marketImpact === 'positive' ? 'buy' : marketImpact === 'negative' ? 'sell' : 'neutral';
 
   // Live price from market store
   const normalizedSymbol = shortSymbol(signal.symbol);
@@ -62,22 +37,6 @@ export function SignalCard({ signal }: SignalCardProps) {
   const ageHours = (Date.now() - new Date(signal.created_at).getTime()) / 3600000;
   const ageDays = Math.floor(ageHours / 24);
 
-  // Lazy fetch track record when expanded
-  useEffect(() => {
-    if (!isExpanded || trackRecord) return;
-    api.getSymbolTrackRecord(signal.symbol)
-      .then((res) => {
-        const data = (res as { data?: SymbolTrackRecord })?.data ?? (res as SymbolTrackRecord);
-        if (data && typeof data.total_signals_30d === 'number') setTrackRecord(data);
-      })
-      .catch(() => { /* non-critical */ });
-  }, [isExpanded, signal.symbol, trackRecord]);
-
-  // Extract first sentence of AI reasoning for collapsed teaser
-  const reasoningTeaser = signal.ai_reasoning
-    ? signal.ai_reasoning.split(/[.!?]\s/)[0] + '.'
-    : null;
-
   return (
     <div
       role="button"
@@ -90,23 +49,16 @@ export function SignalCard({ signal }: SignalCardProps) {
     >
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <ConfidenceGauge
-            confidence={signal.confidence}
-            signalType={signal.signal_type}
-            size={40}
-          />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-display font-semibold text-text-primary">
-                {shortSymbol(signal.symbol)}
-              </span>
-              <SignalBadge signalType={signal.signal_type} />
-            </div>
-            <span className="text-xs text-text-muted">
-              {MARKET_LABELS[signal.market_type]} · {formatDate(signal.created_at)}
-            </span>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm font-display font-semibold text-text-primary">
+            {shortSymbol(signal.symbol)}
+          </span>
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-display font-semibold"
+            style={{ backgroundColor: `${color}20`, color }}
+          >
+            {BADGE_LABELS[signal.signal_type]} · {signal.confidence}%
+          </span>
         </div>
 
         <div className="text-right">
@@ -119,122 +71,62 @@ export function SignalCard({ signal }: SignalCardProps) {
         </div>
       </div>
 
-      {/* Target and stop-loss row */}
-      <div className="flex items-center gap-4 text-xs font-mono mt-2">
-        <span className="text-signal-buy">
-          Target {formatPrice(signal.target_price, signal.market_type)}
+      {/* Market + date + Target/Stop row */}
+      <div className="flex items-center justify-between mt-1.5">
+        <span className="text-xs text-text-muted">
+          {MARKET_LABELS[signal.market_type]} · {formatDate(signal.created_at)}
         </span>
-        <span className="text-signal-sell">
-          Stop {formatPrice(signal.stop_loss, signal.market_type)}
-        </span>
-        {isExpiringSoon && timeRemaining !== null && timeRemaining > 0 && (
-          <span className="ml-auto text-signal-sell">
-            {formatTimeRemaining(timeRemaining)}
+        <div className="flex items-center gap-3 text-xs font-mono">
+          <span className="text-signal-buy">
+            {formatPrice(signal.target_price, signal.market_type)}
           </span>
-        )}
+          <span className="text-signal-sell">
+            {formatPrice(signal.stop_loss, signal.market_type)}
+          </span>
+          {isExpiringSoon && timeRemaining !== null && timeRemaining > 0 && (
+            <span className="text-signal-sell">
+              {formatTimeRemaining(timeRemaining)}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* AI reasoning teaser (collapsed) */}
-      {!isExpanded && reasoningTeaser && (
-        <p className="text-xs text-text-secondary mt-2 line-clamp-1">
-          {reasoningTeaser}
-        </p>
-      )}
+      {/* ── EXPANDED CONTENT (3 sections: progress, AI, action) ── */}
 
-      {/* ── EXPANDED CONTENT ── */}
-
-      {/* Live price delta (expanded) */}
-      {isExpanded && livePrice != null && priceChangePct != null && Math.abs(priceChangePct) >= 0.01 && (
+      {/* Progress section: live delta + target progress bar */}
+      {isExpanded && (
         <div className="mt-3 pt-3 border-t border-border-default">
-          <p className="text-xs font-mono">
-            <span className="text-text-muted">Live:</span>{' '}
-            <span className={priceChangePct >= 0 ? 'text-signal-buy' : 'text-signal-sell'}>
-              {formatPrice(String(livePrice), signal.market_type)} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(2)}%)
-            </span>
-          </p>
+          {livePrice != null && priceChangePct != null && Math.abs(priceChangePct) >= 0.01 && (
+            <p className="text-xs font-mono mb-2">
+              <span className="text-text-muted">Live:</span>{' '}
+              <span className={priceChangePct >= 0 ? 'text-signal-buy' : 'text-signal-sell'}>
+                {formatPrice(String(livePrice), signal.market_type)} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(2)}%)
+              </span>
+            </p>
+          )}
+          <TargetProgressBar signal={signal} livePrice={livePrice ?? undefined} />
+          {ageHours > 48 && (
+            <p className="text-xs mt-1.5 text-signal-hold">
+              {ageHours > 120
+                ? `Signal is ${ageDays}d old — verify before acting`
+                : `Signal is ${ageDays}d old — check conditions`}
+            </p>
+          )}
         </div>
       )}
 
-      {/* Target progress bar (expanded) */}
-      {isExpanded && <TargetProgressBar signal={signal} livePrice={livePrice ?? undefined} />}
-
-      {/* Signal age warning (expanded) */}
-      {isExpanded && ageHours > 48 && (
-        <p className="text-xs mt-1.5 text-signal-hold">
-          {ageHours > 120
-            ? `Signal is ${ageDays}d old — expiring soon, verify before acting`
-            : `Signal is ${ageDays}d old — check if conditions still apply`}
-        </p>
-      )}
-
-      {/* Price chart with target/stop-loss lines (expanded) */}
-      {isExpanded && recentCloses.length >= 2 && (
-        <div className="mt-3 pt-3 border-t border-border-default">
-          <p className="text-[10px] text-text-muted mb-1">Price History — <span className="text-signal-buy">green: target</span> · <span className="text-signal-sell">red: stop-loss</span></p>
-          <Sparkline
-            data={recentCloses}
-            positive={isBuyish}
-            width={400}
-            height={60}
-            target={parseFloat(signal.target_price)}
-            stopLoss={parseFloat(signal.stop_loss)}
-          />
-        </div>
-      )}
-
-      {/* AI Reasoning (expanded) */}
+      {/* AI Reasoning */}
       <AIReasoningPanel reasoning={signal.ai_reasoning} isExpanded={isExpanded} />
 
-      {/* Technical indicators + sentiment (expanded) */}
-      {isExpanded && (rsi || macd || volume || sentimentLabel) && (
-        <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border-default">
-          {rsi?.value != null && (
-            <IndicatorPill
-              label="RSI"
-              value={String(rsi.value)}
-              signal={rsi.signal as 'buy' | 'sell' | 'neutral'}
-            />
-          )}
-          {macd?.signal != null && (
-            <IndicatorPill
-              label="MACD"
-              value={String(macd.signal === 'buy' ? 'Bullish' : macd.signal === 'sell' ? 'Bearish' : 'Neutral')}
-              signal={macd.signal as 'buy' | 'sell' | 'neutral'}
-            />
-          )}
-          {volume?.ratio != null && (
-            <IndicatorPill
-              label="Vol"
-              value={`${volume.ratio}x avg`}
-              signal={volume.signal as 'buy' | 'sell' | 'neutral'}
-            />
-          )}
-          {sentimentLabel && (
-            <IndicatorPill
-              label="Sentiment"
-              value={sentimentLabel}
-              signal={sentimentSignal}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Share + Detail link (expanded) */}
+      {/* Action link */}
       {isExpanded && (
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border-default" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-3 pt-3 border-t border-border-default" onClick={(e) => e.stopPropagation()}>
           <Link href={`/signal/${signal.id}`} className="text-xs text-accent-purple hover:underline">
-            View full details →
+            View full analysis →
           </Link>
-          <ShareButton signalId={signal.id} />
         </div>
       )}
 
-      {/* Expand indicator */}
-      <div className="flex justify-center mt-2">
-        <span className={`text-text-muted text-xs transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-          ▼
-        </span>
-      </div>
     </div>
   );
 }
