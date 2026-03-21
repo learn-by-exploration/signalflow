@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import type { Signal, MarketType } from '@/lib/types';
 import { SignalCard } from './SignalCard';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { KeyboardHelpModal } from '@/components/shared/KeyboardHelpModal';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import Link from 'next/link';
 
 interface SignalFeedProps {
@@ -32,6 +34,20 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const handleFilterChange = useCallback((f: 'all' | 'stock' | 'crypto' | 'forex') => {
+    setFilter(f);
+  }, []);
+
+  const handleFocusSearch = useCallback(() => {
+    searchRef.current?.focus();
+  }, []);
+
+  const { showHelp, setShowHelp } = useKeyboardShortcuts({
+    onFilterChange: handleFilterChange,
+    onFocusSearch: handleFocusSearch,
+  });
 
   const filtered = useMemo(() => {
     let result = signals;
@@ -104,6 +120,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
       <div className="relative">
         <input
           type="text"
+          ref={searchRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search symbol (e.g. HDFC, BTC, EUR)..."
@@ -162,6 +179,8 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
           ))}
         </div>
       )}
+
+      <KeyboardHelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 }

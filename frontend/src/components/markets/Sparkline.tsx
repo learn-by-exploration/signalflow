@@ -3,19 +3,25 @@ interface SparklineProps {
   width?: number;
   height?: number;
   positive?: boolean;
+  target?: number;
+  stopLoss?: number;
 }
 
-export function Sparkline({ data, width = 60, height = 20, positive = true }: SparklineProps) {
+export function Sparkline({ data, width = 60, height = 20, positive = true, target, stopLoss }: SparklineProps) {
   if (data.length < 2) return null;
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+  // Include target and stop-loss in min/max calculation so lines are visible
+  const allValues = [...data, ...(target != null ? [target] : []), ...(stopLoss != null ? [stopLoss] : [])];
+  const min = Math.min(...allValues);
+  const max = Math.max(...allValues);
   const range = max - min || 1;
+
+  const toY = (val: number) => height - ((val - min) / range) * height;
 
   const points = data
     .map((val, i) => {
       const x = (i / (data.length - 1)) * width;
-      const y = height - ((val - min) / range) * height;
+      const y = toY(val);
       return `${x},${y}`;
     })
     .join(' ');
@@ -24,6 +30,20 @@ export function Sparkline({ data, width = 60, height = 20, positive = true }: Sp
 
   return (
     <svg width={width} height={height} className="inline-block">
+      {/* Target reference line */}
+      {target != null && (
+        <line
+          x1={0} y1={toY(target)} x2={width} y2={toY(target)}
+          stroke="#00E676" strokeWidth={0.5} strokeDasharray="2,2" opacity={0.6}
+        />
+      )}
+      {/* Stop-loss reference line */}
+      {stopLoss != null && (
+        <line
+          x1={0} y1={toY(stopLoss)} x2={width} y2={toY(stopLoss)}
+          stroke="#FF5252" strokeWidth={0.5} strokeDasharray="2,2" opacity={0.6}
+        />
+      )}
       <polyline
         points={points}
         fill="none"

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { MarketSnapshot } from '@/lib/types';
 import { formatPrice, formatPercent, changeDirection, shortSymbol } from '@/utils/formatters';
 import { MARKET_LABELS } from '@/lib/constants';
@@ -44,6 +45,19 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
   // Detect stale data (>5 minutes old)
   const isStale = lastUpdated && (Date.now() - new Date(lastUpdated).getTime()) > 5 * 60 * 1000;
 
+  // Refresh countdown (30s poll cycle)
+  const [countdown, setCountdown] = useState(30);
+  useEffect(() => {
+    if (!lastUpdated) return;
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 1000);
+      setCountdown(Math.max(0, 30 - (elapsed % 30)));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lastUpdated]);
+
   // Show top symbols from each market
   const topStocks = stocks.slice(0, 3);
   const topCrypto = crypto.slice(0, 3);
@@ -63,7 +77,7 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
           {lastUpdated && (
             <span className={`text-[10px] font-mono ${isStale ? 'text-signal-sell' : 'text-text-muted'}`}>
               · {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              {isStale && ' (stale)'}
+              {isStale ? ' (stale)' : ` · ${countdown}s`}
             </span>
           )}
         </div>

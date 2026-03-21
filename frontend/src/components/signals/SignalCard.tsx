@@ -141,6 +141,21 @@ export function SignalCard({ signal }: SignalCardProps) {
         </div>
       )}
 
+      {/* Expanded price chart with target/stop-loss lines */}
+      {isExpanded && recentCloses.length >= 2 && (
+        <div className="mt-3 pt-3 border-t border-border-default">
+          <p className="text-[10px] text-text-muted mb-1">Price History — <span className="text-signal-buy">green: target</span> · <span className="text-signal-sell">red: stop-loss</span></p>
+          <Sparkline
+            data={recentCloses}
+            positive={isBuyish}
+            width={400}
+            height={60}
+            target={parseFloat(signal.target_price)}
+            stopLoss={parseFloat(signal.stop_loss)}
+          />
+        </div>
+      )}
+
       {/* AI Reasoning (expanded) */}
       <AIReasoningPanel reasoning={signal.ai_reasoning} isExpanded={isExpanded} />
 
