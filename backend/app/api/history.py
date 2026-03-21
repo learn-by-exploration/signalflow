@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.database import get_db
 from app.models.signal_history import SignalHistory
@@ -13,6 +14,7 @@ from app.schemas.signal import (
     SignalHistoryItem,
     SignalHistoryResponse,
     SignalStatsResponse,
+    SignalSummary,
 )
 
 router = APIRouter(prefix="/signals", tags=["signals"])
@@ -25,19 +27,35 @@ async def list_signal_history(
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> SignalHistoryResponse:
-    """List past signal outcomes."""
-    query = select(SignalHistory)
-
+    """List past signal outcomes with embedded signal details."""
+    base_query = select(SignalHistory)
     if outcome:
-        query = query.where(SignalHistory.outcome == outcome)
+        base_query = base_query.where(SignalHistory.outcome == outcome)
 
-    query = query.order_by(SignalHistory.created_at.desc()).offset(offset).limit(limit)
+    # Total count for pagination
+    count_result = await db.execute(select(func.count()).select_from(base_query.subquery()))
+    total = count_result.scalar() or 0
+
+    # Fetch with joined signal data
+    query = (
+        base_query.options(joinedload(SignalHistory.signal_rel))
+        .order_by(SignalHistory.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
     result = await db.execute(query)
-    entries = result.scalars().all()
+    entries = result.unique().scalars().all()
+
+    items = []
+    for e in entries:
+        item = SignalHistoryItem.model_validate(e)
+        if e.signal_rel:
+            item.signal = SignalSummary.model_validate(e.signal_rel)
+        items.append(item)
 
     return SignalHistoryResponse(
-        data=[SignalHistoryItem.model_validate(e) for e in entries],
-        meta=MetaResponse(timestamp=datetime.now(timezone.utc), count=len(entries)),
+        data=items,
+        meta=MetaResponse(timestamp=datetime.now(timezone.utc), count=len(entries), total=total),
     )
 
 

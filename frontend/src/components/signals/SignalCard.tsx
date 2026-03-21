@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Signal } from '@/lib/types';
 import { formatPrice, formatPercent, formatDate, shortSymbol, formatTimeRemaining } from '@/utils/formatters';
 import { SIGNAL_COLORS, MARKET_LABELS } from '@/lib/constants';
+import { useMarketStore } from '@/store/marketStore';
 import { SignalBadge } from './SignalBadge';
 import { ConfidenceGauge } from './ConfidenceGauge';
 import { AIReasoningPanel } from './AIReasoningPanel';
@@ -37,6 +38,17 @@ export function SignalCard({ signal }: SignalCardProps) {
     : null;
   const sentimentSignal: 'buy' | 'sell' | 'neutral' =
     marketImpact === 'positive' ? 'buy' : marketImpact === 'negative' ? 'sell' : 'neutral';
+
+  // Live price from market store
+  const normalizedSymbol = shortSymbol(signal.symbol);
+  const { stocks, crypto, forex } = useMarketStore();
+  const allSnapshots = [...stocks, ...crypto, ...forex];
+  const liveSnapshot = allSnapshots.find(
+    (s) => shortSymbol(s.symbol) === normalizedSymbol,
+  );
+  const signalPrice = parseFloat(signal.current_price);
+  const livePrice = liveSnapshot ? parseFloat(String(liveSnapshot.price)) : null;
+  const priceChangePct = livePrice ? ((livePrice - signalPrice) / signalPrice) * 100 : null;
 
   // Expiry countdown
   const expiresAt = signal.expires_at ? new Date(signal.expires_at).getTime() : null;
@@ -81,6 +93,11 @@ export function SignalCard({ signal }: SignalCardProps) {
           <div>
             <p className="text-sm font-mono text-text-primary">
               {formatPrice(signal.current_price, signal.market_type)}
+              {livePrice != null && priceChangePct != null && Math.abs(priceChangePct) >= 0.01 && (
+                <span className={`ml-1 text-xs ${priceChangePct >= 0 ? 'text-signal-buy' : 'text-signal-sell'}`}>
+                  → {formatPrice(String(livePrice), signal.market_type)} ({priceChangePct >= 0 ? '+' : ''}{priceChangePct.toFixed(2)}%)
+                </span>
+              )}
             </p>
             <p className="text-xs text-text-muted">
               {signal.timeframe ?? '—'}

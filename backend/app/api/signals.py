@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -25,24 +25,28 @@ async def list_signals(
     db: AsyncSession = Depends(get_db),
 ) -> SignalListResponse:
     """List active trading signals with optional filters."""
-    query = select(Signal).where(Signal.is_active.is_(True))
+    base_query = select(Signal).where(Signal.is_active.is_(True))
 
     if market:
-        query = query.where(Signal.market_type == market)
+        base_query = base_query.where(Signal.market_type == market)
     if signal_type:
-        query = query.where(Signal.signal_type == signal_type)
+        base_query = base_query.where(Signal.signal_type == signal_type)
     if symbol:
-        query = query.where(Signal.symbol.ilike(f"%{symbol}%"))
+        base_query = base_query.where(Signal.symbol.ilike(f"%{symbol}%"))
     if min_confidence > 0:
-        query = query.where(Signal.confidence >= min_confidence)
+        base_query = base_query.where(Signal.confidence >= min_confidence)
 
-    query = query.order_by(Signal.created_at.desc()).offset(offset).limit(limit)
+    # Total count for pagination
+    count_result = await db.execute(select(func.count()).select_from(base_query.subquery()))
+    total = count_result.scalar() or 0
+
+    query = base_query.order_by(Signal.created_at.desc()).offset(offset).limit(limit)
     result = await db.execute(query)
     signals = result.scalars().all()
 
     return SignalListResponse(
         data=[SignalResponse.model_validate(s) for s in signals],
-        meta=MetaResponse(timestamp=datetime.now(timezone.utc), count=len(signals)),
+        meta=MetaResponse(timestamp=datetime.now(timezone.utc), count=len(signals), total=total),
     )
 
 

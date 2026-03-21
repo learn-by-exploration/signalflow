@@ -34,6 +34,7 @@ class MetaResponse(BaseModel):
 
     timestamp: datetime
     count: int
+    total: int | None = None
 
 
 class SignalListResponse(BaseModel):
@@ -41,6 +42,19 @@ class SignalListResponse(BaseModel):
 
     data: list[SignalResponse]
     meta: MetaResponse
+
+
+class SignalSummary(BaseModel):
+    """Minimal signal data embedded in history items."""
+
+    symbol: str
+    market_type: str
+    signal_type: str
+    current_price: Decimal
+    target_price: Decimal
+    stop_loss: Decimal
+
+    model_config = {"from_attributes": True}
 
 
 class SignalHistoryItem(BaseModel):
@@ -53,6 +67,7 @@ class SignalHistoryItem(BaseModel):
     return_pct: Decimal | None = None
     resolved_at: datetime | None = None
     created_at: datetime
+    signal: SignalSummary | None = None
 
     model_config = {"from_attributes": True}
 

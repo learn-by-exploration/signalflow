@@ -185,6 +185,9 @@ class SignalGenerator:
 
         Returns a pandas DataFrame sorted by timestamp ascending, or None.
         """
+        # Normalize symbol: strip .NS suffix for DB lookup (indian_stocks stores without it)
+        query_symbol = symbol.replace(".NS", "")
+
         stmt = (
             select(
                 MarketData.open,
@@ -194,7 +197,7 @@ class SignalGenerator:
                 MarketData.volume,
                 MarketData.timestamp,
             )
-            .where(MarketData.symbol == symbol)
+            .where(MarketData.symbol == query_symbol)
             .order_by(MarketData.timestamp.desc())
             .limit(250)  # ~1 year of daily data
         )
