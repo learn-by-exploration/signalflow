@@ -102,3 +102,13 @@ class SymbolTrackRecord(BaseModel):
     expired: int
     win_rate: float = Field(ge=0, le=100)
     avg_return_pct: float
+
+
+class WeeklyTrendItem(BaseModel):
+    """Win rate data for a single week."""
+
+    week: str
+    start_date: str
+    total: int
+    hit_target: int
+    win_rate: float

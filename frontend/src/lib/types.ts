@@ -80,6 +80,14 @@ export interface SymbolTrackRecord {
   avg_return_pct: number;
 }
 
+export interface WeeklyTrendItem {
+  week: string;
+  start_date: string;
+  total: number;
+  hit_target: number;
+  win_rate: number;
+}
+
 // ── P3: Future Features ──
 
 export interface PriceAlert {

@@ -33,6 +33,9 @@ export const api = {
   getSymbolTrackRecord: (symbol: string) =>
     apiFetch(`/api/v1/signals/${encodeURIComponent(symbol)}/track-record`),
 
+  getAccuracyTrend: (weeks?: number) =>
+    apiFetch(`/api/v1/signals/stats/trend${weeks ? `?weeks=${weeks}` : ''}`),
+
   getMarketOverview: () =>
     apiFetch('/api/v1/markets/overview'),
 

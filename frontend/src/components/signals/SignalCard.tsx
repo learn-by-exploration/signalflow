@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import type { Signal, SymbolTrackRecord } from '@/lib/types';
 import { formatPrice, formatPercent, formatDate, shortSymbol, formatTimeRemaining } from '@/utils/formatters';
 import { SIGNAL_COLORS, MARKET_LABELS } from '@/lib/constants';
@@ -247,9 +248,12 @@ export function SignalCard({ signal }: SignalCardProps) {
         </div>
       )}
 
-      {/* Share button (expanded) */}
+      {/* Share + Detail link (expanded) */}
       {isExpanded && (
-        <div className="flex justify-end mt-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mt-2" onClick={(e) => e.stopPropagation()}>
+          <Link href={`/signal/${signal.id}`} className="text-xs text-accent-purple hover:underline">
+            View full details →
+          </Link>
           <ShareButton signalId={signal.id} />
         </div>
       )}

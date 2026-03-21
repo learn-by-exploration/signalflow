@@ -221,6 +221,78 @@ export default function PortfolioPage() {
           </div>
         )}
 
+        {/* P&L Chart: Per-position bar chart */}
+        {summary && summary.positions.length > 1 && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-display font-semibold">P&L by Position</h2>
+
+            {/* Allocation bar */}
+            <div className="bg-bg-card border border-border-default rounded-xl p-4">
+              <p className="text-xs text-text-muted mb-2">Portfolio Allocation</p>
+              <div className="flex rounded-lg overflow-hidden h-6">
+                {summary.positions.map((pos) => {
+                  const value = parseFloat(pos.value);
+                  const totalVal = parseFloat(summary.current_value) || 1;
+                  const pct = (value / totalVal) * 100;
+                  const isProfit = pos.pnl_pct >= 0;
+                  return (
+                    <div
+                      key={pos.symbol}
+                      className={`relative group ${isProfit ? 'bg-signal-buy/30' : 'bg-signal-sell/30'} border-r border-bg-primary last:border-r-0`}
+                      style={{ width: `${Math.max(pct, 2)}%` }}
+                      title={`${pos.symbol.replace('.NS', '').replace('USDT', '')} — ${pct.toFixed(1)}% of portfolio`}
+                    >
+                      {pct > 8 && (
+                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono text-text-primary truncate px-1">
+                          {pos.symbol.replace('.NS', '').replace('USDT', '')}
+                        </span>
+                      )}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10">
+                        <div className="bg-bg-secondary border border-border-default rounded px-2 py-1 text-[10px] text-text-secondary whitespace-nowrap shadow-lg">
+                          <p className="font-mono font-semibold text-text-primary">{pos.symbol.replace('.NS', '').replace('USDT', '')}</p>
+                          <p>{pct.toFixed(1)}% · {value.toLocaleString()}</p>
+                          <p className={isProfit ? 'text-signal-buy' : 'text-signal-sell'}>{isProfit ? '+' : ''}{pos.pnl_pct}%</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* P&L waterfall bars */}
+            <div className="bg-bg-card border border-border-default rounded-xl p-4">
+              <p className="text-xs text-text-muted mb-3">P&L per Position</p>
+              <div className="space-y-2">
+                {[...summary.positions]
+                  .sort((a, b) => parseFloat(b.pnl) - parseFloat(a.pnl))
+                  .map((pos) => {
+                    const pnl = parseFloat(pos.pnl);
+                    const maxAbsPnl = Math.max(...summary.positions.map((p) => Math.abs(parseFloat(p.pnl))), 1);
+                    const barWidth = Math.abs(pnl) / maxAbsPnl * 100;
+                    const isProfit = pnl >= 0;
+                    return (
+                      <div key={pos.symbol} className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-text-secondary w-16 truncate text-right">
+                          {pos.symbol.replace('.NS', '').replace('USDT', '')}
+                        </span>
+                        <div className="flex-1 h-5 relative">
+                          <div
+                            className={`h-full rounded ${isProfit ? 'bg-signal-buy/40' : 'bg-signal-sell/40'}`}
+                            style={{ width: `${Math.max(barWidth, 2)}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-mono w-20 text-right ${isProfit ? 'text-signal-buy' : 'text-signal-sell'}`}>
+                          {isProfit ? '+' : ''}{pnl.toLocaleString()}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Positions */}
         {summary && summary.positions.length > 0 && (
           <section>

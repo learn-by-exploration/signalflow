@@ -190,7 +190,11 @@ export default function HistoryPage() {
                   {/* Desktop: grid row */}
                   <div className="hidden sm:grid grid-cols-6 gap-4 items-center">
                     <span className="text-sm font-display font-medium text-text-primary">
-                      {item.signal ? shortSymbol(item.signal.symbol) : '—'}
+                      {item.signal ? (
+                        <Link href={`/signal/${item.signal_id}`} className="hover:text-accent-purple transition-colors">
+                          {shortSymbol(item.signal.symbol)}
+                        </Link>
+                      ) : '—'}
                     </span>
                     <span>
                       {item.signal ? (

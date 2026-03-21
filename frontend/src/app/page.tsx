@@ -4,6 +4,7 @@ import { MarketOverview } from '@/components/markets/MarketOverview';
 import { MarketHeatmap } from '@/components/markets/MarketHeatmap';
 import { SignalFeed } from '@/components/signals/SignalFeed';
 import { WinRateCard } from '@/components/signals/WinRateCard';
+import { AccuracyChart } from '@/components/signals/AccuracyChart';
 import { AskAI } from '@/components/signals/AskAI';
 import { AlertTimeline } from '@/components/alerts/AlertTimeline';
 import { useSignalStore } from '@/store/signalStore';
@@ -48,6 +49,9 @@ export default function Dashboard() {
           <div className="space-y-6">
             <ErrorBoundary name="Signal Performance">
               <WinRateCard />
+            </ErrorBoundary>
+            <ErrorBoundary name="Accuracy Trend">
+              <AccuracyChart />
             </ErrorBoundary>
             <ErrorBoundary name="Market Heatmap">
               <MarketHeatmap />

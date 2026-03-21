@@ -17,6 +17,7 @@ from app.schemas.signal import (
     SignalStatsResponse,
     SignalSummary,
     SymbolTrackRecord,
+    WeeklyTrendItem,
 )
 
 router = APIRouter(prefix="/signals", tags=["signals"])
@@ -95,6 +96,49 @@ async def get_signal_stats(
         avg_return_pct=round(float(row.avg_return or 0), 2),
         last_updated=row.last_resolved,
     )
+
+
+@router.get("/stats/trend", response_model=list[WeeklyTrendItem])
+async def get_accuracy_trend(
+    weeks: int = Query(default=8, ge=1, le=52),
+    db: AsyncSession = Depends(get_db),
+) -> list[WeeklyTrendItem]:
+    """Get weekly win rate trend for the last N weeks."""
+    since = datetime.now(timezone.utc) - timedelta(weeks=weeks)
+
+    stmt = (
+        select(
+            func.date_trunc("week", SignalHistory.resolved_at).label("week_start"),
+            func.count(SignalHistory.id).label("total"),
+            func.count(SignalHistory.id)
+            .filter(SignalHistory.outcome == "hit_target")
+            .label("hit_target"),
+        )
+        .where(SignalHistory.resolved_at.isnot(None))
+        .where(SignalHistory.resolved_at >= since)
+        .group_by(func.date_trunc("week", SignalHistory.resolved_at))
+        .order_by(func.date_trunc("week", SignalHistory.resolved_at))
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+
+    items: list[WeeklyTrendItem] = []
+    for row in rows:
+        total = row.total or 0
+        ht = row.hit_target or 0
+        wr = (ht / total * 100) if total > 0 else 0.0
+        week_dt = row.week_start
+        items.append(
+            WeeklyTrendItem(
+                week=week_dt.strftime("%G-W%V"),
+                start_date=week_dt.strftime("%Y-%m-%d"),
+                total=total,
+                hit_target=ht,
+                win_rate=round(wr, 1),
+            )
+        )
+
+    return items
 
 
 @router.get("/{symbol}/track-record", response_model=SymbolTrackRecord)
