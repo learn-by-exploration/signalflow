@@ -2,12 +2,17 @@
 
 Tracks token usage per call, enforces $30/month budget cap,
 and provides cost reporting utilities.
+
+Uses Redis for atomic budget tracking (production-safe with multiple workers)
+and a local JSON file as an audit log.
 """
 
 import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+
+import redis
 
 from app.config import get_settings
 
@@ -22,8 +27,8 @@ PRICING = {
 class CostTracker:
     """Track Claude API costs and enforce monthly budget.
 
-    Stores usage data in a local JSON file. In production,
-    this would use Redis or PostgreSQL for persistence.
+    Uses Redis INCRBYFLOAT for atomic cost accumulation (safe for concurrent workers).
+    Falls back to JSON file if Redis is unavailable.
     """
 
     def __init__(self, storage_path: str | None = None) -> None:
@@ -31,6 +36,13 @@ class CostTracker:
         self.monthly_budget = settings.monthly_ai_budget_usd
         self.model = settings.claude_model
         self._storage_path = Path(storage_path) if storage_path else Path("ai_cost_log.json")
+        self._redis: redis.Redis | None = None
+        try:
+            self._redis = redis.from_url(settings.redis_url, decode_responses=True)
+            self._redis.ping()
+        except Exception:
+            logger.warning("Redis unavailable for cost tracking, using file-only mode")
+            self._redis = None
 
     def _load_data(self) -> dict:
         """Load cost tracking data from storage."""
@@ -85,6 +97,20 @@ class CostTracker:
         cost = self.calculate_cost(input_tokens, output_tokens)
         month_key = self._get_month_key()
 
+        # Atomic Redis increment (production-safe)
+        if self._redis:
+            try:
+                redis_key = f"ai_cost:{month_key}"
+                new_total = self._redis.incrbyfloat(redis_key, cost)
+                self._redis.expire(redis_key, 40 * 86400)  # 40 days TTL
+                # Also track call count
+                count_key = f"ai_cost_count:{month_key}"
+                self._redis.incr(count_key)
+                self._redis.expire(count_key, 40 * 86400)
+            except Exception:
+                logger.warning("Redis cost tracking failed, file-only")
+
+        # Audit log to JSON file (best-effort, not source of truth)
         data = self._load_data()
         data["calls"].append({
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -103,20 +129,28 @@ class CostTracker:
         self._save_data(data)
 
         logger.info(
-            "Claude API call: %s/%s | %d in + %d out tokens | $%.4f | Month total: $%.2f",
+            "Claude API call: %s/%s | %d in + %d out tokens | $%.4f",
             task_type,
             symbol,
             input_tokens,
             output_tokens,
             cost,
-            data["monthly_totals"][month_key],
         )
         return cost
 
     def get_monthly_spend(self) -> float:
-        """Return current month's total spend in USD."""
+        """Return current month's total spend in USD (Redis-first)."""
+        month_key = self._get_month_key()
+        if self._redis:
+            try:
+                val = self._redis.get(f"ai_cost:{month_key}")
+                if val is not None:
+                    return float(val)
+            except Exception:
+                pass
+        # Fallback to JSON file
         data = self._load_data()
-        return data["monthly_totals"].get(self._get_month_key(), 0.0)
+        return data["monthly_totals"].get(month_key, 0.0)
 
     def get_remaining_budget(self) -> float:
         """Return remaining budget for the current month."""

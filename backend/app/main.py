@@ -100,11 +100,40 @@ async def health_check() -> dict:
 
     # Database check
     try:
-        from app.database import async_engine
+        from app.database import async_engine, async_session
         from sqlalchemy import text as sql_text
         async with async_engine.connect() as conn:
             await conn.execute(sql_text("SELECT 1"))
         status["db_status"] = "ok"
+
+        # Active signals count + last data fetch
+        try:
+            from sqlalchemy import func, select
+            from app.models.signal import Signal
+            from app.models.market_data import MarketData
+            async with async_session() as db:
+                sig_count = await db.execute(
+                    select(func.count()).select_from(Signal).where(Signal.is_active.is_(True))
+                )
+                status["active_signals_count"] = sig_count.scalar() or 0
+
+                last_fetch = await db.execute(
+                    select(func.max(MarketData.timestamp))
+                )
+                last_ts = last_fetch.scalar()
+                status["last_data_fetch"] = last_ts.isoformat() if last_ts else None
+
+                # Mark degraded if data is stale (>10 min)
+                if last_ts:
+                    from datetime import timedelta
+                    age = datetime.now(timezone.utc) - last_ts.replace(tzinfo=timezone.utc) if last_ts.tzinfo is None else datetime.now(timezone.utc) - last_ts
+                    if age > timedelta(minutes=10):
+                        status["status"] = "degraded"
+                        status["data_status"] = "stale"
+        except Exception:
+            status["active_signals_count"] = "error"
+            status["last_data_fetch"] = "error"
+
     except Exception:
         status["db_status"] = "error"
         status["status"] = "degraded"
@@ -119,5 +148,16 @@ async def health_check() -> dict:
     except Exception:
         status["redis_status"] = "error"
         status["status"] = "degraded"
+
+    # AI budget check
+    try:
+        from app.services.ai_engine.cost_tracker import CostTracker
+        tracker = CostTracker()
+        summary = tracker.get_usage_summary()
+        budget = float(settings.monthly_ai_budget_usd)
+        spent = summary.get("total_cost_usd", 0)
+        status["ai_budget_remaining_pct"] = round((1 - spent / budget) * 100, 1) if budget > 0 else 100.0
+    except Exception:
+        pass
 
     return status

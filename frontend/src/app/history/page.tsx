@@ -43,16 +43,22 @@ const MARKET_FILTERS: { value: MarketFilter; label: string }[] = [
 export default function HistoryPage() {
   const [history, setHistory] = useState<(SignalHistoryItem & { signal?: Signal })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [total, setTotal] = useState<number | null>(null);
   const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>('all');
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('all');
   const [sortCol, setSortCol] = useState<SortCol>(null);
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
+  const PAGE_SIZE = 20;
+
   useEffect(() => {
     async function fetchHistory() {
       try {
-        const res = (await api.getSignalHistory()) as HistoryResponse;
+        const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: '0' });
+        const res = (await api.getSignalHistory(params)) as HistoryResponse;
         setHistory(res.data);
+        setTotal(res.meta.total ?? null);
       } catch {
         // Fail silently
       } finally {
@@ -61,6 +67,22 @@ export default function HistoryPage() {
     }
     fetchHistory();
   }, []);
+
+  async function loadMore() {
+    setIsLoadingMore(true);
+    try {
+      const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(history.length) });
+      const res = (await api.getSignalHistory(params)) as HistoryResponse;
+      setHistory((prev) => [...prev, ...res.data]);
+      setTotal(res.meta.total ?? null);
+    } catch {
+      // Fail silently
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
+
+  const hasMore = total != null && history.length < total;
 
   const filtered = useMemo(() => {
     let items = history;
@@ -303,6 +325,24 @@ export default function HistoryPage() {
                 </div>
               );
             })}
+
+            {/* Load More / pagination info */}
+            <div className="flex flex-col items-center gap-2 pt-4">
+              {total != null && (
+                <p className="text-xs text-text-muted font-mono">
+                  Showing {filtered.length} of {total} signals
+                </p>
+              )}
+              {hasMore && (
+                <button
+                  onClick={loadMore}
+                  disabled={isLoadingMore}
+                  className="px-6 py-2 text-sm border border-border-default rounded-lg text-text-secondary hover:border-accent-purple hover:text-accent-purple transition-colors disabled:opacity-50"
+                >
+                  {isLoadingMore ? 'Loading...' : `Load More (${history.length} of ${total})`}
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

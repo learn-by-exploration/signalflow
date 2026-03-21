@@ -9,6 +9,7 @@ from sqlalchemy import func, select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.market_data import MarketData
 from app.models.trade import Trade
 from app.schemas.p3 import PortfolioSummary, TradeCreate, TradeData
 
@@ -62,9 +63,10 @@ async def portfolio_summary(
     """Get aggregated portfolio positions and P&L.
 
     Calculates net position per symbol from buy/sell trades.
-    Current value uses the last trade price as proxy (real-time pricing
-    would require a market data lookup).
+    Current value uses the latest close price from market_data for accurate P&L.
+    Falls back to the last trade price if no market data exists for a symbol.
     """
+    # Step 1: Aggregate trades per symbol
     result = await db.execute(
         select(
             Trade.symbol,
@@ -81,12 +83,37 @@ async def portfolio_summary(
                     else_=-Trade.quantity * Trade.price,
                 )
             ).label("net_cost"),
-            func.max(Trade.price).label("last_price"),
+            func.max(Trade.price).label("last_trade_price"),
         )
         .where(Trade.telegram_chat_id == telegram_chat_id)
         .group_by(Trade.symbol, Trade.market_type)
     )
     rows = result.all()
+
+    # Step 2: Fetch latest market prices for all symbols in one query
+    symbols = [row.symbol for row in rows]
+    live_prices: dict[str, Decimal] = {}
+    if symbols:
+        # Subquery to get max timestamp per symbol
+        latest_ts = (
+            select(
+                MarketData.symbol,
+                func.max(MarketData.timestamp).label("max_ts"),
+            )
+            .where(MarketData.symbol.in_(symbols))
+            .group_by(MarketData.symbol)
+            .subquery()
+        )
+        price_result = await db.execute(
+            select(MarketData.symbol, MarketData.close)
+            .join(
+                latest_ts,
+                (MarketData.symbol == latest_ts.c.symbol)
+                & (MarketData.timestamp == latest_ts.c.max_ts),
+            )
+        )
+        for price_row in price_result.all():
+            live_prices[price_row.symbol] = price_row.close
 
     positions = []
     total_invested = Decimal("0")
@@ -95,12 +122,13 @@ async def portfolio_summary(
     for row in rows:
         net_qty = Decimal(str(row.net_qty or 0))
         net_cost = Decimal(str(row.net_cost or 0))
-        last_price = Decimal(str(row.last_price or 0))
+        # Use live market price; fall back to last trade price
+        current_price = live_prices.get(row.symbol, Decimal(str(row.last_trade_price or 0)))
 
         if net_qty <= 0:
             continue  # Position fully closed
 
-        position_value = net_qty * last_price
+        position_value = net_qty * current_price
         avg_price = net_cost / net_qty if net_qty > 0 else Decimal("0")
         pnl = position_value - net_cost
         pnl_pct = float(pnl / net_cost * 100) if net_cost > 0 else 0.0
@@ -110,7 +138,7 @@ async def portfolio_summary(
             "market_type": row.market_type,
             "quantity": str(net_qty),
             "avg_price": str(round(avg_price, 4)),
-            "current_price": str(last_price),
+            "current_price": str(current_price),
             "value": str(round(position_value, 2)),
             "pnl": str(round(pnl, 2)),
             "pnl_pct": round(pnl_pct, 2),

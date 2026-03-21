@@ -50,8 +50,10 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => {
+    setData((prev) => ({ ...prev, loading: true }));
     loadData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId]);
 
   async function logTrade() {
     if (!tradeSymbol.trim() || !tradeQty || !tradePrice) return;

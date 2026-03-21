@@ -4,11 +4,13 @@ import logging
 
 import httpx
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
+from app.models.market_data import MarketData
+from app.models.signal import Signal
 from app.rate_limit import limiter
 from app.schemas.p3 import AskQuestion
 from app.services.ai_engine.cost_tracker import CostTracker
@@ -33,34 +35,38 @@ async def ask_about_symbol(
     cost_tracker = CostTracker()
     symbol = payload.symbol.upper().strip()
 
-    # Gather context: latest market data
-    market_row = await db.execute(
-        text(
-            "SELECT close, high, low, volume, timestamp FROM market_data "
-            "WHERE symbol = :sym ORDER BY timestamp DESC LIMIT 1"
-        ),
-        {"sym": symbol},
+    # Normalize Indian stock symbols: try both with and without .NS suffix
+    query_symbols = [symbol]
+    if not symbol.endswith(".NS") and "/" not in symbol and not symbol.endswith("USDT"):
+        query_symbols.append(f"{symbol}.NS")
+    elif symbol.endswith(".NS"):
+        query_symbols.append(symbol.replace(".NS", ""))
+
+    # Gather context: latest market data (ORM query)
+    market_result = await db.execute(
+        select(MarketData.close, MarketData.high, MarketData.low, MarketData.volume, MarketData.timestamp)
+        .where(MarketData.symbol.in_(query_symbols))
+        .order_by(MarketData.timestamp.desc())
+        .limit(1)
     )
-    md = market_row.fetchone()
+    md = market_result.first()
     market_data = (
-        f"Price: {md[0]}, High: {md[1]}, Low: {md[2]}, Volume: {md[3]}, As of: {md[4]}"
+        f"Price: {md.close}, High: {md.high}, Low: {md.low}, Volume: {md.volume}, As of: {md.timestamp}"
         if md
         else "No recent market data available."
     )
 
-    # Gather context: active signals
-    sig_rows = await db.execute(
-        text(
-            "SELECT signal_type, confidence, current_price, target_price, stop_loss "
-            "FROM signals WHERE symbol = :sym AND is_active = true "
-            "ORDER BY created_at DESC LIMIT 3"
-        ),
-        {"sym": symbol},
+    # Gather context: active signals (ORM query)
+    sig_result = await db.execute(
+        select(Signal.signal_type, Signal.confidence, Signal.current_price, Signal.target_price, Signal.stop_loss)
+        .where(Signal.symbol.in_(query_symbols), Signal.is_active.is_(True))
+        .order_by(Signal.created_at.desc())
+        .limit(3)
     )
-    sigs = sig_rows.fetchall()
+    sigs = sig_result.all()
     if sigs:
         sig_lines = [
-            f"{r[0]} ({r[1]}%) — Price: {r[2]}, Target: {r[3]}, Stop: {r[4]}"
+            f"{r.signal_type} ({r.confidence}%) — Price: {r.current_price}, Target: {r.target_price}, Stop: {r.stop_loss}"
             for r in sigs
         ]
         signals_info = "\n".join(sig_lines)

@@ -15,6 +15,7 @@ interface SignalApiResponse {
  */
 export function useSignals(params?: URLSearchParams) {
   const { setSignals, setLoading, setError } = useSignalStore();
+  const paramsString = params?.toString() ?? '';
 
   const fetchSignals = useCallback(async () => {
     try {
@@ -24,7 +25,8 @@ export function useSignals(params?: URLSearchParams) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch signals');
     }
-  }, [params, setSignals, setLoading, setError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramsString, setSignals, setLoading, setError]);
 
   useEffect(() => {
     fetchSignals();

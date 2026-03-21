@@ -14,7 +14,6 @@ import { TargetProgressBar } from '@/components/signals/TargetProgressBar';
 import { RiskCalculator } from '@/components/signals/RiskCalculator';
 import { ShareButton } from '@/components/signals/ShareButton';
 import { Sparkline } from '@/components/markets/Sparkline';
-import { IndicatorPill } from '@/components/shared/IndicatorPill';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 interface SignalDetailResponse {
@@ -179,6 +178,7 @@ export default function SignalDetailPage() {
               height={100}
               target={parseFloat(signal.target_price)}
               stopLoss={parseFloat(signal.stop_loss)}
+              responsive
             />
           </div>
         )}
@@ -202,12 +202,6 @@ export default function SignalDetailPage() {
             {sma?.signal != null && (
               <IndicatorDetail label="SMA Cross" value={sma.signal === 'buy' ? 'Golden Cross' : sma.signal === 'sell' ? 'Death Cross' : 'No Cross'} signal={sma.signal as string} />
             )}
-          </div>
-          {/* Compact pill row for any extras */}
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {rsi?.value != null && <IndicatorPill label="RSI" value={String(rsi.value)} signal={rsi.signal as 'buy' | 'sell' | 'neutral'} />}
-            {macd?.signal != null && <IndicatorPill label="MACD" value={macd.signal === 'buy' ? 'Bullish' : macd.signal === 'sell' ? 'Bearish' : 'Neutral'} signal={macd.signal as 'buy' | 'sell' | 'neutral'} />}
-            {volume?.ratio != null && <IndicatorPill label="Vol" value={`${volume.ratio}x`} signal={volume.signal as 'buy' | 'sell' | 'neutral'} />}
           </div>
         </div>
 

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { api } from '@/lib/api';
 import type { BacktestRun } from '@/lib/types';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+
+const EXAMPLE_SYMBOLS = ['HDFCBANK.NS', 'RELIANCE.NS', 'TCS.NS', 'BTCUSDT', 'ETHUSDT', 'EUR/USD', 'GBP/JPY'];
 
 export default function BacktestPage() {
   const { toast } = useToast();
@@ -13,6 +15,14 @@ export default function BacktestPage() {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<BacktestRun | null>(null);
   const [polling, setPolling] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   async function startBacktest() {
     if (!symbol.trim()) return;
@@ -30,12 +40,13 @@ export default function BacktestPage() {
 
       // Poll for completion
       let attempts = 0;
-      const interval = setInterval(async () => {
+      intervalRef.current = setInterval(async () => {
         attempts++;
         try {
           const check = (await api.getBacktest(backtestId)) as { data: BacktestRun };
           if (check.data.status === 'completed' || check.data.status === 'failed') {
-            clearInterval(interval);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            intervalRef.current = null;
             setResult(check.data);
             setPolling(false);
             setRunning(false);
@@ -49,7 +60,8 @@ export default function BacktestPage() {
           // Keep polling
         }
         if (attempts > 60) {
-          clearInterval(interval);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = null;
           setPolling(false);
           setRunning(false);
           toast('Backtest timeout — check back later', 'error');
@@ -85,6 +97,11 @@ export default function BacktestPage() {
                 placeholder="e.g. HDFCBANK.NS"
                 className="w-full bg-bg-secondary border border-border-default rounded-lg px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
               />
+              {symbol.trim() && !EXAMPLE_SYMBOLS.some((s) => s.toLowerCase().includes(symbol.trim().toLowerCase())) && (
+                <p className="text-[10px] text-signal-hold mt-1">
+                  Tip: Try {EXAMPLE_SYMBOLS.slice(0, 3).join(', ')} or other tracked symbols
+                </p>
+              )}
             </div>
             <div>
               <label className="text-xs text-text-muted uppercase block mb-1.5">Period</label>

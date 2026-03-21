@@ -70,7 +70,8 @@ export default function AlertsPage() {
       }
     }
     loadAll();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId]);
 
   // ── Alert Config Actions ──
   async function saveConfig() {

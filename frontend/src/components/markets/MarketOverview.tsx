@@ -68,7 +68,7 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
 
   return (
     <div className="bg-bg-secondary/60 border-b border-border-default px-4 py-2">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-0">
         <div className="flex items-center gap-2 shrink-0">
           {/* Connection status dot */}
           <div className="flex items-center gap-1" title={statusStyle.label}>
@@ -88,7 +88,7 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
             <span>Loading markets...</span>
           </div>
         ) : (
-          <div className="flex items-center gap-6 overflow-x-auto scrollbar-none">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-6 overflow-x-auto scrollbar-none">
             {topStocks.length > 0 && (
               <MarketSection label={MARKET_LABELS.stock} marketType="stock" snapshots={topStocks} />
             )}
