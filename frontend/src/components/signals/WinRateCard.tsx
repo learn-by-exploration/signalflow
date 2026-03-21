@@ -7,14 +7,16 @@ import type { SignalStats } from '@/lib/types';
 export function WinRateCard() {
   const [stats, setStats] = useState<SignalStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchStats() {
       try {
         const res = await api.getSignalStats() as SignalStats;
         setStats(res);
+        setError(null);
       } catch {
-        // Non-critical — silently fail
+        setError('Failed to load signal stats');
       } finally {
         setIsLoading(false);
       }
@@ -34,6 +36,20 @@ export function WinRateCard() {
   }
 
   if (!stats || stats.total_signals === 0) {
+    if (error) {
+      return (
+        <div className="bg-bg-card border border-signal-hold/30 rounded-xl p-4">
+          <h3 className="text-sm font-display font-medium text-text-muted mb-1">Signal Performance</h3>
+          <p className="text-xs text-signal-hold mb-2">⚠️ Couldn&apos;t load stats</p>
+          <button
+            onClick={() => { setIsLoading(true); setError(null); api.getSignalStats().then((res) => { setStats(res as SignalStats); setError(null); }).catch(() => setError('Failed to load signal stats')).finally(() => setIsLoading(false)); }}
+            className="text-xs text-accent-purple hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="bg-bg-card border border-border-default rounded-xl p-4">
         <h3 className="text-sm font-display font-medium text-text-muted mb-1">Signal Performance</h3>

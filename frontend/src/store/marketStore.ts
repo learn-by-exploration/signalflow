@@ -13,10 +13,12 @@ interface MarketState {
   isLoading: boolean;
   lastUpdated: string | null;
   wsStatus: ConnectionStatus;
+  fetchError: string | null;
   setMarkets: (data: { stocks: MarketSnapshot[]; crypto: MarketSnapshot[]; forex: MarketSnapshot[] }) => void;
   updatePrice: (snapshot: MarketSnapshot) => void;
   setLoading: (loading: boolean) => void;
   setWsStatus: (status: ConnectionStatus) => void;
+  setFetchError: (error: string | null) => void;
 }
 
 export const useMarketStore = create<MarketState>((set) => ({
@@ -26,7 +28,8 @@ export const useMarketStore = create<MarketState>((set) => ({
   isLoading: false,
   lastUpdated: null,
   wsStatus: 'disconnected' as ConnectionStatus,
-  setMarkets: (data) => set({ ...data, isLoading: false, lastUpdated: new Date().toISOString() }),
+  fetchError: null,
+  setMarkets: (data) => set({ ...data, isLoading: false, lastUpdated: new Date().toISOString(), fetchError: null }),
   updatePrice: (snapshot) =>
     set((state) => {
       const key = snapshot.market_type === 'stock' ? 'stocks' : snapshot.market_type;
@@ -41,4 +44,5 @@ export const useMarketStore = create<MarketState>((set) => ({
     }),
   setLoading: (isLoading) => set({ isLoading }),
   setWsStatus: (wsStatus) => set({ wsStatus }),
+  setFetchError: (fetchError) => set({ fetchError }),
 }));

@@ -29,7 +29,7 @@ export default function Dashboard() {
       <ChatIdPrompt />
 
       {/* Market Overview Bar */}
-      <ErrorBoundary>
+      <ErrorBoundary name="Market Overview">
         <MarketOverview stocks={stocks} crypto={crypto} forex={forex} isLoading={marketsLoading} lastUpdated={lastUpdated} />
       </ErrorBoundary>
 
@@ -38,20 +38,20 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Signal Feed */}
           <div className="lg:col-span-2">
-            <ErrorBoundary>
+            <ErrorBoundary name="Signal Feed">
               <SignalFeed signals={signals} isLoading={isLoading} error={error} />
             </ErrorBoundary>
           </div>
 
           {/* Alert Timeline */}
           <div className="space-y-6">
-            <ErrorBoundary>
+            <ErrorBoundary name="Signal Performance">
               <WinRateCard />
             </ErrorBoundary>
-            <ErrorBoundary>
+            <ErrorBoundary name="Ask AI">
               <AskAI />
             </ErrorBoundary>
-            <ErrorBoundary>
+            <ErrorBoundary name="Alert Timeline">
               <AlertTimeline signals={signals} />
             </ErrorBoundary>
           </div>

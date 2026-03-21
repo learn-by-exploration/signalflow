@@ -38,6 +38,7 @@ function MarketTicker({ snapshot }: { snapshot: MarketSnapshot }) {
 
 export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }: MarketOverviewProps) {
   const wsStatus = useMarketStore((s) => s.wsStatus);
+  const fetchError = useMarketStore((s) => s.fetchError);
   const statusStyle = STATUS_STYLES[wsStatus];
 
   // Detect stale data (>5 minutes old)
@@ -100,6 +101,11 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
           </div>
         )}
       </div>
+      {fetchError && (
+        <div className="max-w-7xl mx-auto px-4 py-1">
+          <p className="text-[10px] text-signal-hold">⚠️ {fetchError}</p>
+        </div>
+      )}
     </div>
   );
 }

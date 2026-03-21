@@ -28,6 +28,16 @@ export function SignalCard({ signal }: SignalCardProps) {
   const recentCloses = (signal.technical_data?.recent_closes ?? []) as number[];
   const isBuyish = signal.signal_type.includes('BUY');
 
+  // Sentiment from AI engine
+  const sentimentData = signal.sentiment_data as Record<string, unknown> | null;
+  const marketImpact = sentimentData?.market_impact as string | undefined;
+  const sentimentScore = sentimentData?.sentiment_score as number | undefined;
+  const sentimentLabel = marketImpact
+    ? `${marketImpact === 'positive' ? 'Bullish' : marketImpact === 'negative' ? 'Bearish' : 'Neutral'}${sentimentScore != null ? ` (${sentimentScore})` : ''}`
+    : null;
+  const sentimentSignal: 'buy' | 'sell' | 'neutral' =
+    marketImpact === 'positive' ? 'buy' : marketImpact === 'negative' ? 'sell' : 'neutral';
+
   // Expiry countdown
   const expiresAt = signal.expires_at ? new Date(signal.expires_at).getTime() : null;
   const timeRemaining = expiresAt ? expiresAt - Date.now() : null;
@@ -97,8 +107,8 @@ export function SignalCard({ signal }: SignalCardProps) {
       {/* Target progress bar */}
       <TargetProgressBar signal={signal} />
 
-      {/* Technical indicators (collapsed) */}
-      {(rsi || macd || volume) && (
+      {/* Technical indicators + sentiment (collapsed) */}
+      {(rsi || macd || volume || sentimentLabel) && (
         <div className="flex flex-wrap gap-1.5 mt-2">
           {rsi?.value != null && (
             <IndicatorPill
@@ -119,6 +129,13 @@ export function SignalCard({ signal }: SignalCardProps) {
               label="Vol"
               value={`${volume.ratio}x`}
               signal={volume.signal as 'buy' | 'sell' | 'neutral'}
+            />
+          )}
+          {sentimentLabel && (
+            <IndicatorPill
+              label="Sentiment"
+              value={sentimentLabel}
+              signal={sentimentSignal}
             />
           )}
         </div>

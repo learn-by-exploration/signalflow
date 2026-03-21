@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import { useMarketStore } from '@/store/marketStore';
 import type { MarketSnapshot } from '@/lib/types';
@@ -17,18 +17,23 @@ interface MarketApiResponse {
  * Hook that fetches market overview data and polls every 30 seconds.
  */
 export function useMarketData() {
-  const { setMarkets, setLoading } = useMarketStore();
+  const { setMarkets, setLoading, setFetchError } = useMarketStore();
+  const failureCount = useRef(0);
 
   const fetchMarkets = useCallback(async () => {
     try {
       setLoading(true);
       const res = (await api.getMarketOverview()) as MarketApiResponse;
       setMarkets(res.data);
+      failureCount.current = 0;
     } catch {
-      // Market data is non-critical — fail silently, retry on next poll
+      failureCount.current += 1;
       setLoading(false);
+      if (failureCount.current >= 3) {
+        setFetchError('Having trouble reaching the server. Data shown may not be current.');
+      }
     }
-  }, [setMarkets, setLoading]);
+  }, [setMarkets, setLoading, setFetchError]);
 
   useEffect(() => {
     fetchMarkets();
