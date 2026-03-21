@@ -1,6 +1,7 @@
 'use client';
 
 import { MarketOverview } from '@/components/markets/MarketOverview';
+import { MarketHeatmap } from '@/components/markets/MarketHeatmap';
 import { SignalFeed } from '@/components/signals/SignalFeed';
 import { WinRateCard } from '@/components/signals/WinRateCard';
 import { AskAI } from '@/components/signals/AskAI';
@@ -47,6 +48,9 @@ export default function Dashboard() {
           <div className="space-y-6">
             <ErrorBoundary name="Signal Performance">
               <WinRateCard />
+            </ErrorBoundary>
+            <ErrorBoundary name="Market Heatmap">
+              <MarketHeatmap />
             </ErrorBoundary>
             <ErrorBoundary name="Ask AI">
               <AskAI />

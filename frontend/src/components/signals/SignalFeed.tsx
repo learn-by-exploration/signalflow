@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useRef, useCallback } from 'react';
 import type { Signal, MarketType } from '@/lib/types';
+import { useSignalStore } from '@/store/signalStore';
+import { api } from '@/lib/api';
 import { SignalCard } from './SignalCard';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { KeyboardHelpModal } from '@/components/shared/KeyboardHelpModal';
@@ -34,7 +36,11 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const total = useSignalStore((s) => s.total);
+  const appendSignals = useSignalStore((s) => s.appendSignals);
+  const hasMore = total != null && signals.length < total;
 
   const handleFilterChange = useCallback((f: 'all' | 'stock' | 'crypto' | 'forex') => {
     setFilter(f);
@@ -48,6 +54,18 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
     onFilterChange: handleFilterChange,
     onFocusSearch: handleFocusSearch,
   });
+
+  const handleLoadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      const res = await api.getSignals(new URLSearchParams({ offset: String(signals.length), limit: '20' })) as { data: Signal[]; meta: { total?: number } };
+      appendSignals(res.data, res.meta.total);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [signals.length, appendSignals]);
 
   const filtered = useMemo(() => {
     let result = signals;
@@ -177,6 +195,24 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
           {filtered.map((signal) => (
             <SignalCard key={signal.id} signal={signal} />
           ))}
+        </div>
+      )}
+
+      {/* Pagination info + Load More */}
+      {!isLoading && total != null && total > 0 && (
+        <div className="text-center space-y-2 pt-2">
+          <p className="text-xs text-text-muted">
+            Showing {signals.length} of {total} signals
+          </p>
+          {hasMore && (
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="px-4 py-2 text-sm rounded-lg border border-accent-purple/50 text-accent-purple hover:bg-accent-purple/10 transition-colors disabled:opacity-50"
+            >
+              {loadingMore ? 'Loading...' : 'Load More'}
+            </button>
+          )}
         </div>
       )}
 

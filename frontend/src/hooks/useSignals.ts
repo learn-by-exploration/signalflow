@@ -7,7 +7,7 @@ import type { Signal } from '@/lib/types';
 
 interface SignalApiResponse {
   data: Signal[];
-  meta: { timestamp: string; count: number };
+  meta: { timestamp: string; count: number; total?: number };
 }
 
 /**
@@ -20,7 +20,7 @@ export function useSignals(params?: URLSearchParams) {
     try {
       setLoading(true);
       const res = (await api.getSignals(params)) as SignalApiResponse;
-      setSignals(res.data);
+      setSignals(res.data, res.meta.total);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch signals');
     }
