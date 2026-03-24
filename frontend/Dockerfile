@@ -11,6 +11,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build-time environment variables (NEXT_PUBLIC_* are inlined during build)
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+ARG NEXT_PUBLIC_WS_URL=ws://localhost:8000
+ARG NEXT_PUBLIC_SHOW_DEMO=false
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
+ENV NEXT_PUBLIC_SHOW_DEMO=$NEXT_PUBLIC_SHOW_DEMO
+
 RUN npm run build
 
 # ── Stage 3: Production ──

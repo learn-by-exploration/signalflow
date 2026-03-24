@@ -138,7 +138,8 @@ function SignInForm() {
           </button>
         </form>
 
-        {/* Demo access */}
+        {/* Demo access — only shown when NEXT_PUBLIC_SHOW_DEMO=true */}
+        {process.env.NEXT_PUBLIC_SHOW_DEMO === 'true' && (
         <div className="bg-bg-card border border-border-default rounded-lg p-3 text-center space-y-2">
           <p className="text-xs text-text-muted">Want to try it out first?</p>
           <button
@@ -149,6 +150,7 @@ function SignInForm() {
           </button>
           <p className="text-[10px] text-text-muted font-mono">demo@signalflow.ai / demo123</p>
         </div>
+        )}
 
         {/* Consent checkbox */}
         <label className="flex items-start gap-3 cursor-pointer">

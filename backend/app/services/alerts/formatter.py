@@ -260,7 +260,6 @@ def format_tutorial() -> str:
         "⚠️ Remember: This is AI-generated analysis, not financial advice. "
         "Always do your own research and consult a qualified advisor."
     )
-    )
 
 
 def format_price_alert_created(symbol: str, condition: str, threshold: str) -> str:

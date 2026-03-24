@@ -9,8 +9,11 @@ services:
     command: >
       bash -c "PYTHONPATH=/app alembic upgrade head &&
                exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-2}"
+    ports: []  # Fronted by reverse proxy in production
+    user: appuser  # Override dev root user
     environment:
       ENVIRONMENT: production
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
     restart: always
 
   celery:
@@ -19,9 +22,11 @@ services:
       dockerfile: Dockerfile
     command: >
       celery -A app.tasks.celery_app worker --beat --loglevel=info --concurrency=2
+    user: appuser  # Override dev root user
     environment:
       ENVIRONMENT: production
       PYTHONPATH: /app
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
     restart: always
 
   frontend:
@@ -29,10 +34,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     command: ["node", "server.js"]
+    environment:
+      NEXT_PUBLIC_SHOW_DEMO: "false"
     restart: always
 
   db:
+    ports: []  # No external access in production
     restart: always
 
   redis:
+    ports: []  # No external access in production
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
     restart: always

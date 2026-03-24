@@ -19,6 +19,12 @@ ENV PYTHONPATH=/app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Ensure app files are owned by non-root user
+RUN chown -R appuser:appgroup /app
+
+# Run as non-root user
+USER appuser
+
 EXPOSE 8000
 
 # Run migrations then start with appropriate worker count

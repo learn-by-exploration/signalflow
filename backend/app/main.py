@@ -49,6 +49,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     _startup_time = datetime.now(timezone.utc)
     logger.info("signalflow_starting", environment=settings.environment)
 
+    # Validate required configuration
+    if not settings.database_url:
+        raise RuntimeError("DATABASE_URL environment variable is required")
+
     # Sentry init (if DSN provided)
     if settings.sentry_dsn:
         import sentry_sdk

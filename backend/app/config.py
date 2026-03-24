@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
 
     # ── Database ──
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/signalflow"
-    database_url_sync: str = "postgresql://postgres:postgres@localhost:5432/signalflow"
+    database_url: str = ""
+    database_url_sync: str = ""
 
     # ── Redis ──
     redis_url: str = "redis://localhost:6379/0"
