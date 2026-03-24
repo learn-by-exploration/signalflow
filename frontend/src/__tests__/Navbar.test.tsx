@@ -15,18 +15,26 @@ vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
 }));
 
-// Mock next-auth/react
+// Mock next-auth/react — default to authenticated
+let mockSession: { data: unknown; status: string } = {
+  data: { user: { name: 'Test', email: 'test@example.com' } },
+  status: 'authenticated',
+};
 vi.mock('next-auth/react', () => ({
-  useSession: () => ({ data: null, status: 'unauthenticated' }),
+  useSession: () => mockSession,
   signOut: vi.fn(),
 }));
 
 beforeEach(() => {
   mockPathname = '/';
+  mockSession = {
+    data: { user: { name: 'Test', email: 'test@example.com' } },
+    status: 'authenticated',
+  };
   useSignalStore.setState({ unseenCount: 0 });
 });
 
-describe('Navbar', () => {
+describe('Navbar (authenticated)', () => {
   it('renders the SignalFlow logo', () => {
     render(<Navbar />);
     expect(screen.getByText('SignalFlow')).toBeInTheDocument();
@@ -51,7 +59,6 @@ describe('Navbar', () => {
     mockPathname = '/';
     useSignalStore.setState({ unseenCount: 5 });
     render(<Navbar />);
-    // Badge should not show when Dashboard is active
     expect(screen.queryByText('5')).not.toBeInTheDocument();
   });
 
@@ -93,8 +100,41 @@ describe('Navbar', () => {
   it('shows mobile menu when hamburger is clicked', () => {
     render(<Navbar />);
     fireEvent.click(screen.getByLabelText('Toggle menu'));
-    // Mobile menu includes all links
     const portfolioLinks = screen.getAllByText('Portfolio');
     expect(portfolioLinks.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('Navbar (unauthenticated)', () => {
+  beforeEach(() => {
+    mockSession = { data: null, status: 'unauthenticated' };
+  });
+
+  it('shows only public links for visitors', () => {
+    render(<Navbar />);
+    expect(screen.getByText('How It Works')).toBeInTheDocument();
+    expect(screen.getByText('Pricing')).toBeInTheDocument();
+    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
+    expect(screen.queryByText('Track Record')).not.toBeInTheDocument();
+    expect(screen.queryByText('More')).not.toBeInTheDocument();
+  });
+
+  it('shows Sign In button for visitors', () => {
+    render(<Navbar />);
+    const signInLink = screen.getByText('Sign In');
+    expect(signInLink.closest('a')).toHaveAttribute('href', '/auth/signin');
+  });
+
+  it('does not show Settings for visitors', () => {
+    render(<Navbar />);
+    expect(screen.queryByLabelText('Settings')).not.toBeInTheDocument();
+  });
+
+  it('mobile menu shows public links and Sign In for visitors', () => {
+    render(<Navbar />);
+    fireEvent.click(screen.getByLabelText('Toggle menu'));
+    const signInLinks = screen.getAllByText('Sign In');
+    expect(signInLinks.length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('Portfolio')).not.toBeInTheDocument();
   });
 });

@@ -1,73 +1,50 @@
 'use client';
 
-import { MarketOverview } from '@/components/markets/MarketOverview';
-import { SignalFeed } from '@/components/signals/SignalFeed';
-import { WinRateCard } from '@/components/signals/WinRateCard';
-import { useSignalStore } from '@/store/signalStore';
-import { useMarketStore } from '@/store/marketStore';
-import { useSignals } from '@/hooks/useSignals';
-import { useMarketData } from '@/hooks/useMarketData';
-import { useWebSocket } from '@/hooks/useWebSocket';
-import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
-import { WelcomeModal } from '@/components/shared/WelcomeModal';
-import { GuidedTour } from '@/components/shared/GuidedTour';
-import { AskAI } from '@/components/signals/AskAI';
-import { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import dynamic from 'next/dynamic';
+import { LandingPage } from '@/components/landing/LandingPage';
 
-export default function Dashboard() {
-  const { signals, isLoading, error } = useSignalStore();
-  const { stocks, crypto, forex, isLoading: marketsLoading, lastUpdated } = useMarketStore();
-  const resetUnseen = useSignalStore((s) => s.resetUnseen);
-
-  // Fetch initial data via REST, subscribe to real-time via WebSocket
-  useSignals();
-  useMarketData();
-  useWebSocket();
-
-  // Reset notification badge when dashboard is viewed
-  useEffect(() => { resetUnseen(); }, [resetUnseen]);
-
+function DashboardSkeleton() {
   return (
     <main className="min-h-screen pb-8">
-      <WelcomeModal />
-      <GuidedTour />
-
-      {/* Market Overview Bar */}
-      <div data-tour="market-overview">
-        <ErrorBoundary name="Market Overview">
-          <MarketOverview stocks={stocks} crypto={crypto} forex={forex} isLoading={marketsLoading} lastUpdated={lastUpdated} />
-        </ErrorBoundary>
+      {/* Market overview skeleton */}
+      <div className="border-b border-border-default bg-bg-secondary/50">
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 rounded-lg bg-bg-card animate-pulse" />
+            ))}
+          </div>
+        </div>
       </div>
-
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Performance Summary (compact inline bar) */}
-        <div data-tour="win-rate">
-          <ErrorBoundary name="Signal Performance">
-            <WinRateCard />
-          </ErrorBoundary>
-        </div>
-
-        {/* Signal Feed (full width) */}
-        <div className="mt-6" data-tour="signal-feed">
-          <ErrorBoundary name="Signal Feed">
-            <SignalFeed signals={signals} isLoading={isLoading} error={error} />
-          </ErrorBoundary>
-        </div>
-
-        {/* Ask AI */}
-        <div className="mt-6">
-          <ErrorBoundary name="Ask AI">
-            <AskAI />
-          </ErrorBoundary>
-        </div>
-
-        {/* Inline disclaimer */}
-        <div className="mt-8 text-center text-xs text-text-muted py-4 border-t border-border-default">
-          <span className="text-signal-hold/60">This is AI-generated analysis, not financial advice.</span>
-          {' '}Always do your own research before making investment decisions.
+      {/* Content skeleton */}
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+        <div className="h-24 rounded-xl bg-bg-card animate-pulse" />
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 rounded-xl bg-bg-card animate-pulse" />
+          ))}
         </div>
       </div>
     </main>
   );
+}
+
+const DashboardContent = dynamic(
+  () => import('@/components/dashboard/DashboardContent'),
+  { ssr: false, loading: () => <DashboardSkeleton /> }
+);
+
+export default function HomePage() {
+  const { status } = useSession();
+
+  if (status === 'loading') {
+    return <DashboardSkeleton />;
+  }
+
+  if (status === 'authenticated') {
+    return <DashboardContent />;
+  }
+
+  return <LandingPage />;
 }

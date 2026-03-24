@@ -6,9 +6,11 @@ export const config = {
      * Protected routes — require sign-in.
      *
      * Public routes (no auth required):
-     * - /auth/*, /shared/*, /how-it-works, /privacy, /terms, /contact, /track-record
+     * - / (landing page handles auth client-side)
+     * - /auth/*, /shared/*, /how-it-works, /privacy, /terms, /contact,
+     *   /pricing, /refund-policy
      */
-    '/',
+    '/track-record/:path*',
     '/history/:path*',
     '/watchlist/:path*',
     '/calendar/:path*',
@@ -17,5 +19,6 @@ export const config = {
     '/backtest/:path*',
     '/brief/:path*',
     '/settings/:path*',
+    '/signal/:path*',
   ],
 };

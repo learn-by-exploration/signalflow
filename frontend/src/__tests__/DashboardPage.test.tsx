@@ -68,44 +68,44 @@ beforeEach(() => {
 
 describe('Dashboard Page', () => {
   it('renders market overview section', async () => {
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByTestId('market-overview')).toBeInTheDocument();
   });
 
   it('renders win rate card', async () => {
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByTestId('win-rate')).toBeInTheDocument();
   });
 
   it('renders signal feed', async () => {
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByTestId('signal-feed')).toBeInTheDocument();
   });
 
   it('renders Ask AI section', async () => {
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByTestId('ask-ai')).toBeInTheDocument();
   });
 
   it('renders welcome modal', async () => {
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByTestId('welcome-modal')).toBeInTheDocument();
   });
 
   it('renders guided tour', async () => {
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByTestId('guided-tour')).toBeInTheDocument();
   });
 
   it('shows inline disclaimer', async () => {
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByText(/AI-generated analysis, not financial advice/)).toBeInTheDocument();
   });
 
@@ -115,36 +115,35 @@ describe('Dashboard Page', () => {
       isLoading: false,
       error: null,
     });
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByText('2 signals')).toBeInTheDocument();
   });
 
   it('passes loading state to SignalFeed', async () => {
     useSignalStore.setState({ isLoading: true });
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('passes error to SignalFeed', async () => {
     useSignalStore.setState({ error: 'Server down' });
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(screen.getByText('Server down')).toBeInTheDocument();
   });
 
   it('resets unseen count on mount', async () => {
     useSignalStore.setState({ unseenCount: 5 });
-    const { default: Dashboard } = await import('@/app/page');
-    render(<Dashboard />);
-    // After mount, resetUnseen should have been called
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    render(<DashboardContent />);
     expect(useSignalStore.getState().unseenCount).toBe(0);
   });
 
   it('has data-tour attributes for guided tour', async () => {
-    const { default: Dashboard } = await import('@/app/page');
-    const { container } = render(<Dashboard />);
+    const { default: DashboardContent } = await import('@/components/dashboard/DashboardContent');
+    const { container } = render(<DashboardContent />);
     expect(container.querySelector('[data-tour="market-overview"]')).toBeTruthy();
     expect(container.querySelector('[data-tour="win-rate"]')).toBeTruthy();
     expect(container.querySelector('[data-tour="signal-feed"]')).toBeTruthy();
