@@ -91,7 +91,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
       result = result.filter((s) => s.market_type === filter);
     }
     if (timeframeFilter !== 'all') {
-      result = result.filter((s) => classifyTimeframe(s.timeframe) === timeframeFilter);
+      result = result.filter((s) => classifyTimeframe(s.timeframe ?? undefined) === timeframeFilter);
     }
     if (search.trim()) {
       const q = search.trim().toUpperCase();

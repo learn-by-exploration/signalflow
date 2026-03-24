@@ -5,7 +5,7 @@ import { CandlestickChart } from '@/components/charts/CandlestickChart';
 // Mock lightweight-charts since it needs a canvas context
 vi.mock('lightweight-charts', () => ({
   createChart: vi.fn(() => ({
-    addCandlestickSeries: vi.fn(() => ({
+    addSeries: vi.fn(() => ({
       setData: vi.fn(),
       createPriceLine: vi.fn(),
     })),
@@ -13,6 +13,7 @@ vi.mock('lightweight-charts', () => ({
     applyOptions: vi.fn(),
     remove: vi.fn(),
   })),
+  CandlestickSeries: {},
   ColorType: { Solid: 'solid' },
 }));
 

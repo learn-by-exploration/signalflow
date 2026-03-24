@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
           credentials?.email === adminEmail &&
           credentials?.password === adminPassword
         ) {
-          return { id: '1', email: credentials.email, name: 'Admin' };
+          return { id: '1', email: credentials?.email ?? '', name: 'Admin' };
         }
         return null;
       },
