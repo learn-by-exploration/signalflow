@@ -66,7 +66,13 @@ export default function MorningBriefPage() {
       <main className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
           <p className="text-signal-sell">{error}</p>
-          <Link href="/" className="text-accent-purple text-sm hover:underline">← Back to Dashboard</Link>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 text-sm rounded-lg border border-signal-sell/50 text-signal-sell hover:bg-signal-sell/10 transition-colors"
+          >
+            Retry
+          </button>
+          <Link href="/" className="block text-accent-purple text-sm hover:underline">← Back to Dashboard</Link>
         </div>
       </main>
     );

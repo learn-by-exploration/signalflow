@@ -24,6 +24,39 @@ const MORE_LINKS = [
   { href: '/settings', label: 'Settings' },
 ];
 
+// Grouped navigation for mobile drawer
+const MOBILE_NAV_GROUPS = [
+  {
+    title: 'Markets',
+    icon: '📊',
+    links: [
+      { href: '/', label: 'Dashboard' },
+      { href: '/news', label: 'News' },
+      { href: '/calendar', label: 'Calendar' },
+    ],
+  },
+  {
+    title: 'Analysis',
+    icon: '📈',
+    links: [
+      { href: '/track-record', label: 'Track Record' },
+      { href: '/history', label: 'Signal History' },
+      { href: '/backtest', label: 'Backtest' },
+      { href: '/brief', label: 'Daily Brief' },
+    ],
+  },
+  {
+    title: 'Account',
+    icon: '👤',
+    links: [
+      { href: '/portfolio', label: 'Portfolio' },
+      { href: '/alerts', label: 'Alerts' },
+      { href: '/watchlist', label: 'Watchlist' },
+      { href: '/settings', label: 'Settings' },
+    ],
+  },
+];
+
 const PUBLIC_LINKS = [
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/pricing', label: 'Pricing' },
@@ -197,24 +230,68 @@ export function Navbar() {
 
       {/* Mobile dropdown */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border-default bg-bg-secondary">
-          {(isAuth ? [...PRIMARY_LINKS, ...MORE_LINKS] : [...PUBLIC_LINKS, { href: '/auth/signin', label: 'Sign In' }]).map((link) => {
-            const isActive = pathname === link.href;
-            return (
+        <div className="md:hidden border-t border-border-default bg-bg-secondary max-h-[80vh] overflow-y-auto">
+          {isAuth ? (
+            MOBILE_NAV_GROUPS.map((group) => (
+              <div key={group.title}>
+                <p className="px-4 pt-3 pb-1 text-xs text-text-muted uppercase tracking-wider font-display">
+                  {group.icon} {group.title}
+                </p>
+                {group.links.map((link) => {
+                  const isActive = pathname === link.href;
+                  const showBadge = link.href === '/' && unseenCount > 0 && !isActive;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex items-center justify-between px-4 py-3 text-sm border-b border-border-default transition-colors ${
+                        isActive
+                          ? 'text-accent-purple bg-accent-purple/5'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      {link.label}
+                      {showBadge && (
+                        <span className="min-w-[20px] h-5 flex items-center justify-center bg-signal-sell text-white text-xs font-mono font-bold rounded-full px-1">
+                          {unseenCount > 9 ? '9+' : unseenCount}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))
+          ) : (
+            [...PUBLIC_LINKS, { href: '/auth/signin', label: 'Sign In' }].map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`block px-4 py-3 text-sm border-b border-border-default transition-colors ${
+                    isActive
+                      ? 'text-accent-purple bg-accent-purple/5'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.02]'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })
+          )}
+          {isAuth && (
+            <div className="px-4 py-3">
               <Link
-                key={link.href}
-                href={link.href}
+                href="/how-it-works"
                 onClick={() => setMobileOpen(false)}
-                className={`block px-4 py-3 text-sm border-b border-border-default transition-colors ${
-                  isActive
-                    ? 'text-accent-purple bg-accent-purple/5'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.02]'
-                }`}
+                className="text-xs text-text-muted hover:text-text-secondary transition-colors"
               >
-                {link.label}
+                How It Works
               </Link>
-            );
-          })}
+            </div>
+          )}
         </div>
       )}
     </nav>
