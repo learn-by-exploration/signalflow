@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Outfit, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/shared/Navbar';
+import { OfflineBanner } from '@/components/shared/OfflineBanner';
 import { SebiDisclaimer } from '@/components/shared/SebiDisclaimer';
 import { CookieConsent } from '@/components/shared/CookieConsent';
 import { AuthProvider } from '@/components/shared/AuthProvider';
@@ -41,6 +42,7 @@ export default function RootLayout({
           <ThemeProvider>
             <TextSizeProvider />
             <Navbar />
+            <OfflineBanner />
             <main className="flex-1">{children}</main>
             <SebiDisclaimer />
             <CookieConsent />

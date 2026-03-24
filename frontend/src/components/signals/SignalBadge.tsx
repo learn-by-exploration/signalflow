@@ -29,7 +29,7 @@ export function SignalBadge({ signalType }: SignalBadgeProps) {
   return (
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-display font-semibold"
-      style={{ backgroundColor: `${color}20`, color }}
+      style={{ backgroundColor: `${color}38`, color }}
       role="status"
       aria-label={`Analysis: ${label}`}
     >

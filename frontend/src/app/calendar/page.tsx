@@ -263,11 +263,11 @@ export default function EconomicCalendarPage() {
                               <p className="text-sm font-medium">{event.event}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-text-muted font-mono">{event.time} IST</span>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${impact.bg} ${impact.color}`}>
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${impact.bg} ${impact.color}`}>
                                   {impact.dots} {impact.label}
                                 </span>
                                 {event.markets.map((m) => (
-                                  <span key={m} className="text-[10px] text-text-muted bg-bg-secondary px-1.5 py-0.5 rounded">
+                                  <span key={m} className="text-xs text-text-muted bg-bg-secondary px-1.5 py-0.5 rounded">
                                     {m}
                                   </span>
                                 ))}
@@ -278,19 +278,19 @@ export default function EconomicCalendarPage() {
                           <div className="flex items-center gap-4 text-right shrink-0">
                             {event.previous && (
                               <div>
-                                <p className="text-[10px] text-text-muted">Previous</p>
+                                <p className="text-xs text-text-muted">Previous</p>
                                 <p className="text-xs font-mono">{event.previous}</p>
                               </div>
                             )}
                             {event.forecast && (
                               <div>
-                                <p className="text-[10px] text-text-muted">Forecast</p>
+                                <p className="text-xs text-text-muted">Forecast</p>
                                 <p className="text-xs font-mono text-accent-purple">{event.forecast}</p>
                               </div>
                             )}
                             {event.actual && (
                               <div>
-                                <p className="text-[10px] text-text-muted">Actual</p>
+                                <p className="text-xs text-text-muted">Actual</p>
                                 <p className="text-xs font-mono font-bold">{event.actual}</p>
                               </div>
                             )}
@@ -315,7 +315,7 @@ export default function EconomicCalendarPage() {
 
         {/* Info note */}
         <div className="bg-bg-secondary/30 border border-border-default rounded-xl p-4 text-center">
-          <p className="text-[10px] text-text-muted max-w-xl mx-auto leading-relaxed">
+          <p className="text-xs text-text-muted max-w-xl mx-auto leading-relaxed">
             💡 <strong className="text-text-secondary">Trading tip:</strong> Avoid entering new
             positions 30 minutes before high-impact events. Wait for the initial volatility to
             settle before acting on signals. Times shown in IST.

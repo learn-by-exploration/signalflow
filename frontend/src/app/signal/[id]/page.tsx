@@ -17,9 +17,9 @@ import { Sparkline } from '@/components/markets/Sparkline';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { IndicatorTooltip } from '@/components/shared/IndicatorTooltip';
 import { CandlestickChart } from '@/components/charts/CandlestickChart';
-import { ConfidenceBreakdown } from '@/components/signals/ConfidenceBreakdown';
 import { PipCalculator } from '@/components/signals/PipCalculator';
 import { TrailingStopSuggestion } from '@/components/signals/TrailingStopSuggestion';
+import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 
 interface SignalDetailResponse {
   data: Signal;
@@ -36,6 +36,7 @@ export default function SignalDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [chartView, setChartView] = useState<'line' | 'candle'>('candle');
+  const [showAllIndicators, setShowAllIndicators] = useState(false);
 
   // Live price from market store
   const { stocks, crypto, forex } = useMarketStore();
@@ -75,7 +76,13 @@ export default function SignalDetailPage() {
         <div className="text-center space-y-3">
           <p className="text-3xl">🔍</p>
           <p className="text-text-secondary">{error ?? 'Signal not found.'}</p>
-          <Link href="/" className="text-accent-purple text-sm hover:underline">← Back to Dashboard</Link>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 text-sm rounded-lg border border-accent-purple/50 text-accent-purple hover:bg-accent-purple/10 transition-colors"
+          >
+            Retry
+          </button>
+          <Link href="/" className="block text-accent-purple text-sm hover:underline">← Back to Dashboard</Link>
         </div>
       </main>
     );
@@ -151,7 +158,7 @@ export default function SignalDetailPage() {
               <span className="text-base">📊</span>
               <div>
                 <p className="text-xs font-display font-medium text-signal-hold">Earnings Season Active</p>
-                <p className="text-[10px] text-text-muted mt-0.5">
+                <p className="text-xs text-text-muted mt-0.5">
                   Quarterly results may be upcoming for this stock. Signals near earnings dates carry higher uncertainty. Consider waiting for results before acting.
                 </p>
               </div>
@@ -159,22 +166,7 @@ export default function SignalDetailPage() {
           ) : null;
         })()}
 
-        {/* Confidence Breakdown */}
-        <div className="bg-bg-card border border-border-default rounded-xl p-5">
-          <ConfidenceBreakdown
-            technicalScore={(() => {
-              // Extract technical score from technical_data if available
-              const td = signal.technical_data as Record<string, Record<string, unknown>>;
-              const indicators = [td?.rsi, td?.macd, td?.volume, td?.bollinger, td?.sma].filter(Boolean);
-              const buyCount = indicators.filter((i) => i?.signal === 'buy').length;
-              return indicators.length > 0 ? Math.round((buyCount / indicators.length) * 100) : signal.confidence;
-            })()}
-            sentimentScore={sentimentScore ?? Math.round(signal.confidence * 0.8)}
-            signalType={signal.signal_type}
-          />
-        </div>
-
-        {/* Price + Target/Stop */}
+        {/* Price + Target/Stop — Position 2 (most actionable info first) */}
         <div className="bg-bg-card border border-border-default rounded-xl p-5" style={{ borderLeftColor: color, borderLeftWidth: 3 }}>
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -207,6 +199,9 @@ export default function SignalDetailPage() {
           )}
         </div>
 
+        {/* ── Signal Analysis ── */}
+        <h3 className="text-xs text-text-muted uppercase tracking-wider mt-2">Signal Analysis</h3>
+
         {/* Price chart */}
         {recentCloses.length >= 2 && (
           <div className="bg-bg-card border border-border-default rounded-xl p-5">
@@ -215,7 +210,7 @@ export default function SignalDetailPage() {
               <div className="flex gap-1">
                 <button
                   onClick={() => setChartView('candle')}
-                  className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                  className={`px-2 py-1 text-xs rounded border transition-colors ${
                     chartView === 'candle'
                       ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                       : 'border-border-default text-text-muted'
@@ -225,7 +220,7 @@ export default function SignalDetailPage() {
                 </button>
                 <button
                   onClick={() => setChartView('line')}
-                  className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                  className={`px-2 py-1 text-xs rounded border transition-colors ${
                     chartView === 'line'
                       ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                       : 'border-border-default text-text-muted'
@@ -235,7 +230,7 @@ export default function SignalDetailPage() {
                 </button>
               </div>
             </div>
-            <p className="text-[10px] text-text-muted mb-2">
+            <p className="text-xs text-text-muted mb-2">
               <span className="text-signal-buy">green: target</span> · <span className="text-signal-sell">red: stop-loss</span>
             </p>
             {chartView === 'candle' ? (
@@ -275,23 +270,36 @@ export default function SignalDetailPage() {
         {/* Technical Indicators — Full Grid */}
         <div className="bg-bg-card border border-border-default rounded-xl p-5">
           <h2 className="text-sm font-display font-semibold mb-3">Technical Indicators</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {rsi?.value != null && (
-              <IndicatorDetail label="RSI (14)" value={String(rsi.value)} signal={rsi.signal as string} description={Number(rsi.value) > 70 ? 'Overbought' : Number(rsi.value) < 30 ? 'Oversold' : 'Neutral zone'} />
-            )}
-            {macd?.signal != null && (
-              <IndicatorDetail label="MACD" value={macd.signal === 'buy' ? 'Bullish' : macd.signal === 'sell' ? 'Bearish' : 'Neutral'} signal={macd.signal as string} description={macd.histogram ? `Histogram: ${macd.histogram}` : undefined} />
-            )}
-            {volume?.ratio != null && (
-              <IndicatorDetail label="Volume" value={`${volume.ratio}x avg`} signal={volume.signal as string} description={Number(volume.ratio) > 1.5 ? 'High activity' : 'Normal'} />
-            )}
-            {bollinger?.signal != null && (
-              <IndicatorDetail label="Bollinger" value={bollinger.signal === 'buy' ? 'Near Lower' : bollinger.signal === 'sell' ? 'Near Upper' : 'Middle'} signal={bollinger.signal as string} />
-            )}
-            {sma?.signal != null && (
-              <IndicatorDetail label="SMA Cross" value={sma.signal === 'buy' ? 'Golden Cross' : sma.signal === 'sell' ? 'Death Cross' : 'No Cross'} signal={sma.signal as string} />
-            )}
-          </div>
+          {(() => {
+            const indicators = [
+              rsi?.value != null && <IndicatorDetail key="rsi" label="RSI (14)" value={String(rsi.value)} signal={rsi.signal as string} description={Number(rsi.value) > 70 ? 'Overbought' : Number(rsi.value) < 30 ? 'Oversold' : 'Neutral zone'} />,
+              macd?.signal != null && <IndicatorDetail key="macd" label="MACD" value={macd.signal === 'buy' ? 'Bullish' : macd.signal === 'sell' ? 'Bearish' : 'Neutral'} signal={macd.signal as string} description={macd.histogram ? `Histogram: ${macd.histogram}` : undefined} />,
+              volume?.ratio != null && <IndicatorDetail key="vol" label="Volume" value={`${volume.ratio}x avg`} signal={volume.signal as string} description={Number(volume.ratio) > 1.5 ? 'High activity' : 'Normal'} />,
+              bollinger?.signal != null && <IndicatorDetail key="bb" label="Bollinger" value={bollinger.signal === 'buy' ? 'Near Lower' : bollinger.signal === 'sell' ? 'Near Upper' : 'Middle'} signal={bollinger.signal as string} />,
+              sma?.signal != null && <IndicatorDetail key="sma" label="SMA Cross" value={sma.signal === 'buy' ? 'Golden Cross' : sma.signal === 'sell' ? 'Death Cross' : 'No Cross'} signal={sma.signal as string} />,
+            ].filter(Boolean);
+            const visibleOnMobile = showAllIndicators ? indicators : indicators.slice(0, 2);
+            return (
+              <>
+                {/* Mobile: show limited, Desktop: show all */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:hidden">
+                  {visibleOnMobile.map((ind) => ind)}
+                </div>
+                <div className="hidden sm:grid sm:grid-cols-3 gap-3">
+                  {indicators.map((ind) => ind)}
+                </div>
+                {!showAllIndicators && indicators.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllIndicators(true)}
+                    className="mt-2 text-xs text-accent-purple hover:underline sm:hidden"
+                  >
+                    Show all {indicators.length} indicators
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* AI Reasoning — Full */}
@@ -322,20 +330,20 @@ export default function SignalDetailPage() {
               )}
               {/* News sources */}
               {sentimentData?.source_count != null && (
-                <p className="mt-2 text-[10px] text-text-muted">
+                <p className="mt-2 text-xs text-text-muted">
                   Based on {String(sentimentData.source_count)} news article{Number(sentimentData.source_count) !== 1 ? 's' : ''} analyzed
                 </p>
               )}
               {Array.isArray(sentimentData?.sources) && (sentimentData.sources as { title: string; url: string }[]).length > 0 && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-[10px] text-text-muted">Sources:</p>
+                  <p className="text-xs text-text-muted">Sources:</p>
                   {(sentimentData.sources as { title: string; url: string }[]).slice(0, 3).map((src, i) => (
                     <a
                       key={i}
                       href={src.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-[10px] text-accent-purple hover:underline truncate"
+                      className="block text-xs text-accent-purple hover:underline truncate"
                     >
                       {src.title || src.url}
                     </a>
@@ -346,16 +354,12 @@ export default function SignalDetailPage() {
           )}
         </div>
 
+        {/* ── Context & History ── */}
+        <h3 className="text-xs text-text-muted uppercase tracking-wider mt-2">Context & History</h3>
+
         {/* News Context — linked news events that drove this signal */}
         {newsContext.length > 0 && (
-          <div className="bg-bg-card border border-border-default rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-base">📰</span>
-              <h2 className="text-sm font-display font-semibold">News Context</h2>
-              <span className="text-[10px] font-mono text-text-muted">
-                {newsContext.length} article{newsContext.length !== 1 ? 's' : ''}
-              </span>
-            </div>
+          <CollapsibleSection title={`📰 News Context (${newsContext.length})`} storageKey={`news-${signalId}`} defaultOpen={false}>
             <div className="space-y-2">
               {newsContext.map((item) => (
                 <div key={item.id} className="flex items-start gap-2 py-1.5 border-b border-border-default last:border-b-0">
@@ -376,7 +380,7 @@ export default function SignalDetailPage() {
                     ) : (
                       <p className="text-xs text-text-primary leading-snug">{item.headline}</p>
                     )}
-                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-muted">
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-text-muted">
                       {item.source && <span>{item.source}</span>}
                       {item.event_category && (
                         <span className="px-1 py-0.5 rounded bg-accent-purple/10 text-accent-purple">
@@ -391,32 +395,12 @@ export default function SignalDetailPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Risk Calculator */}
-        <div className="bg-bg-card border border-border-default rounded-xl p-5">
-          <RiskCalculator signal={signal} />
-        </div>
-
-        {/* Pip Calculator — Forex only */}
-        {signal.market_type === 'forex' && (
-          <div className="bg-bg-card border border-border-default rounded-xl p-5">
-            <PipCalculator signal={signal} />
-          </div>
-        )}
-
-        {/* Trailing Stop Suggestion */}
-        {(signal.signal_type.includes('BUY') || signal.signal_type.includes('SELL')) && signal.signal_type !== 'HOLD' && (
-          <div className="bg-bg-card border border-border-default rounded-xl p-5">
-            <TrailingStopSuggestion signal={signal} livePrice={livePrice ?? undefined} />
-          </div>
+          </CollapsibleSection>
         )}
 
         {/* Track Record */}
         {trackRecord && trackRecord.total_signals_30d > 0 && (
-          <div className="bg-bg-card border border-border-default rounded-xl p-5">
-            <h2 className="text-sm font-display font-semibold mb-2">📊 Symbol Track Record (30d)</h2>
+          <CollapsibleSection title="📊 Symbol Track Record (30d)" storageKey={`track-${signalId}`} defaultOpen={false}>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 text-center">
               <div>
                 <p className="text-lg font-mono text-text-primary">{trackRecord.total_signals_30d}</p>
@@ -443,7 +427,26 @@ export default function SignalDetailPage() {
                 <p className="text-xs text-text-muted">Avg Return</p>
               </div>
             </div>
-          </div>
+          </CollapsibleSection>
+        )}
+
+        {/* ── Trading Tools ── */}
+        <h3 className="text-xs text-text-muted uppercase tracking-wider mt-2">Trading Tools</h3>
+
+        <CollapsibleSection title="🧮 Risk Calculator" storageKey={`risk-${signalId}`} defaultOpen={false}>
+          <RiskCalculator signal={signal} />
+        </CollapsibleSection>
+
+        {signal.market_type === 'forex' && (
+          <CollapsibleSection title="💱 Pip Calculator" storageKey={`pip-${signalId}`} defaultOpen={false}>
+            <PipCalculator signal={signal} />
+          </CollapsibleSection>
+        )}
+
+        {(signal.signal_type.includes('BUY') || signal.signal_type.includes('SELL')) && signal.signal_type !== 'HOLD' && (
+          <CollapsibleSection title="📏 Trailing Stop Suggestion" storageKey={`trail-${signalId}`} defaultOpen={false}>
+            <TrailingStopSuggestion signal={signal} livePrice={livePrice ?? undefined} />
+          </CollapsibleSection>
         )}
 
         {/* Actions */}
@@ -453,7 +456,7 @@ export default function SignalDetailPage() {
         </div>
 
         {/* Disclaimer */}
-        <p className="text-[10px] text-text-muted text-center">
+        <p className="text-xs text-text-muted text-center">
           This is AI-generated analysis, not financial advice. Always do your own research before trading.
         </p>
       </div>
@@ -471,11 +474,11 @@ function IndicatorDetail({ label, value, signal, description }: {
   const colorClass = signal === 'buy' ? 'text-signal-buy' : signal === 'sell' ? 'text-signal-sell' : 'text-signal-hold';
   return (
     <div className="bg-bg-secondary rounded-lg p-3">
-      <p className="text-[10px] text-text-muted uppercase mb-1">
+      <p className="text-xs text-text-muted uppercase mb-1">
         <IndicatorTooltip term={label}>{label}</IndicatorTooltip>
       </p>
       <p className={`text-sm font-mono font-semibold ${colorClass}`}>{value}</p>
-      {description && <p className="text-[10px] text-text-muted mt-0.5">{description}</p>}
+      {description && <p className="text-xs text-text-muted mt-0.5">{description}</p>}
     </div>
   );
 }

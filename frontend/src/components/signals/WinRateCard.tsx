@@ -52,15 +52,15 @@ export function WinRateCard() {
           <span className={`text-sm font-mono font-bold ${winColor}`}>
             {stats.win_rate.toFixed(1)}%
           </span>
-          <span className="text-[10px] text-text-muted uppercase tracking-wider">Win Rate</span>
+          <span className="text-xs text-text-muted uppercase tracking-wider">Win Rate</span>
         </div>
         <div className="flex items-baseline gap-1.5">
           <span className={`text-sm font-mono font-bold ${returnColor}`}>
             {stats.avg_return_pct >= 0 ? '+' : ''}{stats.avg_return_pct.toFixed(2)}%
           </span>
-          <span className="text-[10px] text-text-muted uppercase tracking-wider">Avg Return</span>
+          <span className="text-xs text-text-muted uppercase tracking-wider">Avg Return</span>
         </div>
-        <a href="/history" className="text-[10px] text-accent-purple hover:underline ml-auto">
+        <a href="/history" className="text-xs text-accent-purple hover:underline ml-auto">
           {stats.total_signals} signals →
         </a>
         {trend.length >= 2 && (

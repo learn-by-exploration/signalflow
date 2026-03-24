@@ -127,7 +127,7 @@ export function GuidedTour() {
       >
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-display font-bold text-accent-purple">{step.title}</h3>
-          <span className="text-[10px] text-text-muted font-mono">
+          <span className="text-xs text-text-muted font-mono">
             {currentStep + 1}/{TOUR_STEPS.length}
           </span>
         </div>

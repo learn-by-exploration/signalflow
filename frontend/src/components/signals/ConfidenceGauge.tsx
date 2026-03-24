@@ -61,7 +61,7 @@ export function ConfidenceGauge({ confidence, signalType, size = 56 }: Confidenc
         />
       </svg>
       <span
-        className="absolute text-[10px] font-mono font-bold"
+        className="absolute text-xs font-mono font-bold"
         style={{ color }}
       >
         {confidence}%

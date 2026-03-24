@@ -57,8 +57,19 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
   const fetchError = useMarketStore((s) => s.fetchError);
   const statusStyle = STATUS_STYLES[wsStatus];
 
-  // Detect stale data (>5 minutes old)
-  const isStale = lastUpdated && (Date.now() - new Date(lastUpdated).getTime()) > 5 * 60 * 1000;
+  // Detect data age
+  const dataAgeMs = lastUpdated ? Date.now() - new Date(lastUpdated).getTime() : null;
+  const isStale = dataAgeMs != null && dataAgeMs > 5 * 60 * 1000;
+  const isWarning = dataAgeMs != null && dataAgeMs > 60 * 1000 && !isStale;
+
+  const ageLabel = (() => {
+    if (!dataAgeMs) return null;
+    const secs = Math.floor(dataAgeMs / 1000);
+    if (secs < 10) return 'just now';
+    if (secs < 60) return `${secs}s ago`;
+    const mins = Math.floor(secs / 60);
+    return `${mins}m ago`;
+  })();
 
   // Show top 3 symbols from each market
   const topStocks = stocks.slice(0, 3);
@@ -76,9 +87,10 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
             <span className={`inline-block w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
           </div>
           {lastUpdated && (
-            <span className={`text-[10px] font-mono ${isStale ? 'text-signal-sell' : 'text-text-muted'}`}>
+            <span className={`text-xs font-mono ${isStale ? 'text-signal-sell' : isWarning ? 'text-signal-hold' : 'text-text-muted'}`}>
               {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              {isStale && ' (stale)'}
+              {ageLabel && ` · ${ageLabel}`}
+              {isStale && ' ⚠'}
             </span>
           )}
         </div>
@@ -103,7 +115,7 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
       </div>
       {fetchError && (
         <div className="max-w-7xl mx-auto px-4 py-1">
-          <p className="text-[10px] text-signal-hold">{fetchError}</p>
+          <p className="text-xs text-signal-hold">{fetchError}</p>
         </div>
       )}
     </div>
@@ -113,7 +125,7 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
 function MarketSection({ label, snapshots }: { label: string; snapshots: MarketSnapshot[] }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="text-[10px] text-text-muted uppercase tracking-wider">{label}</span>
+      <span className="text-xs text-text-muted uppercase tracking-wider">{label}</span>
       {snapshots.map((s) => (
         <MarketTicker key={s.symbol} snapshot={s} />
       ))}

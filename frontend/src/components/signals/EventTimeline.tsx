@@ -91,7 +91,7 @@ export function EventTimeline({ events, links = [], compact = false }: EventTime
                   <h4 className="text-sm font-display font-medium text-text-primary leading-snug">
                     {dirIcon} {event.title}
                   </h4>
-                  <span className="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded bg-accent-purple/10 text-accent-purple">
+                  <span className="shrink-0 text-xs font-mono px-1.5 py-0.5 rounded bg-accent-purple/10 text-accent-purple">
                     {categoryLabel}
                   </span>
                 </div>
@@ -104,7 +104,7 @@ export function EventTimeline({ events, links = [], compact = false }: EventTime
                 )}
 
                 {/* Meta row */}
-                <div className="flex items-center gap-3 text-[10px] text-text-muted">
+                <div className="flex items-center gap-3 text-xs text-text-muted">
                   <span className={dirColor}>
                     Impact {event.impact_magnitude}/5
                   </span>
@@ -121,7 +121,7 @@ export function EventTimeline({ events, links = [], compact = false }: EventTime
                 {!compact && event.affected_symbols.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {event.affected_symbols.map((sym) => (
-                      <span key={sym} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.04] text-text-secondary">
+                      <span key={sym} className="text-xs font-mono px-1.5 py-0.5 rounded bg-white/[0.04] text-text-secondary">
                         {sym}
                       </span>
                     ))}
@@ -135,7 +135,7 @@ export function EventTimeline({ events, links = [], compact = false }: EventTime
                       const targetEvent = events.find((e) => e.id === link.target_event_id);
                       const relLabel = RELATIONSHIP_LABELS[link.relationship_type] ?? link.relationship_type;
                       return (
-                        <div key={link.id} className="flex items-center gap-2 text-[10px]">
+                        <div key={link.id} className="flex items-center gap-2 text-xs">
                           <span className="text-accent-purple">{relLabel}</span>
                           <span className="text-text-secondary truncate">
                             {targetEvent?.title ?? 'Unknown event'}

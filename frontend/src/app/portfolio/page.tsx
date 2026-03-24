@@ -272,12 +272,12 @@ export default function PortfolioPage() {
                       title={`${pos.symbol.replace('.NS', '').replace('USDT', '')} — ${pct.toFixed(1)}% of portfolio`}
                     >
                       {pct > 8 && (
-                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-mono text-text-primary truncate px-1">
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-mono text-text-primary truncate px-1">
                           {pos.symbol.replace('.NS', '').replace('USDT', '')}
                         </span>
                       )}
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10">
-                        <div className="bg-bg-secondary border border-border-default rounded px-2 py-1 text-[10px] text-text-secondary whitespace-nowrap shadow-lg">
+                        <div className="bg-bg-secondary border border-border-default rounded px-2 py-1 text-xs text-text-secondary whitespace-nowrap shadow-lg">
                           <p className="font-mono font-semibold text-text-primary">{pos.symbol.replace('.NS', '').replace('USDT', '')}</p>
                           <p>{pct.toFixed(1)}% · {value.toLocaleString()}</p>
                           <p className={isProfit ? 'text-signal-buy' : 'text-signal-sell'}>{isProfit ? '+' : ''}{pos.pnl_pct}%</p>

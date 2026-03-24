@@ -20,7 +20,7 @@ export function SebiDisclaimer() {
         substantial risk of loss. Always consult a SEBI-registered investment advisor before
         making investment decisions.
       </p>
-      <p className="text-center text-[10px] text-text-muted mt-2">
+      <p className="text-center text-xs text-text-muted mt-2">
         <Link href="/privacy" className="hover:text-text-secondary underline">
           Privacy Policy
         </Link>

@@ -17,8 +17,8 @@ const config: Config = {
         },
         text: {
           primary: '#F9FAFB',
-          secondary: '#9CA3AF',
-          muted: '#6B7280',
+          secondary: '#D1D5DB',
+          muted: '#9CA3AF',
         },
         accent: {
           purple: '#6366F1',
@@ -31,6 +31,12 @@ const config: Config = {
         border: {
           default: 'rgba(255, 255, 255, 0.06)',
           hover: 'rgba(255, 255, 255, 0.12)',
+        },
+        semantic: {
+          success: '#00E676',
+          danger: '#FF5252',
+          warning: '#FFD740',
+          info: '#6366F1',
         },
       },
       fontFamily: {

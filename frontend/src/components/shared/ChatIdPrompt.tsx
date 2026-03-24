@@ -42,11 +42,14 @@ export function ChatIdPrompt() {
         <div>
           <label className="text-xs text-text-muted block mb-1">Telegram Chat ID</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="e.g. 123456789"
-            className="w-full bg-bg-primary border border-border-default rounded-lg px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
+            aria-label="Telegram Chat ID"
+            className="w-full bg-bg-primary border border-border-default rounded-lg px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted"
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           />
         </div>
@@ -67,7 +70,7 @@ export function ChatIdPrompt() {
           </button>
         </div>
 
-        <p className="text-[10px] text-text-muted text-center">
+        <p className="text-xs text-text-muted text-center">
           This is stored locally in your browser. No account or sign-up required.
         </p>
       </div>

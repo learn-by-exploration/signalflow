@@ -11,6 +11,31 @@ vi.mock('@/hooks/useMarketData', () => ({
   useMarketData: vi.fn(),
 }));
 
+vi.mock('@/hooks/useQueries', () => ({
+  useSignalsQuery: () => ({
+    data: { data: useSignalStore.getState().signals, meta: { total: useSignalStore.getState().total } },
+    isLoading: useSignalStore.getState().isLoading,
+    error: useSignalStore.getState().error ? new Error(useSignalStore.getState().error!) : null,
+    dataUpdatedAt: Date.now(),
+  }),
+  useMarketOverviewQuery: () => ({
+    data: {
+      data: {
+        stocks: useMarketStore.getState().stocks,
+        crypto: useMarketStore.getState().crypto,
+        forex: useMarketStore.getState().forex,
+      },
+    },
+    isLoading: useMarketStore.getState().isLoading,
+    error: null,
+    dataUpdatedAt: useMarketStore.getState().lastUpdated ? new Date(useMarketStore.getState().lastUpdated!).getTime() : 0,
+  }),
+  queryKeys: {
+    signals: ['signals'],
+    marketOverview: ['market-overview'],
+  },
+}));
+
 vi.mock('@/hooks/useWebSocket', () => ({
   useWebSocket: vi.fn(),
 }));

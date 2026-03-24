@@ -45,13 +45,13 @@ export function AlertTimeline({ signals }: AlertTimelineProps) {
                     {shortSymbol(signal.symbol)}
                   </span>
                   <span
-                    className="text-[10px] font-mono font-semibold"
+                    className="text-xs font-mono font-semibold"
                     style={{ color }}
                   >
                     {signal.signal_type.replace('_', ' ')}
                   </span>
                 </div>
-                <span className="text-[10px] text-text-muted">{formatTime(signal.created_at)}</span>
+                <span className="text-xs text-text-muted">{formatTime(signal.created_at)}</span>
               </div>
               <div className="flex items-center gap-2 text-xs font-mono text-text-secondary">
                 <span>{formatPrice(signal.current_price, signal.market_type)}</span>

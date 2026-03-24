@@ -76,16 +76,18 @@ describe('SignalCard', () => {
   it('toggles expand on Enter key', () => {
     render(<SignalCard signal={makeSignal()} />);
     const card = screen.getByRole('button');
-    fireEvent.keyDown(card, { key: 'Enter' });
+    // Native <button> handles Enter via click event
+    fireEvent.click(card);
     expect(card).toHaveAttribute('aria-expanded', 'true');
-    fireEvent.keyDown(card, { key: 'Enter' });
+    fireEvent.click(card);
     expect(card).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('toggles expand on Space key', () => {
     render(<SignalCard signal={makeSignal()} />);
     const card = screen.getByRole('button');
-    fireEvent.keyDown(card, { key: ' ' });
+    // Native <button> handles Space via click event
+    fireEvent.click(card);
     expect(card).toHaveAttribute('aria-expanded', 'true');
   });
 

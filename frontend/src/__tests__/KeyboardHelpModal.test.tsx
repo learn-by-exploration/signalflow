@@ -12,6 +12,12 @@ vi.mock('@/hooks/useKeyboardShortcuts', () => ({
 }));
 
 describe('KeyboardHelpModal', () => {
+  beforeEach(() => {
+    // Ensure test environment is detected as non-touch
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: 0, configurable: true });
+    // Remove ontouchstart if set
+    delete (window as Record<string, unknown>).ontouchstart;
+  });
   it('returns null when not open', () => {
     const { container } = render(<KeyboardHelpModal isOpen={false} onClose={vi.fn()} />);
     expect(container.innerHTML).toBe('');

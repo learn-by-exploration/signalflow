@@ -7,6 +7,8 @@ import type { ConnectionStatus } from '@/lib/websocket';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
 import { showSignalNotification } from '@/lib/notifications';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/hooks/useQueries';
 
 const DEFAULT_MARKETS = ['stock', 'crypto', 'forex'];
 
@@ -22,22 +24,32 @@ export function useWebSocket(markets: string[] = DEFAULT_MARKETS) {
   const wsRef = useRef<SignalWebSocket | null>(null);
   const marketsKey = JSON.stringify(markets);
 
+  let queryClient: ReturnType<typeof useQueryClient> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    queryClient = useQueryClient();
+  } catch {
+    // QueryProvider may not be available in all contexts
+  }
+
   const handleMessage = useCallback(
     (msg: WSMessage) => {
       if (msg.type === 'signal' && msg.data) {
         const signal = msg.data as Signal;
         addSignal(signal);
-        // Browser push notification for high-confidence signals
         showSignalNotification(signal);
-        // Increment unseen if not on dashboard
+        // Invalidate React Query signals cache
+        queryClient?.invalidateQueries({ queryKey: queryKeys.signals });
         if (typeof window !== 'undefined' && window.location.pathname !== '/') {
           incrementUnseen();
         }
       } else if (msg.type === 'market_update' && msg.data) {
         updatePrice(msg.data as MarketSnapshot);
+        // Invalidate React Query markets cache
+        queryClient?.invalidateQueries({ queryKey: queryKeys.marketOverview });
       }
     },
-    [addSignal, incrementUnseen, updatePrice],
+    [addSignal, incrementUnseen, updatePrice, queryClient],
   );
 
   const handleStatusChange = useCallback(

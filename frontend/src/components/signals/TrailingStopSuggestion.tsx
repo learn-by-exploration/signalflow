@@ -101,7 +101,7 @@ export function TrailingStopSuggestion({ signal, livePrice }: TrailingStopProps)
         ))}
       </div>
 
-      <p className="text-[10px] text-text-muted">
+      <p className="text-xs text-text-muted">
         Move your stop-loss up as price approaches target to lock in gains.
         {currentLevel.pct > 0 && (
           <span className="text-accent-purple">

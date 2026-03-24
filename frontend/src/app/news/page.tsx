@@ -188,7 +188,7 @@ export default function NewsPage() {
                               {item.headline}
                             </h3>
                           </div>
-                          <div className="flex items-center gap-3 text-[10px] text-text-muted">
+                          <div className="flex items-center gap-3 text-xs text-text-muted">
                             {item.source && <span>{item.source}</span>}
                             <span className="font-mono">{item.symbol}</span>
                             <span>{MARKET_LABELS[item.market_type]}</span>
@@ -203,7 +203,7 @@ export default function NewsPage() {
                           </div>
                         </div>
                         {item.impact_magnitude != null && (
-                          <span className="shrink-0 text-[10px] font-mono text-text-muted">
+                          <span className="shrink-0 text-xs font-mono text-text-muted">
                             Impact {item.impact_magnitude}/5
                           </span>
                         )}
@@ -244,7 +244,7 @@ export default function NewsPage() {
                               <span className="text-sm">{item.is_completed ? '✅' : isPast ? '⏰' : '📅'}</span>
                               <h3 className="text-sm font-display text-text-primary">{item.title}</h3>
                             </div>
-                            <div className="flex items-center gap-3 text-[10px] text-text-muted">
+                            <div className="flex items-center gap-3 text-xs text-text-muted">
                               <span className="px-1.5 py-0.5 rounded bg-accent-purple/10 text-accent-purple">
                                 {item.event_type}
                               </span>
@@ -255,7 +255,7 @@ export default function NewsPage() {
                             {item.affected_symbols.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1.5">
                                 {item.affected_symbols.map((sym) => (
-                                  <span key={sym} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.04] text-text-secondary">
+                                  <span key={sym} className="text-xs font-mono px-1.5 py-0.5 rounded bg-white/[0.04] text-text-secondary">
                                     {sym}
                                   </span>
                                 ))}
