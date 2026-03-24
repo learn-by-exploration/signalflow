@@ -3,12 +3,15 @@ export { default } from 'next-auth/middleware';
 export const config = {
   matcher: [
     /*
-     * Protected routes — require sign-in:
-     * - /portfolio, /alerts, /backtest, /brief
+     * Protected routes — require sign-in.
      *
-     * Public routes (excluded from matcher):
-     * - /, /track-record, /history, /how-it-works, /shared/*, /auth/*
+     * Public routes (no auth required):
+     * - /auth/*, /shared/*, /how-it-works, /privacy, /terms, /contact, /track-record
      */
+    '/',
+    '/history/:path*',
+    '/watchlist/:path*',
+    '/calendar/:path*',
     '/portfolio/:path*',
     '/alerts/:path*',
     '/backtest/:path*',

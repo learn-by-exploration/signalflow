@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
@@ -30,9 +30,29 @@ export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   const unseenCount = useSignalStore((s) => s.unseenCount);
   const { data: session, status } = useSession();
+
+  // Close More dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    if (moreOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [moreOpen]);
+
+  // Close menus on route change
+  useEffect(() => {
+    setMoreOpen(false);
+    setMobileOpen(false);
+  }, [pathname]);
 
   return (
     <nav className="sticky top-0 z-50 bg-bg-secondary/95 backdrop-blur-md border-b border-border-default">
@@ -71,7 +91,7 @@ export function Navbar() {
             })}
 
             {/* More dropdown */}
-            <div className="relative">
+            <div className="relative" ref={moreRef}>
               <button
                 onClick={() => setMoreOpen(!moreOpen)}
                 className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-white/[0.03] rounded-lg transition-colors"
@@ -79,7 +99,10 @@ export function Navbar() {
                 More
               </button>
               {moreOpen && (
-                <div className="absolute right-0 mt-1 bg-bg-secondary border border-border-default rounded-lg shadow-lg py-1 min-w-[160px] z-50">
+                <div
+                  className="absolute right-0 mt-1 bg-bg-secondary border border-border-default rounded-lg shadow-lg py-1 min-w-[160px] z-50"
+                  onMouseLeave={() => setMoreOpen(false)}
+                >
                   {MORE_LINKS.map((link) => (
                     <Link
                       key={link.href}
