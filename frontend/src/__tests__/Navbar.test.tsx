@@ -15,6 +15,12 @@ vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
 }));
 
+// Mock next-auth/react
+vi.mock('next-auth/react', () => ({
+  useSession: () => ({ data: null, status: 'unauthenticated' }),
+  signOut: vi.fn(),
+}));
+
 // Mock SettingsPanel to avoid complexity
 vi.mock('@/components/shared/SettingsPanel', () => ({
   SettingsPanel: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div data-testid="settings-panel">Settings</div> : null,
@@ -40,7 +46,7 @@ describe('Navbar', () => {
   });
 
   it('highlights active page with aria-current', () => {
-    mockPathname = '/history';
+    mockPathname = '/track-record';
     render(<Navbar />);
     const link = screen.getAllByText('Track Record')[0].closest('a');
     expect(link).toHaveAttribute('aria-current', 'page');
@@ -55,14 +61,14 @@ describe('Navbar', () => {
   });
 
   it('shows unseen count badge when Dashboard is not active', () => {
-    mockPathname = '/history';
+    mockPathname = '/track-record';
     useSignalStore.setState({ unseenCount: 5 });
     render(<Navbar />);
     expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('caps unseen badge at 9+', () => {
-    mockPathname = '/history';
+    mockPathname = '/track-record';
     useSignalStore.setState({ unseenCount: 15 });
     render(<Navbar />);
     expect(screen.getByText('9+')).toBeInTheDocument();

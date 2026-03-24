@@ -3,16 +3,18 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { useSignalStore } from '@/store/signalStore';
 import { SettingsPanel } from './SettingsPanel';
 
 const PRIMARY_LINKS = [
   { href: '/', label: 'Dashboard' },
-  { href: '/history', label: 'Track Record' },
+  { href: '/track-record', label: 'Track Record' },
   { href: '/alerts', label: 'Alerts' },
 ];
 
 const MORE_LINKS = [
+  { href: '/history', label: 'Signal History', icon: '📋' },
   { href: '/portfolio', label: 'Portfolio', icon: '💼' },
   { href: '/backtest', label: 'Backtest', icon: '🧪' },
   { href: '/brief', label: 'Daily Brief', icon: '📰' },
@@ -25,6 +27,7 @@ export function Navbar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const unseenCount = useSignalStore((s) => s.unseenCount);
+  const { data: session, status } = useSession();
 
   return (
     <nav className="sticky top-0 z-50 bg-bg-secondary/95 backdrop-blur-md border-b border-border-default">
@@ -91,8 +94,27 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Settings + Mobile hamburger */}
+          {/* Auth + Settings + Mobile hamburger */}
           <div className="flex items-center gap-1">
+            {status === 'authenticated' ? (
+              <button
+                onClick={() => signOut()}
+                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-white/[0.03]"
+                title={session.user?.email ?? undefined}
+              >
+                <span className="w-5 h-5 rounded-full bg-accent-purple/20 text-accent-purple flex items-center justify-center text-[10px] font-bold">
+                  {(session.user?.name?.[0] ?? session.user?.email?.[0] ?? '?').toUpperCase()}
+                </span>
+                <span className="max-w-[80px] truncate">{session.user?.name ?? 'User'}</span>
+              </button>
+            ) : status === 'unauthenticated' ? (
+              <Link
+                href="/auth/signin"
+                className="hidden md:block px-3 py-1.5 text-xs text-accent-purple border border-accent-purple/30 rounded-lg hover:bg-accent-purple/10 transition-colors"
+              >
+                Sign In
+              </Link>
+            ) : null}
             <button
               onClick={() => setSettingsOpen(true)}
               className="p-2 text-text-secondary hover:text-text-primary transition-colors"
