@@ -2,13 +2,14 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
 from app.models.alert_config import AlertConfig
+from app.rate_limit import limiter
 from app.schemas.alert import AlertConfigCreate, AlertConfigData, AlertConfigUpdate, WatchlistUpdate
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -30,7 +31,9 @@ async def get_alert_config(
 
 
 @router.post("/config", response_model=dict, status_code=201)
+@limiter.limit("10/minute")
 async def create_alert_config(
+    request: Request,
     payload: AlertConfigCreate,
     db: AsyncSession = Depends(get_db),
 ) -> dict:

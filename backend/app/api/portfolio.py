@@ -4,13 +4,14 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.market_data import MarketData
 from app.models.trade import Trade
+from app.rate_limit import limiter
 from app.schemas.p3 import PortfolioSummary, TradeCreate, TradeData
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
@@ -34,7 +35,9 @@ async def list_trades(
 
 
 @router.post("/trades", response_model=dict, status_code=201)
+@limiter.limit("30/minute")
 async def log_trade(
+    request: Request,
     payload: TradeCreate,
     db: AsyncSession = Depends(get_db),
 ) -> dict:

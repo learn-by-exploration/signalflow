@@ -2,19 +2,22 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.signal import Signal
 from app.models.signal_share import SignalShare
+from app.rate_limit import limiter
 
 router = APIRouter(prefix="/signals", tags=["sharing"])
 
 
 @router.post("/{signal_id}/share", response_model=dict, status_code=201)
+@limiter.limit("10/minute")
 async def share_signal(
+    request: Request,
     signal_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> dict:

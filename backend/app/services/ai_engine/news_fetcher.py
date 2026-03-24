@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 # Timeout for all HTTP requests
 REQUEST_TIMEOUT = 10.0
+# Maximum response size (5 MB) — prevent DoS from oversized responses
+MAX_RESPONSE_SIZE = 5 * 1024 * 1024
 
 # Market-specific financial RSS feeds
 FINANCIAL_RSS_FEEDS: dict[str, list[str]] = {
@@ -82,6 +84,9 @@ async def fetch_google_news(query: str, max_articles: int = 10) -> list[str]:
                 params={"q": query, "hl": "en-IN", "gl": "IN", "ceid": "IN:en"},
             )
             resp.raise_for_status()
+            if len(resp.content) > MAX_RESPONSE_SIZE:
+                logger.warning("Google News response too large: %d bytes", len(resp.content))
+                return []
             return _parse_rss_titles(resp.text)[:max_articles]
     except Exception:
         logger.debug("Google News RSS failed for query: %s", query)
@@ -105,6 +110,9 @@ async def fetch_bing_news(query: str, max_articles: int = 10) -> list[str]:
                 params={"q": query, "format": "rss"},
             )
             resp.raise_for_status()
+            if len(resp.content) > MAX_RESPONSE_SIZE:
+                logger.warning("Bing News response too large: %d bytes", len(resp.content))
+                return []
             return _parse_rss_titles(resp.text)[:max_articles]
     except Exception:
         logger.debug("Bing News RSS failed for query: %s", query)
@@ -129,6 +137,9 @@ async def fetch_financial_rss(market_type: str, max_articles: int = 5) -> list[s
             try:
                 resp = await client.get(feed_url)
                 resp.raise_for_status()
+                if len(resp.content) > MAX_RESPONSE_SIZE:
+                    logger.warning("RSS feed too large: %s (%d bytes)", feed_url, len(resp.content))
+                    continue
                 articles = _parse_rss_titles(resp.text)
                 all_articles.extend(articles[:max_articles])
             except Exception:
