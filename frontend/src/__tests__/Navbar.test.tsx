@@ -85,8 +85,7 @@ describe('Navbar (authenticated)', () => {
 
   it('renders "More" dropdown with additional links on click', () => {
     render(<Navbar />);
-    fireEvent.click(screen.getByText('More'));
-    expect(screen.getByText('Portfolio')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('More ▾'));
     expect(screen.getByText('Backtest')).toBeInTheDocument();
     expect(screen.getByText('Daily Brief')).toBeInTheDocument();
     expect(screen.getByText('How It Works')).toBeInTheDocument();

@@ -198,11 +198,26 @@ export default function AlertsPage() {
               </div>
             </div>
 
-            {/* Min confidence slider */}
+            {/* Min confidence — preset buttons + slider */}
             <div>
               <label className="text-sm text-text-secondary mb-2 block">
                 Minimum Confidence: <span className="font-mono text-accent-purple">{minConfidence}%</span>
               </label>
+              <div className="flex gap-2 mb-2">
+                {[60, 70, 80, 90].map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => setMinConfidence(preset)}
+                    className={`flex-1 py-1.5 text-xs font-mono rounded-lg border transition-colors ${
+                      minConfidence === preset
+                        ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
+                        : 'border-border-default text-text-muted hover:border-border-hover'
+                    }`}
+                  >
+                    {preset}%
+                  </button>
+                ))}
+              </div>
               <input
                 type="range"
                 min={0}
@@ -210,6 +225,7 @@ export default function AlertsPage() {
                 step={5}
                 value={minConfidence}
                 onChange={(e) => setMinConfidence(Number(e.target.value))}
+                aria-label="Minimum confidence threshold"
                 className="w-full accent-accent-purple"
               />
               <div className="flex justify-between text-xs text-text-muted mt-1">

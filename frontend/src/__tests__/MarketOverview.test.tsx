@@ -75,7 +75,7 @@ describe('MarketOverview', () => {
         lastUpdated={staleTime}
       />,
     );
-    expect(screen.getByText(/stale/i)).toBeInTheDocument();
+    expect(screen.getByText(/⚠/)).toBeInTheDocument();
   });
 
   it('does not show stale warning when data is fresh', () => {
@@ -88,7 +88,7 @@ describe('MarketOverview', () => {
         lastUpdated={new Date().toISOString()}
       />,
     );
-    expect(screen.queryByText(/stale/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/⚠/)).not.toBeInTheDocument();
   });
 
   it('shows connection status from market store', () => {

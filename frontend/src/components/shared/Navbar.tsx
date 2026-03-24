@@ -103,8 +103,16 @@ export function Navbar() {
 
           {/* Desktop nav — authenticated */}
           {isAuth ? (
-            <div className="hidden md:flex items-center gap-1">
-              {PRIMARY_LINKS.map((link) => {
+            <div className="hidden md:flex items-center gap-0.5">
+              {/* Top-level links: most used pages */}
+              {[
+                { href: '/', label: 'Dashboard' },
+                { href: '/news', label: 'News' },
+                { href: '/track-record', label: 'Track Record' },
+                { href: '/alerts', label: 'Alerts' },
+                { href: '/history', label: 'History' },
+                { href: '/portfolio', label: 'Portfolio' },
+              ].map((link) => {
                 const isActive = pathname === link.href;
                 const showBadge = link.href === '/' && unseenCount > 0 && !isActive;
                 return (
@@ -112,7 +120,7 @@ export function Navbar() {
                     key={link.href}
                     href={link.href}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`relative px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    className={`relative px-2.5 py-1.5 text-sm rounded-lg transition-colors ${
                       isActive
                         ? 'text-accent-purple bg-accent-purple/10'
                         : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.03]'
@@ -128,20 +136,45 @@ export function Navbar() {
                 );
               })}
 
-              {/* More dropdown */}
+              {/* More dropdown — remaining pages */}
               <div className="relative" ref={moreRef}>
                 <button
                   onClick={() => setMoreOpen(!moreOpen)}
-                  className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-white/[0.03] rounded-lg transition-colors"
+                  className="px-2.5 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-white/[0.03] rounded-lg transition-colors"
                 >
-                  More
+                  More ▾
                 </button>
                 {moreOpen && (
                   <div
-                    className="absolute right-0 mt-1 bg-bg-secondary border border-border-default rounded-lg shadow-lg py-1 min-w-[160px] z-50"
+                    className="absolute right-0 mt-1 bg-bg-secondary border border-border-default rounded-lg shadow-lg py-1 min-w-[180px] z-50"
                     onMouseLeave={() => setMoreOpen(false)}
                   >
-                    {MORE_LINKS.map((link) => (
+                    <p className="px-4 py-1 text-xs text-text-muted uppercase tracking-wider">Tools</p>
+                    {[
+                      { href: '/backtest', label: 'Backtest' },
+                      { href: '/watchlist', label: 'Watchlist' },
+                      { href: '/calendar', label: 'Calendar' },
+                      { href: '/brief', label: 'Daily Brief' },
+                    ].map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMoreOpen(false)}
+                        className={`block px-4 py-2 text-sm transition-colors ${
+                          pathname === link.href
+                            ? 'text-accent-purple bg-accent-purple/5'
+                            : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.03]'
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                    <div className="border-t border-border-default my-1" />
+                    <p className="px-4 py-1 text-xs text-text-muted uppercase tracking-wider">Help</p>
+                    {[
+                      { href: '/how-it-works', label: 'How It Works' },
+                      { href: '/settings', label: 'Settings' },
+                    ].map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
