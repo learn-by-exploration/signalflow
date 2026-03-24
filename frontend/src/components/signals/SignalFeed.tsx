@@ -202,10 +202,22 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
 
       {!isLoading && !error && filtered.length === 0 && (
         <div className="bg-bg-card border border-border-default rounded-xl p-8 text-center space-y-3">
-          <p className="text-text-secondary text-sm">
-            No {filter === 'all' ? '' : filter + ' '}signals right now. Signals are generated every 5 minutes.
+          <p className="text-3xl">
+            {filter === 'stock' ? '📈' : filter === 'crypto' ? '🪙' : filter === 'forex' ? '💱' : '📊'}
           </p>
-          <div className="flex flex-wrap justify-center gap-3 text-xs">
+          <p className="text-text-secondary text-sm">
+            No {filter === 'all' ? '' : filter + ' '}signals right now.
+          </p>
+          <p className="text-text-muted text-xs max-w-md mx-auto">
+            {filter === 'stock'
+              ? 'Indian stock signals are generated during NSE market hours (9:15 AM – 3:30 PM IST, Mon–Fri). Check back during trading hours.'
+              : filter === 'crypto'
+              ? 'Crypto signals fire 24/7, typically during high volatility periods. New signals are generated every 5 minutes.'
+              : filter === 'forex'
+              ? 'Forex signals are active during global market hours (Mon–Fri). Major pairs like EUR/USD are most active during London and New York sessions.'
+              : 'Signals are generated every 5 minutes across stocks, crypto, and forex. Try filtering by market or check back soon.'}
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 text-xs pt-1">
             <a href="/how-it-works" className="text-accent-purple hover:underline">Learn how signals work</a>
             <span className="text-text-muted">·</span>
             <a href="/alerts" className="text-accent-purple hover:underline">Set up alerts</a>

@@ -57,8 +57,8 @@ describe('TargetProgressBar', () => {
     const { getByText } = render(
       <TargetProgressBar signal={makeSignal()} />,
     );
-    expect(getByText('Stop')).toBeInTheDocument();
-    expect(getByText('Target')).toBeInTheDocument();
+    expect(getByText('⛔ Stop')).toBeInTheDocument();
+    expect(getByText('🎯 Target')).toBeInTheDocument();
   });
 
   it('positions marker at ~33% when price is at 1/3 of range (BUY)', () => {

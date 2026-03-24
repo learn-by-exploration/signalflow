@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Outfit, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/shared/Navbar';
+import { SebiDisclaimer } from '@/components/shared/SebiDisclaimer';
 import { ToastProvider } from '@/components/shared/Toast';
 import { TextSizeProvider } from '@/components/shared/TextSizeProvider';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
@@ -30,12 +31,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-        <body className={`${outfit.variable} ${jetbrainsMono.variable} min-h-screen bg-bg-primary text-text-primary font-body antialiased`}>
+        <body className={`${outfit.variable} ${jetbrainsMono.variable} flex flex-col min-h-screen bg-bg-primary text-text-primary font-body antialiased`}>
         <ToastProvider>
           <ThemeProvider>
             <TextSizeProvider />
             <Navbar />
-            {children}
+            <main className="flex-1">{children}</main>
+            <SebiDisclaimer />
           </ThemeProvider>
         </ToastProvider>
       </body>

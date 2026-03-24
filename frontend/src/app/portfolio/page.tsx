@@ -391,10 +391,21 @@ export default function PortfolioPage() {
         )}
 
         {!summary?.positions.length && data.trades.length === 0 && (
-          <div className="text-center py-16 text-text-muted">
-            <p className="text-4xl mb-3">💼</p>
-            <p className="text-lg">No trades logged yet</p>
-            <p className="mt-2 text-sm">Click "Log Trade" above or use the Telegram bot: <span className="font-mono text-accent-purple">/trade buy HDFCBANK 10 1678.90</span></p>
+          <div className="bg-bg-card border border-border-default rounded-xl p-8 text-center space-y-3">
+            <p className="text-4xl">💼</p>
+            <p className="text-lg text-text-secondary">No trades logged yet</p>
+            <p className="mt-1 text-sm text-text-muted max-w-md mx-auto">
+              Track your trades to build a performance history. Click &ldquo;Log Trade&rdquo; above
+              to manually record a trade, or use the Telegram bot:
+            </p>
+            <p className="font-mono text-xs text-accent-purple bg-accent-purple/5 rounded-lg px-4 py-2 inline-block">
+              /trade buy HDFCBANK 10 1678.90
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 text-xs pt-1">
+              <a href="/" className="text-accent-purple hover:underline">View active signals</a>
+              <span className="text-text-muted">·</span>
+              <a href="/how-it-works" className="text-accent-purple hover:underline">How it works</a>
+            </div>
           </div>
         )}
       </div>
