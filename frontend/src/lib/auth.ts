@@ -44,12 +44,18 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days (when remember me is checked)
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.iat = Math.floor(Date.now() / 1000);
+      }
+      // Rotate token if older than 1 day
+      const tokenAge = Math.floor(Date.now() / 1000) - ((token.iat as number) || 0);
+      if (tokenAge > 86400) {
+        token.iat = Math.floor(Date.now() / 1000);
       }
       return token;
     },

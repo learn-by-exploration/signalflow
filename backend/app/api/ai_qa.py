@@ -129,8 +129,11 @@ async def ask_about_symbol(
         answer = data["content"][0]["text"].strip()
         return {"data": {"answer": answer, "source": "claude"}}
 
-    except Exception:
-        logger.exception("Claude API error for symbol Q&A: %s", symbol)
+    except Exception as exc:
+        safe_msg = str(exc)
+        if settings.anthropic_api_key:
+            safe_msg = safe_msg.replace(settings.anthropic_api_key, "[REDACTED]")
+        logger.error("Claude API error for symbol Q&A %s: %s", symbol, safe_msg)
         return {
             "data": {
                 "answer": (

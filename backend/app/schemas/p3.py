@@ -21,7 +21,6 @@ class PriceAlertData(BaseModel):
     """Price alert response data."""
 
     id: UUID
-    telegram_chat_id: int
     symbol: str
     market_type: str
     condition: str
@@ -51,7 +50,6 @@ class TradeData(BaseModel):
     """Trade response data."""
 
     id: UUID
-    telegram_chat_id: int
     symbol: str
     market_type: str
     side: str

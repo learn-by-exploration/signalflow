@@ -11,7 +11,6 @@ async def test_get_alert_config(test_client):
     resp = await test_client.get("/api/v1/alerts/config", params={"telegram_chat_id": 12345})
     assert resp.status_code == 200
     data = resp.json()["data"]
-    assert data["telegram_chat_id"] == 12345
     assert data["username"] == "testuser"
     assert data["min_confidence"] == 60
 
@@ -28,7 +27,7 @@ async def test_get_alert_config_schema(test_client):
     """Validate response fields."""
     resp = await test_client.get("/api/v1/alerts/config", params={"telegram_chat_id": 12345})
     data = resp.json()["data"]
-    required = {"id", "telegram_chat_id", "markets", "min_confidence", "signal_types", "is_active", "created_at", "updated_at"}
+    required = {"id", "markets", "min_confidence", "signal_types", "is_active", "created_at", "updated_at"}
     assert required.issubset(data.keys())
 
 
@@ -47,7 +46,6 @@ async def test_create_alert_config(test_client):
     resp = await test_client.post("/api/v1/alerts/config", json=payload)
     assert resp.status_code == 201
     data = resp.json()["data"]
-    assert data["telegram_chat_id"] == 54321
     assert data["min_confidence"] == 75
     assert data["markets"] == ["stock"]
 

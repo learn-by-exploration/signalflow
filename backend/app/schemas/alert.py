@@ -39,7 +39,6 @@ class AlertConfigData(BaseModel):
     """Alert config data."""
 
     id: UUID
-    telegram_chat_id: int
     username: str | None = None
     markets: list[str]
     min_confidence: int

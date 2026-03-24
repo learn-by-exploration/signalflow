@@ -1,5 +1,6 @@
 """Signal sharing endpoints — create shareable link, public view."""
 
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -46,6 +47,12 @@ async def get_shared_signal(
     share = result.scalar_one_or_none()
     if not share:
         raise HTTPException(status_code=404, detail="Shared signal not found")
+
+    # Check share expiration
+    if share.expires_at:
+        expires = share.expires_at if share.expires_at.tzinfo else share.expires_at.replace(tzinfo=timezone.utc)
+        if expires < datetime.now(timezone.utc):
+            raise HTTPException(status_code=410, detail="Share link has expired")
 
     sig_result = await db.execute(select(Signal).where(Signal.id == share.signal_id))
     signal = sig_result.scalar_one_or_none()

@@ -114,6 +114,6 @@ async def test_price_alert_schema(test_client):
         "threshold": "1.10",
     })
     data = create_resp.json()["data"]
-    required = {"id", "telegram_chat_id", "symbol", "market_type", "condition",
+    required = {"id", "symbol", "market_type", "condition",
                 "threshold", "is_triggered", "is_active", "created_at"}
     assert required.issubset(data.keys())
