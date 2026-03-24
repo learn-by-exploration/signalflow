@@ -21,6 +21,8 @@ const MORE_LINKS = [
   { href: '/backtest', label: 'Backtest', icon: '🧪' },
   { href: '/brief', label: 'Daily Brief', icon: '📰' },
   { href: '/how-it-works', label: 'How It Works', icon: '💡' },
+  { href: '/privacy', label: 'Privacy Policy', icon: '🔒' },
+  { href: '/terms', label: 'Terms of Service', icon: '📜' },
 ];
 
 export function Navbar() {

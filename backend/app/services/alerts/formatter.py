@@ -71,6 +71,8 @@ def format_signal_alert(signal: dict) -> str:
         f"🤖 AI: {signal.get('ai_reasoning', 'No reasoning available.')}",
         "",
         f"RSI: {rsi_val} | MACD: {macd_label} | Vol: {vol_label}",
+        "",
+        "⚠️ AI analysis only — not investment advice. DYOR.",
     ]
 
     return "\n".join(lines)
@@ -78,12 +80,12 @@ def format_signal_alert(signal: dict) -> str:
 
 def format_morning_brief(brief_text: str) -> str:
     """Format a morning briefing for Telegram."""
-    return f"☀️ Morning Brief\n\n{brief_text}"
+    return f"☀️ Morning Brief\n\n{brief_text}\n\n⚠️ For informational purposes only — not investment advice."
 
 
 def format_evening_wrap(wrap_text: str) -> str:
     """Format an evening wrap for Telegram."""
-    return f"🌙 Evening Wrap\n\n{wrap_text}"
+    return f"🌙 Evening Wrap\n\n{wrap_text}\n\n⚠️ For informational purposes only — not investment advice."
 
 
 def format_market_snapshot(stocks: list, crypto: list, forex: list) -> str:
@@ -141,7 +143,7 @@ def format_welcome() -> str:
     """Format the /start welcome message."""
     return (
         "👋 Welcome to SignalFlow AI!\n\n"
-        "I deliver AI-powered trading signals for:\n"
+        "I deliver AI-powered market analysis for:\n"
         "📈 Indian Stocks (NSE)\n"
         "🪙 Cryptocurrency\n"
         "💱 Forex\n\n"
@@ -158,8 +160,10 @@ def format_welcome() -> str:
         "/tutorial — Learn how to read signals\n"
         "/stop — Pause alerts\n"
         "/resume — Resume alerts\n\n"
-        "⚠️ Disclaimer: This is AI-generated analysis, not financial advice. "
-        "Always do your own research before trading."
+        "⚠️ IMPORTANT: SignalFlow AI is an AI-powered analysis tool. "
+        "It is NOT registered with SEBI and does NOT provide investment advice. "
+        "All analysis is for educational and informational purposes only. "
+        "Always do your own research and consult a qualified financial advisor."
     )
 
 
@@ -204,6 +208,7 @@ def format_weekly_digest(stats: dict) -> str:
         lines.append(f"📉 Worst: {top_loser['symbol']} ({'+' if top_loser['return_pct'] >= 0 else ''}{top_loser['return_pct']:.2f}%)")
 
     lines.append("\nKeep learning! Every signal is a lesson. 📚")
+    lines.append("\n⚠️ AI analysis only — not investment advice.")
 
     return "\n".join(lines)
 

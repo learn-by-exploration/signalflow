@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 export default function SignInPage() {
   const searchParams = useSearchParams();
@@ -12,9 +13,11 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [consented, setConsented] = useState(false);
 
   async function handleCredentials(e: React.FormEvent) {
     e.preventDefault();
+    if (!consented) return;
     setLoading(true);
     await signIn('credentials', { email, password, callbackUrl });
     setLoading(false);
@@ -43,8 +46,9 @@ export default function SignInPage() {
 
         {/* Google */}
         <button
-          onClick={() => signIn('google', { callbackUrl })}
-          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg border border-border-default bg-bg-card hover:bg-bg-card-hover transition-colors text-sm font-medium"
+          onClick={() => consented && signIn('google', { callbackUrl })}
+          disabled={!consented}
+          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg border border-border-default bg-bg-card hover:bg-bg-card-hover transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -108,16 +112,44 @@ export default function SignInPage() {
           </div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !consented}
             className="w-full py-2.5 bg-accent-purple text-white text-sm rounded-lg font-medium hover:bg-accent-purple/90 transition-colors disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <p className="text-center text-[10px] text-text-muted">
-          By signing in, you agree that SignalFlow AI is not investment advice.
-        </p>
+        {/* Consent checkbox */}
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={consented}
+            onChange={(e) => setConsented(e.target.checked)}
+            className="mt-1 rounded border-border-default bg-bg-card text-accent-purple focus:ring-accent-purple"
+          />
+          <span className="text-xs text-text-secondary leading-relaxed">
+            I am 18 years or older. I have read and agree to the{' '}
+            <Link
+              href="/terms"
+              target="_blank"
+              className="text-accent-purple underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              href="/privacy"
+              target="_blank"
+              className="text-accent-purple underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Privacy Policy
+            </Link>
+            . I understand that SignalFlow AI provides AI-generated analysis for educational
+            purposes only and does not constitute investment advice.
+          </span>
+        </label>
       </div>
     </main>
   );

@@ -135,12 +135,18 @@ export function SignalCard({ signal }: SignalCardProps) {
       {/* AI Reasoning */}
       <AIReasoningPanel reasoning={signal.ai_reasoning} isExpanded={isExpanded} />
 
-      {/* Action link */}
+      {/* Action link + per-signal disclaimer */}
       {isExpanded && (
         <div className="mt-3 pt-3 border-t border-border-default animate-fade-in-down" onClick={(e) => e.stopPropagation()}>
-          <Link href={`/signal/${signal.id}`} className="text-xs text-accent-purple hover:underline">
-            View full analysis →
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href={`/signal/${signal.id}`} className="text-xs text-accent-purple hover:underline">
+              View full analysis →
+            </Link>
+          </div>
+          <p className="text-[10px] text-text-muted mt-2">
+            AI-generated analysis for informational purposes only — not investment advice.{' '}
+            <Link href="/terms" className="underline hover:text-text-secondary">Terms</Link>
+          </p>
         </div>
       )}
 
