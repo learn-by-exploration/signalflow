@@ -87,6 +87,12 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
       NEXT_PUBLIC_WS_URL: ws://localhost:8000
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ia4GYa20L3M1jvr96bLOu3sVZAEtC_MlT4_BzDWQcs0
+      ADMIN_EMAIL: admin@signalflow.ai
+      ADMIN_PASSWORD: signalflow123
+      DEMO_EMAIL: demo@signalflow.ai
+      DEMO_PASSWORD: demo123
     depends_on:
       - backend
 

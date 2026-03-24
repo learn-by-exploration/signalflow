@@ -17,8 +17,8 @@ vi.mock('next/navigation', () => ({
 describe('SignIn Consent Flow', () => {
   it('renders consent checkbox', () => {
     render(<SignInPage />);
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox).toBeDefined();
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThanOrEqual(1);
   });
 
   it('sign-in button is disabled when consent not given', () => {
@@ -35,8 +35,12 @@ describe('SignIn Consent Flow', () => {
 
   it('buttons enabled after checking consent', () => {
     render(<SignInPage />);
-    const checkbox = screen.getByRole('checkbox');
-    fireEvent.click(checkbox);
+    // The consent checkbox is the one associated with the 18+ age text
+    const checkboxes = screen.getAllByRole('checkbox');
+    const consentCheckbox = checkboxes.find(
+      (cb) => cb.closest('label')?.textContent?.includes('18 years or older')
+    );
+    fireEvent.click(consentCheckbox!);
 
     const submitButton = screen.getByRole('button', { name: 'Sign In' });
     expect(submitButton.hasAttribute('disabled')).toBe(false);

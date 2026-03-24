@@ -13,18 +13,28 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email', placeholder: 'you@example.com' },
         password: { label: 'Password', type: 'password' },
+        rememberMe: { label: 'Remember me', type: 'text' },
       },
       async authorize(credentials) {
-        // For MVP: simple env-based check. Replace with DB lookup in production.
-        const adminEmail = process.env.ADMIN_EMAIL;
-        const adminPassword = process.env.ADMIN_PASSWORD;
+        const email = credentials?.email;
+        const password = credentials?.password;
 
+        // Admin user
         if (
-          credentials?.email === adminEmail &&
-          credentials?.password === adminPassword
+          email === process.env.ADMIN_EMAIL &&
+          password === process.env.ADMIN_PASSWORD
         ) {
-          return { id: '1', email: credentials?.email ?? '', name: 'Admin' };
+          return { id: '1', email: email ?? '', name: 'Admin' };
         }
+
+        // Demo user — allows anyone to try the platform
+        if (
+          email === (process.env.DEMO_EMAIL ?? 'demo@signalflow.ai') &&
+          password === (process.env.DEMO_PASSWORD ?? 'demo123')
+        ) {
+          return { id: '2', email: email ?? '', name: 'Demo User' };
+        }
+
         return null;
       },
     }),
@@ -34,7 +44,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60, // 30 days (when remember me is checked)
   },
   callbacks: {
     async jwt({ token, user }) {

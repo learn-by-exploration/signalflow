@@ -130,7 +130,8 @@ describe('Consent Flow Compliance', () => {
   it('Sign-in page has consent checkbox', async () => {
     const { default: SignInPage } = await import('@/app/auth/signin/page');
     render(<SignInPage />);
-    expect(screen.getByRole('checkbox')).toBeDefined();
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThanOrEqual(1);
   });
 
   it('Sign-in consent mentions 18+ age requirement', async () => {

@@ -13,5 +13,6 @@ export const config = {
     '/alerts/:path*',
     '/backtest/:path*',
     '/brief/:path*',
+    '/settings/:path*',
   ],
 };

@@ -21,11 +21,6 @@ vi.mock('next-auth/react', () => ({
   signOut: vi.fn(),
 }));
 
-// Mock SettingsPanel to avoid complexity
-vi.mock('@/components/shared/SettingsPanel', () => ({
-  SettingsPanel: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div data-testid="settings-panel">Settings</div> : null,
-}));
-
 beforeEach(() => {
   mockPathname = '/';
   useSignalStore.setState({ unseenCount: 0 });
@@ -74,15 +69,11 @@ describe('Navbar', () => {
     expect(screen.getByText('9+')).toBeInTheDocument();
   });
 
-  it('renders Settings button with proper aria-label', () => {
+  it('renders Settings link with proper aria-label', () => {
     render(<Navbar />);
-    expect(screen.getByLabelText('Settings')).toBeInTheDocument();
-  });
-
-  it('opens settings panel when gear icon is clicked', () => {
-    render(<Navbar />);
-    fireEvent.click(screen.getByLabelText('Settings'));
-    expect(screen.getByTestId('settings-panel')).toBeInTheDocument();
+    const settingsLink = screen.getByLabelText('Settings');
+    expect(settingsLink).toBeInTheDocument();
+    expect(settingsLink.closest('a')).toHaveAttribute('href', '/settings');
   });
 
   it('renders "More" dropdown with additional links on click', () => {

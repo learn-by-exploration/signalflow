@@ -14,12 +14,19 @@ function SignInForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [consented, setConsented] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  function fillDemo() {
+    setEmail('demo@signalflow.ai');
+    setPassword('demo123');
+    setConsented(true);
+  }
 
   async function handleCredentials(e: React.FormEvent) {
     e.preventDefault();
     if (!consented) return;
     setLoading(true);
-    await signIn('credentials', { email, password, callbackUrl });
+    await signIn('credentials', { email, password, rememberMe: rememberMe ? 'true' : 'false', callbackUrl });
     setLoading(false);
   }
 
@@ -110,6 +117,18 @@ function SignInForm() {
               placeholder="••••••••"
             />
           </div>
+
+          {/* Remember me */}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="rounded border-border-default bg-bg-card text-accent-purple focus:ring-accent-purple"
+            />
+            <span className="text-xs text-text-secondary">Remember me for 30 days</span>
+          </label>
+
           <button
             type="submit"
             disabled={loading || !consented}
@@ -118,6 +137,18 @@ function SignInForm() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        {/* Demo access */}
+        <div className="bg-bg-card border border-border-default rounded-lg p-3 text-center space-y-2">
+          <p className="text-xs text-text-muted">Want to try it out first?</p>
+          <button
+            onClick={fillDemo}
+            className="text-sm text-accent-purple hover:underline font-medium"
+          >
+            Use Demo Account
+          </button>
+          <p className="text-[10px] text-text-muted font-mono">demo@signalflow.ai / demo123</p>
+        </div>
 
         {/* Consent checkbox */}
         <label className="flex items-start gap-3 cursor-pointer">

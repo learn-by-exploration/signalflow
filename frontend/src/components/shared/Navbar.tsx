@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useSignalStore } from '@/store/signalStore';
-import { SettingsPanel } from './SettingsPanel';
 
 const PRIMARY_LINKS = [
   { href: '/', label: 'Dashboard' },
@@ -24,13 +23,14 @@ const MORE_LINKS = [
   { href: '/privacy', label: 'Privacy Policy', icon: '🔒' },
   { href: '/terms', label: 'Terms of Service', icon: '📜' },
   { href: '/contact', label: 'Contact', icon: '📧' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const unseenCount = useSignalStore((s) => s.unseenCount);
   const { data: session, status } = useSession();
 
@@ -120,8 +120,8 @@ export function Navbar() {
                 Sign In
               </Link>
             ) : null}
-            <button
-              onClick={() => setSettingsOpen(true)}
+            <Link
+              href="/settings"
               className="p-2 text-text-secondary hover:text-text-primary transition-colors"
               aria-label="Settings"
             >
@@ -129,7 +129,7 @@ export function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-            </button>
+            </Link>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="md:hidden p-2 text-text-secondary hover:text-text-primary"
@@ -175,7 +175,6 @@ export function Navbar() {
           })}
         </div>
       )}
-      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </nav>
   );
 }
