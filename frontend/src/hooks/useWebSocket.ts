@@ -6,6 +6,7 @@ import type { WSMessage, Signal, MarketSnapshot } from '@/lib/types';
 import type { ConnectionStatus } from '@/lib/websocket';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
+import { showSignalNotification } from '@/lib/notifications';
 
 const DEFAULT_MARKETS = ['stock', 'crypto', 'forex'];
 
@@ -24,7 +25,10 @@ export function useWebSocket(markets: string[] = DEFAULT_MARKETS) {
   const handleMessage = useCallback(
     (msg: WSMessage) => {
       if (msg.type === 'signal' && msg.data) {
-        addSignal(msg.data as Signal);
+        const signal = msg.data as Signal;
+        addSignal(signal);
+        // Browser push notification for high-confidence signals
+        showSignalNotification(signal);
         // Increment unseen if not on dashboard
         if (typeof window !== 'undefined' && window.location.pathname !== '/') {
           incrementUnseen();

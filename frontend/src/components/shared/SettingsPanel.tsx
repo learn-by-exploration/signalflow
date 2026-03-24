@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePreferencesStore, type ViewMode, type TextSize } from '@/store/preferencesStore';
+import { isNotificationSupported, getNotificationPermission, requestNotificationPermission } from '@/lib/notifications';
 
 const VIEW_OPTIONS: { value: ViewMode; label: string; desc: string }[] = [
   { value: 'simple', label: 'Simple', desc: 'Symbol, action, AI reason only' },
@@ -20,6 +22,18 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const { viewMode, setViewMode, textSize, setTextSize } = usePreferencesStore();
+  const [notifPermission, setNotifPermission] = useState<string>('default');
+
+  useEffect(() => {
+    if (isOpen) {
+      setNotifPermission(getNotificationPermission());
+    }
+  }, [isOpen]);
+
+  async function handleEnableNotifications() {
+    const result = await requestNotificationPermission();
+    setNotifPermission(result);
+  }
 
   if (!isOpen) return null;
 
@@ -80,6 +94,31 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             })}
           </div>
         </div>
+
+        {/* Push Notifications */}
+        {isNotificationSupported() && (
+          <div>
+            <label className="text-xs text-text-muted uppercase tracking-wider block mb-2">Push Notifications</label>
+            {notifPermission === 'granted' ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-signal-buy/30 bg-signal-buy/5">
+                <span className="text-signal-buy text-sm">🔔</span>
+                <span className="text-xs text-signal-buy">Enabled — you&apos;ll get alerts for high-confidence signals</span>
+              </div>
+            ) : notifPermission === 'denied' ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border-default">
+                <span className="text-text-muted text-sm">🔕</span>
+                <span className="text-xs text-text-muted">Blocked by browser. Enable in browser settings.</span>
+              </div>
+            ) : (
+              <button
+                onClick={handleEnableNotifications}
+                className="w-full px-3 py-2 rounded-lg border border-accent-purple/30 text-accent-purple text-sm hover:bg-accent-purple/10 transition-colors"
+              >
+                🔔 Enable Signal Alerts
+              </button>
+            )}
+          </div>
+        )}
 
         <button
           onClick={onClose}

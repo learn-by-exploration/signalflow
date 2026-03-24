@@ -11,6 +11,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { WelcomeModal } from '@/components/shared/WelcomeModal';
 import { GuidedTour } from '@/components/shared/GuidedTour';
+import { AskAI } from '@/components/signals/AskAI';
 import { useEffect } from 'react';
 
 export default function Dashboard() {
@@ -51,6 +52,13 @@ export default function Dashboard() {
         <div className="mt-6" data-tour="signal-feed">
           <ErrorBoundary name="Signal Feed">
             <SignalFeed signals={signals} isLoading={isLoading} error={error} />
+          </ErrorBoundary>
+        </div>
+
+        {/* Ask AI */}
+        <div className="mt-6">
+          <ErrorBoundary name="Ask AI">
+            <AskAI />
           </ErrorBoundary>
         </div>
 

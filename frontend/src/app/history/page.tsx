@@ -156,6 +156,60 @@ export default function HistoryPage() {
           </div>
         )}
 
+        {/* Export buttons */}
+        {!isLoading && filtered.length > 0 && (
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => {
+                const csv = [
+                  'Symbol,Signal Type,Outcome,Return %,Exit Price,Resolved At',
+                  ...filtered.map((item) => {
+                    const sym = item.signal ? shortSymbol(item.signal.symbol) : '';
+                    const sig = item.signal?.signal_type ?? '';
+                    const out = item.outcome ?? 'pending';
+                    const ret = item.return_pct ?? '';
+                    const exit = item.exit_price ?? '';
+                    const date = item.resolved_at ? new Date(item.resolved_at).toISOString() : '';
+                    return `${sym},${sig},${out},${ret},${exit},${date}`;
+                  }),
+                ].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `signalflow-history-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="px-3 py-1.5 text-xs rounded-lg border border-border-default text-text-secondary hover:border-accent-purple hover:text-accent-purple transition-colors"
+            >
+              📥 Export CSV
+            </button>
+            <button
+              onClick={() => {
+                const json = JSON.stringify(filtered.map((item) => ({
+                  symbol: item.signal ? shortSymbol(item.signal.symbol) : null,
+                  signal_type: item.signal?.signal_type ?? null,
+                  outcome: item.outcome,
+                  return_pct: item.return_pct,
+                  exit_price: item.exit_price,
+                  resolved_at: item.resolved_at,
+                })), null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `signalflow-history-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="px-3 py-1.5 text-xs rounded-lg border border-border-default text-text-secondary hover:border-accent-purple hover:text-accent-purple transition-colors"
+            >
+              📥 Export JSON
+            </button>
+          </div>
+        )}
+
         {/* Outcome filter pills */}
         {!isLoading && stats.total > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">

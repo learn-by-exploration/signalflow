@@ -17,6 +17,7 @@ import { Sparkline } from '@/components/markets/Sparkline';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { IndicatorTooltip } from '@/components/shared/IndicatorTooltip';
 import { CandlestickChart } from '@/components/charts/CandlestickChart';
+import { ConfidenceBreakdown } from '@/components/signals/ConfidenceBreakdown';
 
 interface SignalDetailResponse {
   data: Signal;
@@ -133,6 +134,39 @@ export default function SignalDetailPage() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* Earnings proximity warning for stocks */}
+        {signal.market_type === 'stock' && (() => {
+          const month = new Date().getMonth();
+          // Earnings seasons: Jan (Q3), Apr (Q4), Jul (Q1), Oct (Q2)
+          const isEarningsSeason = [0, 3, 6, 9].includes(month);
+          return isEarningsSeason ? (
+            <div className="bg-signal-hold/10 border border-signal-hold/20 rounded-xl px-4 py-3 flex items-start gap-2">
+              <span className="text-base">📊</span>
+              <div>
+                <p className="text-xs font-display font-medium text-signal-hold">Earnings Season Active</p>
+                <p className="text-[10px] text-text-muted mt-0.5">
+                  Quarterly results may be upcoming for this stock. Signals near earnings dates carry higher uncertainty. Consider waiting for results before acting.
+                </p>
+              </div>
+            </div>
+          ) : null;
+        })()}
+
+        {/* Confidence Breakdown */}
+        <div className="bg-bg-card border border-border-default rounded-xl p-5">
+          <ConfidenceBreakdown
+            technicalScore={(() => {
+              // Extract technical score from technical_data if available
+              const td = signal.technical_data as Record<string, Record<string, unknown>>;
+              const indicators = [td?.rsi, td?.macd, td?.volume, td?.bollinger, td?.sma].filter(Boolean);
+              const buyCount = indicators.filter((i) => i?.signal === 'buy').length;
+              return indicators.length > 0 ? Math.round((buyCount / indicators.length) * 100) : signal.confidence;
+            })()}
+            sentimentScore={sentimentScore ?? Math.round(signal.confidence * 0.8)}
+            signalType={signal.signal_type}
+          />
         </div>
 
         {/* Price + Target/Stop */}
@@ -280,6 +314,28 @@ export default function SignalDetailPage() {
                     <li key={i} className="text-xs text-text-secondary">• {f}</li>
                   ))}
                 </ul>
+              )}
+              {/* News sources */}
+              {sentimentData?.source_count != null && (
+                <p className="mt-2 text-[10px] text-text-muted">
+                  Based on {String(sentimentData.source_count)} news article{Number(sentimentData.source_count) !== 1 ? 's' : ''} analyzed
+                </p>
+              )}
+              {Array.isArray(sentimentData?.sources) && (sentimentData.sources as { title: string; url: string }[]).length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-[10px] text-text-muted">Sources:</p>
+                  {(sentimentData.sources as { title: string; url: string }[]).slice(0, 3).map((src, i) => (
+                    <a
+                      key={i}
+                      href={src.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-[10px] text-accent-purple hover:underline truncate"
+                    >
+                      {src.title || src.url}
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
           )}

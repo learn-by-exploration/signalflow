@@ -6,6 +6,7 @@ import type { PortfolioSummary, Trade } from '@/lib/types';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { EquityCurve } from '@/components/charts/EquityCurve';
+import { AllocationPieChart } from '@/components/charts/AllocationPieChart';
 import { useUserStore } from '@/store/userStore';
 
 interface PortfolioData {
@@ -238,6 +239,14 @@ export default function PortfolioPage() {
                 }];
               }, [])}
             label="📈 Portfolio Equity Curve"
+          />
+        )}
+
+        {/* Allocation Pie Chart */}
+        {summary && summary.positions.length > 0 && (
+          <AllocationPieChart
+            positions={summary.positions}
+            totalValue={parseFloat(summary.current_value) || 0}
           />
         )}
 
