@@ -9,7 +9,7 @@ const STEPS = [
   {
     emoji: '📊',
     title: 'Real-Time Signals',
-    desc: 'Get AI-powered buy/sell signals for Indian stocks, crypto, and forex — updated every 5 minutes.',
+    desc: 'Get AI-powered market analysis for Indian stocks, crypto, and forex — updated every 5 minutes.',
   },
   {
     emoji: '🤖',

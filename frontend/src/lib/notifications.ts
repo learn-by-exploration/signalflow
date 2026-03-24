@@ -45,7 +45,15 @@ export function showSignalNotification(signal: SignalNotificationData, minConfid
   if (signal.confidence < minConfidence) return;
 
   const emoji = SIGNAL_EMOJIS[signal.signal_type] ?? '📊';
-  const title = `${emoji} ${signal.signal_type.replace('_', ' ')} — ${signal.symbol}`;
+  const displayLabels: Record<string, string> = {
+    STRONG_BUY: 'STRONGLY BULLISH',
+    BUY: 'BULLISH',
+    HOLD: 'HOLD',
+    SELL: 'BEARISH',
+    STRONG_SELL: 'STRONGLY BEARISH',
+  };
+  const label = displayLabels[signal.signal_type] ?? signal.signal_type;
+  const title = `${emoji} ${label} — ${signal.symbol}`;
   const body = `Confidence: ${signal.confidence}%\nPrice: ${signal.current_price} → Target: ${signal.target_price}`;
 
   new Notification(title, {

@@ -14,11 +14,11 @@ const BADGE_ICONS: Record<string, string> = {
 };
 
 const SIMPLE_ACTION: Record<string, string> = {
-  STRONG_BUY: 'Consider buying — strong signals',
-  BUY: 'Consider buying',
+  STRONG_BUY: 'Strong bullish momentum detected',
+  BUY: 'Bullish momentum detected',
   HOLD: 'Wait and watch',
-  SELL: 'Consider selling',
-  STRONG_SELL: 'Consider selling — strong signals',
+  SELL: 'Bearish momentum detected',
+  STRONG_SELL: 'Strong bearish momentum detected',
 };
 
 interface SimpleSignalCardProps {

@@ -40,7 +40,7 @@ describe('WelcomeModal', () => {
   it('shows first step content', () => {
     render(<WelcomeModal />);
     expect(screen.getByText('Real-Time Signals')).toBeInTheDocument();
-    expect(screen.getByText(/AI-powered buy\/sell signals/)).toBeInTheDocument();
+    expect(screen.getByText(/AI-powered market analysis/)).toBeInTheDocument();
   });
 
   it('advances to next step on "Next" button click', () => {

@@ -23,6 +23,7 @@ const MORE_LINKS = [
   { href: '/how-it-works', label: 'How It Works', icon: '💡' },
   { href: '/privacy', label: 'Privacy Policy', icon: '🔒' },
   { href: '/terms', label: 'Terms of Service', icon: '📜' },
+  { href: '/contact', label: 'Contact', icon: '📧' },
 ];
 
 export function Navbar() {

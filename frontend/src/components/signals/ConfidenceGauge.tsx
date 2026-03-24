@@ -8,11 +8,11 @@ interface ConfidenceGaugeProps {
 }
 
 const SIGNAL_LABELS: Record<SignalType, string> = {
-  STRONG_BUY: 'Strong Buy',
-  BUY: 'Buy',
+  STRONG_BUY: 'Strongly Bullish',
+  BUY: 'Bullish',
   HOLD: 'Hold',
-  SELL: 'Sell',
-  STRONG_SELL: 'Strong Sell',
+  SELL: 'Bearish',
+  STRONG_SELL: 'Strongly Bearish',
 };
 
 export function ConfidenceGauge({ confidence, signalType, size = 56 }: ConfidenceGaugeProps) {

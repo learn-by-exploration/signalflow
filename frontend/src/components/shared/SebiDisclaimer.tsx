@@ -28,6 +28,10 @@ export function SebiDisclaimer() {
         <Link href="/terms" className="hover:text-text-secondary underline">
           Terms of Service
         </Link>
+        {' · '}
+        <Link href="/contact" className="hover:text-text-secondary underline">
+          Contact &amp; Grievance
+        </Link>
       </p>
     </footer>
   );

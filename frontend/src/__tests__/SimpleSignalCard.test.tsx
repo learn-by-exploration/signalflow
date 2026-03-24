@@ -30,7 +30,7 @@ describe('SimpleSignalCard', () => {
   it('renders badge with icon', () => {
     render(<SimpleSignalCard signal={mockSignal} />);
     expect(screen.getByText('▲▲')).toBeInTheDocument();
-    expect(screen.getByText('STRONG BUY')).toBeInTheDocument();
+    expect(screen.getByText('STRONGLY BULLISH')).toBeInTheDocument();
   });
 
   it('shows confidence percentage', () => {
@@ -40,7 +40,7 @@ describe('SimpleSignalCard', () => {
 
   it('shows plain English action text', () => {
     render(<SimpleSignalCard signal={mockSignal} />);
-    expect(screen.getByText('Consider buying — strong signals')).toBeInTheDocument();
+    expect(screen.getByText('Strong bullish momentum detected')).toBeInTheDocument();
   });
 
   it('shows truncated AI reasoning', () => {
@@ -57,7 +57,7 @@ describe('SimpleSignalCard', () => {
   it('renders SELL signal with correct action', () => {
     const sellSignal = { ...mockSignal, signal_type: 'SELL' as const };
     render(<SimpleSignalCard signal={sellSignal} />);
-    expect(screen.getByText('Consider selling')).toBeInTheDocument();
+    expect(screen.getByText('Bearish momentum detected')).toBeInTheDocument();
     expect(screen.getByText('▼')).toBeInTheDocument();
   });
 

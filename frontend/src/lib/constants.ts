@@ -28,9 +28,9 @@ export const MARKET_LABELS = {
 } as const;
 
 export const BADGE_LABELS = {
-  STRONG_BUY: 'STRONG BUY',
-  BUY: 'BUY',
+  STRONG_BUY: 'STRONGLY BULLISH',
+  BUY: 'BULLISH',
   HOLD: 'HOLD',
-  SELL: 'SELL',
-  STRONG_SELL: 'STRONG SELL',
+  SELL: 'BEARISH',
+  STRONG_SELL: 'STRONGLY BEARISH',
 } as const;

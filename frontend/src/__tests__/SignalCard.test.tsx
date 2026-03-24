@@ -52,7 +52,7 @@ describe('SignalCard', () => {
 
   it('renders signal badge with confidence', () => {
     render(<SignalCard signal={makeSignal()} />);
-    expect(screen.getByText(/BUY · 72%/)).toBeInTheDocument();
+    expect(screen.getByText(/BULLISH · 72%/)).toBeInTheDocument();
   });
 
   it('renders price and timeframe', () => {
@@ -112,11 +112,11 @@ describe('SignalCard', () => {
 
   it('renders STRONG_BUY badge icon', () => {
     render(<SignalCard signal={makeSignal({ signal_type: 'STRONG_BUY', confidence: 90 })} />);
-    expect(screen.getByText(/STRONG BUY · 90%/)).toBeInTheDocument();
+    expect(screen.getByText(/STRONGLY BULLISH · 90%/)).toBeInTheDocument();
   });
 
   it('renders SELL badge icon', () => {
     render(<SignalCard signal={makeSignal({ signal_type: 'SELL', confidence: 30 })} />);
-    expect(screen.getByText(/SELL · 30%/)).toBeInTheDocument();
+    expect(screen.getByText(/BEARISH · 30%/)).toBeInTheDocument();
   });
 });

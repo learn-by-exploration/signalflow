@@ -25,7 +25,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     target: '[data-tour="signal-feed"]',
     title: 'Active Signals',
-    content: 'These are live buy/sell signals from our AI. Each card shows the symbol, direction (▲ buy, ▼ sell), and confidence level. Tap any card to expand it.',
+    content: 'These are live market analyses from our AI. Each card shows the symbol, direction (▲ bullish, ▼ bearish), and analysis strength. Tap any card to expand it.',
     position: 'top',
   },
   {

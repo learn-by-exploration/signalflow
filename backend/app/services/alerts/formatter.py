@@ -45,6 +45,16 @@ def format_signal_alert(signal: dict) -> str:
     emoji = "🟢" if is_buy else "🔴" if "SELL" in signal_type else "🟡"
     market_type = signal.get("market_type", "stock")
 
+    # Display-layer label mapping (DB stores STRONG_BUY etc.)
+    display_labels = {
+        "STRONG_BUY": "STRONGLY BULLISH",
+        "BUY": "BULLISH",
+        "HOLD": "NEUTRAL",
+        "SELL": "BEARISH",
+        "STRONG_SELL": "STRONGLY BEARISH",
+    }
+    display_type = display_labels.get(signal_type, signal_type.replace("_", " "))
+
     price = _format_price(signal["current_price"], market_type)
     target = _format_price(signal["target_price"], market_type)
     stop = _format_price(signal["stop_loss"], market_type)
@@ -60,7 +70,7 @@ def format_signal_alert(signal: dict) -> str:
     vol_label = f"{vol_ratio}x" if vol_ratio != "—" else "—"
 
     lines = [
-        f"{emoji} {signal_type.replace('_', ' ')} — {_clean_symbol(signal['symbol'])}",
+        f"{emoji} {display_type} — {_clean_symbol(signal['symbol'])}",
         "",
         f"💰 Price: {price}",
         f"📊 Confidence: {bar} {conf}%",
@@ -127,13 +137,21 @@ def format_market_snapshot(stocks: list, crypto: list, forex: list) -> str:
 def format_signals_list(signals: list) -> str:
     """Format top 5 signals for /signals command."""
     if not signals:
-        return "No active signals right now."
+        return "No active analyses right now."
 
-    lines = ["📊 Top Active Signals", ""]
+    display_labels = {
+        "STRONG_BUY": "Strongly Bullish",
+        "BUY": "Bullish",
+        "HOLD": "Neutral",
+        "SELL": "Bearish",
+        "STRONG_SELL": "Strongly Bearish",
+    }
+    lines = ["📊 Top Active Analyses", ""]
     for s in signals[:5]:
         emoji = "🟢" if "BUY" in s["signal_type"] else "🔴" if "SELL" in s["signal_type"] else "🟡"
+        label = display_labels.get(s["signal_type"], s["signal_type"])
         lines.append(
-            f"{emoji} {_clean_symbol(s['symbol'])} — {s['signal_type'].replace('_', ' ')} ({s['confidence']}%)"
+            f"{emoji} {_clean_symbol(s['symbol'])} — {label} ({s['confidence']}%)"
         )
 
     return "\n".join(lines)
@@ -216,30 +234,32 @@ def format_weekly_digest(stats: dict) -> str:
 def format_tutorial() -> str:
     """Format the /tutorial guided onboarding message."""
     return (
-        "📚 How to Read SignalFlow Signals\n\n"
-        "Each signal has these parts:\n\n"
-        "1️⃣ Signal Type\n"
-        "🟢 STRONG BUY — High confidence buy opportunity\n"
-        "🟢 BUY — Moderate buy opportunity\n"
+        "📚 How to Read SignalFlow Analysis\n\n"
+        "Each analysis has these parts:\n\n"
+        "1️⃣ Analysis Type\n"
+        "🟢 STRONGLY BULLISH — High confidence upward momentum\n"
+        "🟢 BULLISH — Moderate upward momentum\n"
         "🟡 HOLD — Wait and watch\n"
-        "🔴 SELL — Consider exiting\n"
-        "🔴 STRONG SELL — High confidence exit\n\n"
-        "2️⃣ Confidence Score (0-100%)\n"
-        "Higher = stronger signal. We recommend acting on 70%+ signals.\n\n"
-        "3️⃣ Target & Stop-Loss\n"
-        "🎯 Target — Price where you take profit\n"
-        "🛑 Stop-Loss — Price where you exit to limit losses\n"
-        "Always respect the stop-loss!\n\n"
+        "🔴 BEARISH — Downward momentum detected\n"
+        "🔴 STRONGLY BEARISH — High confidence downward momentum\n\n"
+        "2️⃣ Analysis Strength (0-100%)\n"
+        "Higher = stronger consensus from indicators and AI.\n\n"
+        "3️⃣ Key Levels\n"
+        "🎯 Projected resistance — Potential upside level\n"
+        "🛑 Key support — Potential downside level\n"
+        "Always set risk management limits!\n\n"
         "4️⃣ AI Reasoning\n"
-        "🤖 Explains WHY the signal was generated — "
-        "which indicators and news drove the decision.\n\n"
+        "🤖 Explains WHY this analysis was generated — "
+        "which indicators and news drove the assessment.\n\n"
         "5️⃣ Technical Indicators\n"
         "RSI — Momentum (>70 overbought, <30 oversold)\n"
         "MACD — Trend direction (Bullish/Bearish)\n"
         "Volume — Trading activity level\n\n"
         "💡 Tip: Start with paper trading (simulated) before using real money. "
         "Track your decisions in a journal.\n\n"
-        "⚠️ Remember: These are AI-generated signals, not financial advice."
+        "⚠️ Remember: This is AI-generated analysis, not financial advice. "
+        "Always do your own research and consult a qualified advisor."
+    )
     )
 
 

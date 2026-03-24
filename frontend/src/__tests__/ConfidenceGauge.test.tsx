@@ -11,19 +11,19 @@ describe('ConfidenceGauge', () => {
   it('has accessible aria-label with confidence and signal type', () => {
     render(<ConfidenceGauge confidence={75} signalType="BUY" />);
     const svg = screen.getByRole('img');
-    expect(svg).toHaveAttribute('aria-label', 'Confidence: 75 percent, Buy');
+    expect(svg).toHaveAttribute('aria-label', 'Confidence: 75 percent, Bullish');
   });
 
-  it('shows Strong Buy label for STRONG_BUY', () => {
+  it('shows Strongly Bullish label for STRONG_BUY', () => {
     render(<ConfidenceGauge confidence={85} signalType="STRONG_BUY" />);
     const svg = screen.getByRole('img');
-    expect(svg).toHaveAttribute('aria-label', 'Confidence: 85 percent, Strong Buy');
+    expect(svg).toHaveAttribute('aria-label', 'Confidence: 85 percent, Strongly Bullish');
   });
 
-  it('shows Sell label for SELL', () => {
+  it('shows Bearish label for SELL', () => {
     render(<ConfidenceGauge confidence={30} signalType="SELL" />);
     const svg = screen.getByRole('img');
-    expect(svg).toHaveAttribute('aria-label', 'Confidence: 30 percent, Sell');
+    expect(svg).toHaveAttribute('aria-label', 'Confidence: 30 percent, Bearish');
   });
 
   it('renders SVG with correct size', () => {

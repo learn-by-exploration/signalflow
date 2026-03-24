@@ -109,7 +109,7 @@ describe('notifications', () => {
 
       showSignalNotification(baseSignal);
       expect(mockConstructor).toHaveBeenCalledTimes(1);
-      expect(mockConstructor.mock.calls[0][0]).toContain('STRONG BUY');
+      expect(mockConstructor.mock.calls[0][0]).toContain('STRONGLY BULLISH');
       expect(mockConstructor.mock.calls[0][0]).toContain('HDFCBANK');
     });
 

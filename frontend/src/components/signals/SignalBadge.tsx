@@ -6,11 +6,11 @@ interface SignalBadgeProps {
 }
 
 const BADGE_LABELS: Record<SignalType, string> = {
-  STRONG_BUY: 'STRONG BUY',
-  BUY: 'BUY',
+  STRONG_BUY: 'STRONGLY BULLISH',
+  BUY: 'BULLISH',
   HOLD: 'HOLD',
-  SELL: 'SELL',
-  STRONG_SELL: 'STRONG SELL',
+  SELL: 'BEARISH',
+  STRONG_SELL: 'STRONGLY BEARISH',
 };
 
 const BADGE_ICONS: Record<SignalType, string> = {
@@ -31,7 +31,7 @@ export function SignalBadge({ signalType }: SignalBadgeProps) {
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-display font-semibold"
       style={{ backgroundColor: `${color}20`, color }}
       role="status"
-      aria-label={`Signal: ${label}`}
+      aria-label={`Analysis: ${label}`}
     >
       <span aria-hidden="true">{icon}</span> {label}
     </span>
