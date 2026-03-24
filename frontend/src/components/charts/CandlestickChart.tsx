@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { createChart, type IChartApi, type CandlestickData, type Time, ColorType } from 'lightweight-charts';
+import { createChart, CandlestickSeries, type IChartApi, type CandlestickData, type Time, ColorType } from 'lightweight-charts';
 
 interface CandlestickChartProps {
   data: { time: string; open: number; high: number; low: number; close: number }[];
@@ -43,7 +43,7 @@ export function CandlestickChart({ data, targetPrice, stopLoss, height = 300 }: 
       },
     });
 
-    const candleSeries = chart.addCandlestickSeries({
+    const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#00E676',
       downColor: '#FF5252',
       borderUpColor: '#00E676',
