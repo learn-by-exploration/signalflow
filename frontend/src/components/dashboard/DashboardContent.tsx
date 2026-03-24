@@ -6,21 +6,48 @@ import { SignalFeed } from '@/components/signals/SignalFeed';
 import { WinRateCard } from '@/components/signals/WinRateCard';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
-import { useSignals } from '@/hooks/useSignals';
-import { useMarketData } from '@/hooks/useMarketData';
+import { useSignalsQuery, useMarketOverviewQuery } from '@/hooks/useQueries';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { WelcomeModal } from '@/components/shared/WelcomeModal';
 import { GuidedTour } from '@/components/shared/GuidedTour';
 import { AskAI } from '@/components/signals/AskAI';
+import type { MarketSnapshot } from '@/lib/types';
 
 export default function DashboardContent() {
-  const { signals, isLoading, error } = useSignalStore();
-  const { stocks, crypto, forex, isLoading: marketsLoading, lastUpdated } = useMarketStore();
   const resetUnseen = useSignalStore((s) => s.resetUnseen);
 
-  useSignals();
-  useMarketData();
+  // React Query: signals
+  const signalsQuery = useSignalsQuery();
+  const signals = signalsQuery.data?.data ?? [];
+  const signalsLoading = signalsQuery.isLoading;
+  const signalsError = signalsQuery.error?.message ?? null;
+
+  // Sync signals to store for WebSocket/other consumers
+  const setSignals = useSignalStore((s) => s.setSignals);
+  useEffect(() => {
+    if (signalsQuery.data) {
+      setSignals(signalsQuery.data.data, signalsQuery.data.meta?.total);
+    }
+  }, [signalsQuery.data, setSignals]);
+
+  // React Query: market overview
+  const marketsQuery = useMarketOverviewQuery();
+  const marketsData = marketsQuery.data as { data?: { stocks?: MarketSnapshot[]; crypto?: MarketSnapshot[]; forex?: MarketSnapshot[] } } | undefined;
+  const stocks = marketsData?.data?.stocks ?? [];
+  const crypto = marketsData?.data?.crypto ?? [];
+  const forex = marketsData?.data?.forex ?? [];
+  const marketsLoading = marketsQuery.isLoading;
+  const lastUpdated = marketsQuery.dataUpdatedAt ? new Date(marketsQuery.dataUpdatedAt).toISOString() : null;
+
+  // Sync markets to store for WebSocket/other consumers
+  const setMarkets = useMarketStore((s) => s.setMarkets);
+  useEffect(() => {
+    if (marketsData?.data) {
+      setMarkets(marketsData.data as { stocks: MarketSnapshot[]; crypto: MarketSnapshot[]; forex: MarketSnapshot[] });
+    }
+  }, [marketsData, setMarkets]);
+
   useWebSocket();
 
   useEffect(() => { resetUnseen(); }, [resetUnseen]);
@@ -45,7 +72,7 @@ export default function DashboardContent() {
 
         <div className="mt-6" data-tour="signal-feed">
           <ErrorBoundary name="Signal Feed">
-            <SignalFeed signals={signals} isLoading={isLoading} error={error} />
+            <SignalFeed signals={signals} isLoading={signalsLoading} error={signalsError} />
           </ErrorBoundary>
         </div>
 
