@@ -14,6 +14,8 @@ const PRIMARY_LINKS = [
 ];
 
 const MORE_LINKS = [
+  { href: '/watchlist', label: 'Watchlist', icon: '⭐' },
+  { href: '/calendar', label: 'Calendar', icon: '📅' },
   { href: '/history', label: 'Signal History', icon: '📋' },
   { href: '/portfolio', label: 'Portfolio', icon: '💼' },
   { href: '/backtest', label: 'Backtest', icon: '🧪' },
