@@ -77,13 +77,33 @@ def format_signal_alert(signal: dict) -> str:
         "",
         f"🎯 Target: {target}  |  🛑 Stop: {stop}",
         f"⏱ Timeframe: {signal.get('timeframe', '—')}",
+    ]
+
+    # Add news context if available (max 2 headlines for Telegram)
+    sentiment = signal.get("sentiment_data") or {}
+    articles = sentiment.get("articles", [])
+    if articles:
+        lines.append("")
+        lines.append("📰 Key news:")
+        for article in articles[:2]:
+            source = article.get("source", "")
+            headline = article.get("headline", "")
+            if len(headline) > 60:
+                headline = headline[:57] + "..."
+            source_label = f" ({source})" if source and source != "unknown" else ""
+            lines.append(f"• {headline}{source_label}")
+    elif sentiment.get("fallback_reason"):
+        lines.append("")
+        lines.append("📰 No recent news — technical analysis only")
+
+    lines.extend([
         "",
         f"🤖 AI: {signal.get('ai_reasoning', 'No reasoning available.')}",
         "",
         f"RSI: {rsi_val} | MACD: {macd_label} | Vol: {vol_label}",
         "",
         "⚠️ AI analysis only — not investment advice. DYOR.",
-    ]
+    ])
 
     return "\n".join(lines)
 

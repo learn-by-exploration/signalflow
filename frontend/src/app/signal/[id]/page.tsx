@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import type { Signal, SymbolTrackRecord } from '@/lib/types';
+import type { Signal, SymbolTrackRecord, SignalNewsContext } from '@/lib/types';
 import { formatPrice, formatPercent, formatDate, shortSymbol, formatTimeRemaining } from '@/utils/formatters';
 import { SIGNAL_COLORS, MARKET_LABELS } from '@/lib/constants';
 import { useMarketStore } from '@/store/marketStore';
@@ -23,12 +23,14 @@ import { TrailingStopSuggestion } from '@/components/signals/TrailingStopSuggest
 
 interface SignalDetailResponse {
   data: Signal;
+  news?: SignalNewsContext[];
 }
 
 export default function SignalDetailPage() {
   const params = useParams();
   const signalId = params.id as string;
   const [signal, setSignal] = useState<Signal | null>(null);
+  const [newsContext, setNewsContext] = useState<SignalNewsContext[]>([]);
   const [trackRecord, setTrackRecord] = useState<SymbolTrackRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export default function SignalDetailPage() {
       try {
         const res = (await api.getSignal(signalId)) as SignalDetailResponse;
         setSignal(res.data);
+        setNewsContext(res.news ?? []);
         // Fetch track record
         try {
           const tr = await api.getSymbolTrackRecord(res.data.symbol);
@@ -342,6 +345,54 @@ export default function SignalDetailPage() {
             </div>
           )}
         </div>
+
+        {/* News Context — linked news events that drove this signal */}
+        {newsContext.length > 0 && (
+          <div className="bg-bg-card border border-border-default rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-base">📰</span>
+              <h2 className="text-sm font-display font-semibold">News Context</h2>
+              <span className="text-[10px] font-mono text-text-muted">
+                {newsContext.length} article{newsContext.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {newsContext.map((item) => (
+                <div key={item.id} className="flex items-start gap-2 py-1.5 border-b border-border-default last:border-b-0">
+                  <span className={`shrink-0 mt-0.5 text-xs ${
+                    item.sentiment_direction === 'bullish' ? 'text-signal-buy' :
+                    item.sentiment_direction === 'bearish' ? 'text-signal-sell' :
+                    'text-text-muted'
+                  }`}>
+                    {item.sentiment_direction === 'bullish' ? '📈' :
+                     item.sentiment_direction === 'bearish' ? '📉' : '➡️'}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    {item.source_url ? (
+                      <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                         className="text-xs text-text-primary hover:text-accent-purple transition-colors leading-snug block">
+                        {item.headline}
+                      </a>
+                    ) : (
+                      <p className="text-xs text-text-primary leading-snug">{item.headline}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-muted">
+                      {item.source && <span>{item.source}</span>}
+                      {item.event_category && (
+                        <span className="px-1 py-0.5 rounded bg-accent-purple/10 text-accent-purple">
+                          {item.event_category}
+                        </span>
+                      )}
+                      {item.published_at && (
+                        <span>{new Date(item.published_at).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Risk Calculator */}
         <div className="bg-bg-card border border-border-default rounded-xl p-5">

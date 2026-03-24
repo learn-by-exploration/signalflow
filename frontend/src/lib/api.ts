@@ -103,4 +103,26 @@ export const api = {
 
   getBacktest: (backtestId: string) =>
     apiFetch(`/api/v1/backtest/${backtestId}`),
+
+  // ── News & Event Chain ──
+  getNews: (params?: URLSearchParams) =>
+    apiFetch(`/api/v1/news${params ? `?${params}` : ''}`),
+
+  getNewsForSignal: (signalId: string) =>
+    apiFetch(`/api/v1/news/signal/${signalId}`),
+
+  getEvents: (params?: URLSearchParams) =>
+    apiFetch(`/api/v1/news/events${params ? `?${params}` : ''}`),
+
+  getEvent: (eventId: string) =>
+    apiFetch(`/api/v1/news/events/${eventId}`),
+
+  getCausalChains: (symbol: string) =>
+    apiFetch(`/api/v1/news/chains/${encodeURIComponent(symbol)}`),
+
+  getEventCalendar: (params?: URLSearchParams) =>
+    apiFetch(`/api/v1/news/calendar${params ? `?${params}` : ''}`),
+
+  createCalendarEvent: (data: { title: string; event_type: string; scheduled_at: string; affected_symbols?: string[]; impact_magnitude?: number; is_recurring?: boolean }) =>
+    apiFetch('/api/v1/news/calendar', { method: 'POST', body: JSON.stringify(data) }),
 };

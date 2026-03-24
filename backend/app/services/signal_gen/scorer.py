@@ -1,11 +1,13 @@
 """Signal confidence scoring algorithm.
 
-Combines technical indicator signals with AI sentiment to produce
-a final confidence score and signal type.
+Combines technical indicator signals with AI sentiment and event chain
+analysis to produce a final confidence score and signal type.
 """
 
 import logging
 from typing import Any
+
+from app.services.ai_engine.event_chain import compute_chain_score
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +20,10 @@ TECHNICAL_WEIGHTS = {
     "sma_cross": 0.25,
 }
 
-# Final blend: 60% technical + 40% AI (per CLAUDE.md)
-TECHNICAL_BLEND = 0.60
-SENTIMENT_BLEND = 0.40
+# Chain-aware blend: 50% technical + 35% event chain + 15% sentiment residual
+TECHNICAL_BLEND = 0.50
+CHAIN_BLEND = 0.35
+SENTIMENT_BLEND = 0.15
 
 # Signal thresholds from CLAUDE.md
 SIGNAL_THRESHOLDS = [
@@ -83,8 +86,9 @@ def compute_final_confidence(
 ) -> tuple[int, str]:
     """Compute final confidence and signal type.
 
-    Uses formula: final = (technical × 0.60) + (sentiment × 0.40)
-    If sentiment unavailable, uses technical only capped at 60%.
+    Uses chain-aware formula:
+        final = (technical × 0.50) + (chain_score × 0.35) + (sentiment × 0.15)
+    Falls back to technical only (capped at 60%) if no AI data.
 
     Args:
         technical_data: Output of TechnicalAnalyzer.full_analysis().
@@ -103,7 +107,22 @@ def compute_final_confidence(
 
     if has_sentiment:
         sent_score = float(sentiment_data["sentiment_score"])
-        final = tech_score * TECHNICAL_BLEND + sent_score * SENTIMENT_BLEND
+
+        # Build chain events from extracted event data
+        chain_events = _extract_chain_events(sentiment_data)
+        chain_features = compute_chain_score(chain_events)
+        chain_score = float(chain_features["chain_score"])
+
+        if chain_events:
+            # Full chain-aware scoring
+            final = (
+                tech_score * TECHNICAL_BLEND
+                + chain_score * CHAIN_BLEND
+                + sent_score * SENTIMENT_BLEND
+            )
+        else:
+            # No chains extracted — fallback to 60/40 tech/sentiment
+            final = tech_score * 0.60 + sent_score * 0.40
     else:
         # No AI → use technical only, capped per CLAUDE.md
         final = tech_score
@@ -124,3 +143,26 @@ def compute_final_confidence(
             break
 
     return confidence, signal_type
+
+
+def _extract_chain_events(sentiment_data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Extract chain-compatible event dicts from sentiment engine output.
+
+    The sentiment engine returns events under the 'events' key when
+    the EVENT_CHAIN_PROMPT is used. Convert them into the format
+    expected by compute_chain_score.
+    """
+    events = sentiment_data.get("events", [])
+    if not events:
+        return []
+
+    chain_events = []
+    for evt in events:
+        chain_events.append({
+            "direction": evt.get("sentiment_direction", "neutral"),
+            "magnitude": min(float(evt.get("impact_magnitude", 3)) / 5.0, 1.0),
+            "confidence": float(evt.get("confidence", 50)),
+            "hours_since": float(evt.get("hours_since", 0)),
+            "category": evt.get("event_category", "sector"),
+        })
+    return chain_events

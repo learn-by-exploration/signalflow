@@ -116,3 +116,44 @@ def run_sentiment() -> dict:
     """Run Claude AI sentiment analysis on recent news for all tracked symbols."""
     logger.info("Running sentiment analysis")
     return asyncio.run(_run_sentiment_async())
+
+
+async def _expire_stale_events_async() -> dict:
+    """Mark event entities as expired based on their category-specific TTLs."""
+    from datetime import timezone as tz
+    from sqlalchemy import update
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+    from app.config import get_settings
+    from app.database import Base
+    from app.models.event_entity import EventEntity
+
+    settings = get_settings()
+    engine = create_async_engine(settings.database_url)
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    now = datetime.now(tz.utc)
+    expired = 0
+
+    try:
+        async with session_factory() as session:
+            # Expire events past their expires_at timestamp
+            stmt = (
+                update(EventEntity)
+                .where(EventEntity.expires_at <= now)
+                .values(expires_at=now)
+            )
+            result = await session.execute(stmt)
+            expired = result.rowcount
+            await session.commit()
+    finally:
+        await engine.dispose()
+
+    return {"expired_events": expired}
+
+
+@celery_app.task(name="app.tasks.ai_tasks.expire_stale_events")
+def expire_stale_events() -> dict:
+    """Expire event entities that have passed their TTL."""
+    logger.info("Expiring stale event entities")
+    return asyncio.run(_expire_stale_events_async())

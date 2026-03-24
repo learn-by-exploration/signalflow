@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.signal import Signal
+from app.models.signal_news_link import SignalNewsLink
+from app.models.news_event import NewsEvent
 from app.schemas.signal import MetaResponse, SignalListResponse, SignalResponse
 
 router = APIRouter(prefix="/signals", tags=["signals"])
@@ -55,9 +57,39 @@ async def get_signal(
     signal_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Get a single signal by ID."""
+    """Get a single signal by ID, including linked news events."""
     result = await db.execute(select(Signal).where(Signal.id == signal_id))
     signal = result.scalar_one_or_none()
     if not signal:
         raise HTTPException(status_code=404, detail="Signal not found")
-    return {"data": SignalResponse.model_validate(signal)}
+
+    # Fetch linked news events
+    news_items: list[dict] = []
+    link_result = await db.execute(
+        select(SignalNewsLink.news_event_id)
+        .where(SignalNewsLink.signal_id == signal_id)
+    )
+    news_event_ids = [row[0] for row in link_result.all()]
+    if news_event_ids:
+        news_result = await db.execute(
+            select(NewsEvent)
+            .where(NewsEvent.id.in_(news_event_ids))
+            .order_by(NewsEvent.fetched_at.desc())
+            .limit(10)
+        )
+        for ne in news_result.scalars().all():
+            news_items.append({
+                "id": str(ne.id),
+                "headline": ne.headline,
+                "source": ne.source,
+                "source_url": ne.source_url,
+                "sentiment_direction": ne.sentiment_direction,
+                "impact_magnitude": ne.impact_magnitude,
+                "event_category": ne.event_category,
+                "published_at": ne.published_at.isoformat() if ne.published_at else None,
+            })
+
+    return {
+        "data": SignalResponse.model_validate(signal),
+        "news": news_items,
+    }

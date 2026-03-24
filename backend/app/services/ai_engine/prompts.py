@@ -71,6 +71,54 @@ Write a concise evening wrap (150-200 words) covering:
 
 Tone: Professional, direct, educational. Highlight any lessons from today's signals."""
 
+EVENT_CHAIN_PROMPT = """You are a financial event analyst. Extract causal event chains \
+from these news articles about {symbol} ({market_type}).
+
+Articles:
+{articles_text}
+
+For each distinct event, trace its causal chain to market impact.
+
+Respond ONLY with valid JSON (no markdown, no preamble):
+{{
+  "events": [
+    {{
+      "description": "<concise event description, max 15 words>",
+      "category": "<macro_policy|earnings|sector|geopolitical|regulatory|technical|commodity>",
+      "source_articles": [0, 2],
+      "sentiment_direction": "<bullish|bearish|neutral>",
+      "magnitude": <0.0 to 1.0>,
+      "chain": [
+        {{
+          "step": 1,
+          "effect": "<intermediate effect, max 15 words>",
+          "mechanism": "<economic mechanism, max 10 words>",
+          "confidence": <0.0-1.0>
+        }}
+      ],
+      "affected_symbols": [
+        {{
+          "symbol": "{symbol}",
+          "direction": "<bullish|bearish|neutral>",
+          "magnitude": <0.0-1.0>,
+          "time_horizon": "<hours|days|weeks>"
+        }}
+      ],
+      "affected_sectors": ["<sector_name>"]
+    }}
+  ],
+  "cross_event_interactions": [
+    {{
+      "events": [0, 1],
+      "interaction": "<reinforcing|conflicting|independent>",
+      "net_effect": "<description of combined effect>"
+    }}
+  ],
+  "overall_direction": "<bullish|bearish|neutral>",
+  "overall_confidence": <0.0-1.0>,
+  "sentiment_score": <0-100>
+}}"""
+
 SYMBOL_QA_PROMPT = """You are an expert financial analyst assistant helping an intelligent \
 finance professional (M.Com in Finance) who is learning active trading.
 

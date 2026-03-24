@@ -61,4 +61,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "app.tasks.data_tasks.health_check",
         "schedule": 300.0,
     },
+    # ── Event Chain Maintenance ──
+    "expire-stale-events": {
+        "task": "app.tasks.ai_tasks.expire_stale_events",
+        "schedule": 3600.0,  # Every hour
+    },
 }

@@ -30,13 +30,6 @@ MIN_DATA_POINTS = 50
 # Cooldown period: don't generate a new signal for the same symbol within this window
 SIGNAL_COOLDOWN_HOURS = 1
 
-# Symbols that map to short display names
-SYMBOL_DISPLAY = {
-    ".NS": "stock",  # suffix check
-    "USDT": "crypto",  # suffix check
-    "/": "forex",  # contains check
-}
-
 
 def detect_market_type(symbol: str) -> str:
     """Detect market type from symbol string."""
@@ -60,7 +53,9 @@ class SignalGenerator:
     def __init__(self, db: AsyncSession, redis_client: Any | None = None) -> None:
         self.db = db
         self.settings = get_settings()
-        self.sentiment_engine = AISentimentEngine(redis_client=redis_client)
+        self.sentiment_engine = AISentimentEngine(
+            redis_client=redis_client, db_session=db
+        )
         self.reasoner = AIReasoner()
 
     async def generate_all(self) -> list[Signal]:
@@ -168,6 +163,9 @@ class SignalGenerator:
         self.db.add(signal)
         await self.db.flush()
 
+        # 8. Link signal to news events
+        await self._link_news_events(signal.id, sentiment_data)
+
         logger.info(
             "Signal: %s %s — %s (confidence=%d, target=%s, stop=%s)",
             signal_type,
@@ -227,3 +225,28 @@ class SignalGenerator:
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none() is not None
+
+    async def _link_news_events(
+        self, signal_id: Any, sentiment_data: dict[str, Any] | None
+    ) -> None:
+        """Create SignalNewsLink records to connect a signal to its news events."""
+        if not sentiment_data:
+            return
+
+        news_event_ids = sentiment_data.get("news_event_ids", [])
+        if not news_event_ids:
+            return
+
+        try:
+            from app.models.signal_news_link import SignalNewsLink
+            import uuid
+
+            for event_id_str in news_event_ids[:10]:
+                link = SignalNewsLink(
+                    signal_id=signal_id,
+                    news_event_id=uuid.UUID(event_id_str),
+                )
+                self.db.add(link)
+            await self.db.flush()
+        except Exception:
+            logger.warning("Failed to link news events to signal %s", signal_id)

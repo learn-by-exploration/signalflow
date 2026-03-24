@@ -72,7 +72,7 @@ class TestAISentimentEngine:
     async def test_neutral_fallback_on_no_news(self) -> None:
         engine = AISentimentEngine(redis_client=None)
         with patch.object(engine.cost_tracker, "is_budget_available", return_value=True):
-            with patch.object(engine, "_fetch_news", return_value=[]):
+            with patch("app.services.ai_engine.sentiment.fetch_news_for_symbol_structured", return_value=[]):
                 result = await engine.analyze_sentiment("BTCUSDT", "crypto")
         assert result["sentiment_score"] == 50
         assert result["fallback_reason"] == "no_news"
@@ -93,11 +93,18 @@ class TestAISentimentEngine:
         engine = AISentimentEngine(redis_client=None)
         mock_claude_response = {
             "content": [{"text": json.dumps({
+                "events": [
+                    {"headline": "Stock XYZ rises 5%", "description": "earnings beat",
+                     "sentiment_direction": "bullish", "impact_magnitude": 3,
+                     "event_category": "earnings", "confidence": 80},
+                    {"headline": "Sector momentum strong", "description": "sector momentum",
+                     "sentiment_direction": "bullish", "impact_magnitude": 2,
+                     "event_category": "sector", "confidence": 70},
+                ],
+                "overall_direction": "bullish",
+                "overall_confidence": 0.85,
                 "sentiment_score": 72,
-                "key_factors": ["earnings beat", "sector momentum"],
-                "market_impact": "positive",
-                "time_horizon": "short_term",
-                "confidence_in_analysis": 85,
+                "cross_event_interactions": [],
             })}],
             "usage": {"input_tokens": 500, "output_tokens": 100},
         }
@@ -106,8 +113,10 @@ class TestAISentimentEngine:
         mock_response.json.return_value = mock_claude_response
         mock_response.raise_for_status = MagicMock()
 
+        structured_articles = [{"headline": "Stock XYZ rises 5%", "source": "Reuters", "source_url": "https://example.com", "published_at": None}]
+
         with patch.object(engine.cost_tracker, "is_budget_available", return_value=True):
-            with patch.object(engine, "_fetch_news", return_value=["Stock XYZ rises 5%"]):
+            with patch("app.services.ai_engine.sentiment.fetch_news_for_symbol_structured", return_value=structured_articles):
                 with patch("app.services.ai_engine.sentiment.httpx.AsyncClient") as MockClient:
                     mock_client_instance = AsyncMock()
                     mock_client_instance.post.return_value = mock_response

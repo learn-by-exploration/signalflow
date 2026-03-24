@@ -8,6 +8,7 @@ import { useSignalStore } from '@/store/signalStore';
 
 const PRIMARY_LINKS = [
   { href: '/', label: 'Dashboard' },
+  { href: '/news', label: 'News' },
   { href: '/track-record', label: 'Track Record' },
   { href: '/alerts', label: 'Alerts' },
 ];

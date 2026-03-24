@@ -40,10 +40,15 @@ async def db_session() -> AsyncGenerator:
     # Import ALL models so Base.metadata.create_all creates all tables
     import app.models.alert_config  # noqa: F401
     import app.models.backtest  # noqa: F401
+    import app.models.causal_link  # noqa: F401
+    import app.models.event_calendar  # noqa: F401
+    import app.models.event_entity  # noqa: F401
     import app.models.market_data  # noqa: F401
+    import app.models.news_event  # noqa: F401
     import app.models.price_alert  # noqa: F401
     import app.models.signal  # noqa: F401
     import app.models.signal_history  # noqa: F401
+    import app.models.signal_news_link  # noqa: F401
     import app.models.signal_share  # noqa: F401
     import app.models.trade  # noqa: F401
 
@@ -69,10 +74,15 @@ async def db_engine_and_session():
     # Import ALL models so Base.metadata.create_all creates all tables
     import app.models.alert_config  # noqa: F401
     import app.models.backtest  # noqa: F401
+    import app.models.causal_link  # noqa: F401
+    import app.models.event_calendar  # noqa: F401
+    import app.models.event_entity  # noqa: F401
     import app.models.market_data  # noqa: F401
+    import app.models.news_event  # noqa: F401
     import app.models.price_alert  # noqa: F401
     import app.models.signal  # noqa: F401
     import app.models.signal_history  # noqa: F401
+    import app.models.signal_news_link  # noqa: F401
     import app.models.signal_share  # noqa: F401
     import app.models.trade  # noqa: F401
 

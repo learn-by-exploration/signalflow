@@ -6,6 +6,11 @@ from app.models.price_alert import PriceAlert
 from app.models.trade import Trade
 from app.models.signal_share import SignalShare
 from app.models.backtest import BacktestRun
+from app.models.news_event import NewsEvent
+from app.models.event_entity import EventEntity
+from app.models.causal_link import CausalLink
+from app.models.signal_news_link import SignalNewsLink
+from app.models.event_calendar import EventCalendar
 
 __all__ = [
     "MarketData",
@@ -16,4 +21,9 @@ __all__ = [
     "Trade",
     "SignalShare",
     "BacktestRun",
+    "NewsEvent",
+    "EventEntity",
+    "CausalLink",
+    "SignalNewsLink",
+    "EventCalendar",
 ]

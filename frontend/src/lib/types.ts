@@ -158,3 +158,78 @@ export interface AskResponse {
   answer: string;
   source: 'claude' | 'fallback';
 }
+
+// ── News & Event Chain Types ──
+
+export interface NewsEvent {
+  id: string;
+  headline: string;
+  source: string | null;
+  source_url: string | null;
+  symbol: string;
+  market_type: MarketType;
+  sentiment_direction: 'bullish' | 'bearish' | 'neutral' | null;
+  impact_magnitude: number | null;
+  event_category: string | null;
+  published_at: string | null;
+  fetched_at: string;
+}
+
+export interface EventEntity {
+  id: string;
+  title: string;
+  description: string | null;
+  event_category: string;
+  affected_symbols: string[];
+  affected_sectors: string[];
+  impact_magnitude: number;
+  sentiment_direction: 'bullish' | 'bearish' | 'neutral' | 'mixed';
+  confidence: number;
+  article_count: number;
+  occurred_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface CausalLink {
+  id: string;
+  source_event_id: string;
+  target_event_id: string;
+  relationship_type: 'causes' | 'amplifies' | 'dampens' | 'contradicts' | 'precedes';
+  propagation_delay: string | null;
+  impact_decay: number;
+  confidence: number;
+  reasoning: string | null;
+}
+
+export interface CausalChain {
+  root_event: EventEntity;
+  links: CausalLink[];
+  downstream_events: EventEntity[];
+  chain_score: number;
+  net_direction: string;
+}
+
+export interface EventCalendar {
+  id: string;
+  title: string;
+  event_type: string;
+  scheduled_at: string;
+  affected_symbols: string[];
+  impact_magnitude: number;
+  is_recurring: boolean;
+  outcome: string | null;
+  is_completed: boolean;
+  created_at: string;
+}
+
+export interface SignalNewsContext {
+  id: string;
+  headline: string;
+  source: string | null;
+  source_url: string | null;
+  sentiment_direction: string | null;
+  impact_magnitude: number | null;
+  event_category: string | null;
+  published_at: string | null;
+}
