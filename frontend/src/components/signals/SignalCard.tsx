@@ -147,6 +147,13 @@ export function SignalCard({ signal }: SignalCardProps) {
             AI-generated analysis for informational purposes only — not investment advice.{' '}
             <Link href="/terms" className="underline hover:text-text-secondary">Terms</Link>
           </p>
+          {signal.market_type === 'forex' && (
+            <p className="text-[10px] text-signal-hold/80 mt-1">
+              ⚠ Forex: Retail forex trading on non-exchange platforms is not permitted for
+              Indian residents under FEMA. Cross-currency pair analysis is for informational
+              purposes only.
+            </p>
+          )}
         </div>
       )}
 

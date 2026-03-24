@@ -3,6 +3,7 @@ import { Outfit, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/shared/Navbar';
 import { SebiDisclaimer } from '@/components/shared/SebiDisclaimer';
+import { CookieConsent } from '@/components/shared/CookieConsent';
 import { AuthProvider } from '@/components/shared/AuthProvider';
 import { QueryProvider } from '@/components/shared/QueryProvider';
 import { ToastProvider } from '@/components/shared/Toast';
@@ -42,6 +43,7 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-1">{children}</main>
             <SebiDisclaimer />
+            <CookieConsent />
           </ThemeProvider>
         </ToastProvider>
         </QueryProvider>

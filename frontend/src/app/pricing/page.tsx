@@ -99,6 +99,16 @@ export default function PricingPage() {
             Payment integration (Razorpay/Stripe) coming soon.
           </p>
         </div>
+
+        <div className="bg-signal-hold/5 border border-signal-hold/20 rounded-xl p-4 max-w-2xl mx-auto">
+          <p className="text-xs text-text-secondary text-center leading-relaxed">
+            <span className="text-signal-hold font-semibold">⚠ Risk Disclosure:</span>{' '}
+            SignalFlow AI is NOT registered with SEBI. All analysis is AI-generated for
+            educational purposes only and does not constitute investment advice. Past
+            performance does not guarantee future results. Trading involves substantial risk
+            of loss. Prices shown are indicative and may differ from actual market prices.
+          </p>
+        </div>
       </div>
     </main>
   );
