@@ -60,10 +60,10 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
   // Detect stale data (>5 minutes old)
   const isStale = lastUpdated && (Date.now() - new Date(lastUpdated).getTime()) > 5 * 60 * 1000;
 
-  // Show top symbol from each market (reduce clutter)
-  const topStocks = stocks.slice(0, 1);
-  const topCrypto = crypto.slice(0, 1);
-  const topForex = forex.slice(0, 1);
+  // Show top 3 symbols from each market
+  const topStocks = stocks.slice(0, 3);
+  const topCrypto = crypto.slice(0, 3);
+  const topForex = forex.slice(0, 3);
 
   const hasData = topStocks.length + topCrypto.length + topForex.length > 0;
 

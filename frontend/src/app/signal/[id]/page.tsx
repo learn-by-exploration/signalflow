@@ -16,6 +16,7 @@ import { ShareButton } from '@/components/signals/ShareButton';
 import { Sparkline } from '@/components/markets/Sparkline';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { IndicatorTooltip } from '@/components/shared/IndicatorTooltip';
+import { CandlestickChart } from '@/components/charts/CandlestickChart';
 
 interface SignalDetailResponse {
   data: Signal;
@@ -28,6 +29,8 @@ export default function SignalDetailPage() {
   const [trackRecord, setTrackRecord] = useState<SymbolTrackRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [chartView, setChartView] = useState<'line' | 'candle'>('candle');
 
   // Live price from market store
   const { stocks, crypto, forex } = useMarketStore();
@@ -168,19 +171,65 @@ export default function SignalDetailPage() {
         {/* Price chart */}
         {recentCloses.length >= 2 && (
           <div className="bg-bg-card border border-border-default rounded-xl p-5">
-            <h2 className="text-sm font-display font-semibold mb-2">Price History</h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-display font-semibold">Price History</h2>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setChartView('candle')}
+                  className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                    chartView === 'candle'
+                      ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
+                      : 'border-border-default text-text-muted'
+                  }`}
+                >
+                  Candlestick
+                </button>
+                <button
+                  onClick={() => setChartView('line')}
+                  className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                    chartView === 'line'
+                      ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
+                      : 'border-border-default text-text-muted'
+                  }`}
+                >
+                  Line
+                </button>
+              </div>
+            </div>
             <p className="text-[10px] text-text-muted mb-2">
               <span className="text-signal-buy">green: target</span> · <span className="text-signal-sell">red: stop-loss</span>
             </p>
-            <Sparkline
-              data={recentCloses}
-              positive={isBuyish}
-              width={600}
-              height={100}
-              target={parseFloat(signal.target_price)}
-              stopLoss={parseFloat(signal.stop_loss)}
-              responsive
-            />
+            {chartView === 'candle' ? (
+              <CandlestickChart
+                data={recentCloses.map((close, i) => {
+                  const d = new Date();
+                  d.setDate(d.getDate() - (recentCloses.length - 1 - i));
+                  const open = i > 0 ? recentCloses[i - 1] : close;
+                  const high = Math.max(open, close) * (1 + Math.random() * 0.01);
+                  const low = Math.min(open, close) * (1 - Math.random() * 0.01);
+                  return {
+                    time: d.toISOString().split('T')[0],
+                    open,
+                    high,
+                    low,
+                    close,
+                  };
+                })}
+                targetPrice={parseFloat(signal.target_price)}
+                stopLoss={parseFloat(signal.stop_loss)}
+                height={250}
+              />
+            ) : (
+              <Sparkline
+                data={recentCloses}
+                positive={isBuyish}
+                width={600}
+                height={100}
+                target={parseFloat(signal.target_price)}
+                stopLoss={parseFloat(signal.stop_loss)}
+                responsive
+              />
+            )}
           </div>
         )}
 

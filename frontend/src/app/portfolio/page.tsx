@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import type { PortfolioSummary, Trade } from '@/lib/types';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { EquityCurve } from '@/components/charts/EquityCurve';
 import { useUserStore } from '@/store/userStore';
 
 interface PortfolioData {
@@ -221,6 +222,23 @@ export default function PortfolioPage() {
               </p>
             </div>
           </div>
+        )}
+
+        {/* Equity Curve */}
+        {data.trades.length >= 2 && (
+          <EquityCurve
+            data={data.trades
+              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+              .reduce<{ date: string; value: number }[]>((acc, trade) => {
+                const prev = acc.length > 0 ? acc[acc.length - 1].value : 0;
+                const tradeValue = parseFloat(trade.price) * parseFloat(trade.quantity) * (trade.side === 'buy' ? 1 : -1);
+                return [...acc, {
+                  date: new Date(trade.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+                  value: prev + tradeValue,
+                }];
+              }, [])}
+            label="📈 Portfolio Equity Curve"
+          />
         )}
 
         {/* P&L Chart: Per-position bar chart */}

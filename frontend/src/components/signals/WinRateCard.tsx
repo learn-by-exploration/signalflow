@@ -2,19 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import type { SignalStats } from '@/lib/types';
+import type { SignalStats, WeeklyTrendItem } from '@/lib/types';
 import { WinRateCardSkeleton } from '@/components/shared/Skeleton';
+import { Sparkline } from '@/components/markets/Sparkline';
 
 export function WinRateCard() {
   const [stats, setStats] = useState<SignalStats | null>(null);
+  const [trend, setTrend] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const res = await api.getSignalStats() as SignalStats;
-        setStats(res);
+        const [statsRes, trendRes] = await Promise.all([
+          api.getSignalStats() as Promise<SignalStats>,
+          api.getAccuracyTrend(8).catch(() => []),
+        ]);
+        setStats(statsRes);
+        const items = Array.isArray(trendRes) ? trendRes : (trendRes as { data?: WeeklyTrendItem[] })?.data ?? [];
+        setTrend((items as WeeklyTrendItem[]).map((i) => i.win_rate));
         setError(null);
       } catch {
         setError('Failed to load signal stats');
@@ -56,6 +63,15 @@ export function WinRateCard() {
         <a href="/history" className="text-[10px] text-accent-purple hover:underline ml-auto">
           {stats.total_signals} signals →
         </a>
+        {trend.length >= 2 && (
+          <Sparkline
+            data={trend}
+            width={60}
+            height={24}
+            positive={stats.win_rate >= 50}
+            label={`Win rate trend: ${trend[trend.length - 1]?.toFixed(0) ?? ''}%`}
+          />
+        )}
       </div>
     </div>
   );
