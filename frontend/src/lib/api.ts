@@ -5,8 +5,17 @@
 import { API_URL } from './constants';
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // Add API key if configured
+  if (process.env.NEXT_PUBLIC_API_KEY) {
+    headers['X-API-Key'] = process.env.NEXT_PUBLIC_API_KEY;
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...init,
   });
 

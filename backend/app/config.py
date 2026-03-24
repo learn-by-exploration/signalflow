@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     frontend_url: str = "http://localhost:3000"
+    api_secret_key: str = ""  # Shared secret between frontend and backend
 
     # ── Database ──
     database_url: str = ""

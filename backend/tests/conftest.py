@@ -194,6 +194,7 @@ async def test_client(seeded_db):
     """HTTP test client with the database overridden to the seeded test DB."""
     from httpx import ASGITransport, AsyncClient
 
+    from app.auth import require_api_key
     from app.database import get_db
     from app.main import app
 
@@ -206,7 +207,11 @@ async def test_client(seeded_db):
                 await session.rollback()
                 raise
 
+    async def override_api_key() -> str:
+        return "test-key"
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[require_api_key] = override_api_key
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
@@ -221,9 +226,14 @@ async def client() -> AsyncGenerator:
     """
     from httpx import ASGITransport, AsyncClient
 
+    from app.auth import require_api_key
     from app.database import get_db
     from app.main import app
 
+    async def override_api_key() -> str:
+        return "test-key"
+
+    app.dependency_overrides[require_api_key] = override_api_key
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

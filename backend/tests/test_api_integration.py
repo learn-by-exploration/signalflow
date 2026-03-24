@@ -6,10 +6,14 @@ Requires: backend running (uvicorn) + seeded database.
 Skips gracefully if server isn't running.
 """
 
+import os
+
 import pytest
 import httpx
 
 BASE_URL = "http://localhost:8000"
+API_KEY = os.environ.get("API_SECRET_KEY", "")
+AUTH_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
 
 
 def _server_available() -> bool:
@@ -38,7 +42,7 @@ class TestHealthEndpoint:
 
 class TestSignalsEndpoint:
     def test_list_signals_returns_200(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals", headers=AUTH_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         assert "data" in body
@@ -47,7 +51,7 @@ class TestSignalsEndpoint:
         assert body["meta"]["count"] == len(body["data"])
 
     def test_list_signals_has_expected_fields(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals", headers=AUTH_HEADERS)
         body = resp.json()
         if body["data"]:
             signal = body["data"][0]
@@ -60,48 +64,48 @@ class TestSignalsEndpoint:
                 assert field in signal, f"Missing field: {field}"
 
     def test_filter_by_market(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals?market=crypto")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals?market=crypto", headers=AUTH_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         for signal in body["data"]:
             assert signal["market_type"] == "crypto"
 
     def test_filter_by_signal_type(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals?signal_type=STRONG_BUY")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals?signal_type=STRONG_BUY", headers=AUTH_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         for signal in body["data"]:
             assert signal["signal_type"] == "STRONG_BUY"
 
     def test_filter_by_min_confidence(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals?min_confidence=80")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals?min_confidence=80", headers=AUTH_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         for signal in body["data"]:
             assert signal["confidence"] >= 80
 
     def test_pagination_limit(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals?limit=2")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals?limit=2", headers=AUTH_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         assert len(body["data"]) <= 2
 
     def test_get_signal_by_id(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals?limit=1")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals?limit=1", headers=AUTH_HEADERS)
         signals = resp.json()["data"]
         if signals:
             signal_id = signals[0]["id"]
-            resp2 = httpx.get(f"{BASE_URL}/api/v1/signals/{signal_id}")
+            resp2 = httpx.get(f"{BASE_URL}/api/v1/signals/{signal_id}", headers=AUTH_HEADERS)
             assert resp2.status_code == 200
 
     def test_get_nonexistent_signal_returns_404(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals/00000000-0000-0000-0000-000000000000")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals/00000000-0000-0000-0000-000000000000", headers=AUTH_HEADERS)
         assert resp.status_code == 404
 
 
 class TestMarketsEndpoint:
     def test_market_overview_returns_200(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/markets/overview")
+        resp = httpx.get(f"{BASE_URL}/api/v1/markets/overview", headers=AUTH_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         assert "data" in body
@@ -111,14 +115,14 @@ class TestMarketsEndpoint:
         assert "forex" in data
 
     def test_market_overview_has_symbols(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/markets/overview")
+        resp = httpx.get(f"{BASE_URL}/api/v1/markets/overview", headers=AUTH_HEADERS)
         data = resp.json()["data"]
         assert len(data["stocks"]) > 0
         assert len(data["crypto"]) > 0
         assert len(data["forex"]) > 0
 
     def test_market_snapshot_fields(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/markets/overview")
+        resp = httpx.get(f"{BASE_URL}/api/v1/markets/overview", headers=AUTH_HEADERS)
         data = resp.json()["data"]
         for market_type in ["stocks", "crypto", "forex"]:
             if data[market_type]:
@@ -131,14 +135,14 @@ class TestMarketsEndpoint:
 
 class TestHistoryEndpoint:
     def test_history_returns_200(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals/history")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals/history", headers=AUTH_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         assert "data" in body
         assert "meta" in body
 
     def test_history_has_outcome_fields(self) -> None:
-        resp = httpx.get(f"{BASE_URL}/api/v1/signals/history")
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals/history", headers=AUTH_HEADERS)
         body = resp.json()
         if body["data"]:
             entry = body["data"][0]
