@@ -80,9 +80,17 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Chat-ID", "X-Request-ID"],
 )
+
+# ── Trusted Host middleware (production only) ──
+if settings.environment == "production" and settings.allowed_hosts:
+    from starlette.middleware.trustedhost import TrustedHostMiddleware
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=settings.allowed_hosts.split(","),
+    )
 
 
 # ── Correlation ID middleware ──
@@ -98,6 +106,13 @@ async def correlation_id_middleware(request: Request, call_next):
     )
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
+    # Security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if settings.environment == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 

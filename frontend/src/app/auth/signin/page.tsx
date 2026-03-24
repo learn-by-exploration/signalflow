@@ -7,7 +7,8 @@ import Link from 'next/link';
 
 function SignInForm() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/';
+  const rawCallback = searchParams.get('callbackUrl') ?? '/';
+  const callbackUrl = rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/';
   const error = searchParams.get('error');
 
   const [email, setEmail] = useState('');

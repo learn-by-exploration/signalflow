@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
     frontend_url: str = "http://localhost:3000"
     api_secret_key: str = ""  # Shared secret between frontend and backend
+    allowed_hosts: str = ""  # Comma-separated allowed hosts for production
 
     # ── Database ──
     database_url: str = ""
