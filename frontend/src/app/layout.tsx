@@ -4,6 +4,7 @@ import './globals.css';
 import { Navbar } from '@/components/shared/Navbar';
 import { SebiDisclaimer } from '@/components/shared/SebiDisclaimer';
 import { AuthProvider } from '@/components/shared/AuthProvider';
+import { QueryProvider } from '@/components/shared/QueryProvider';
 import { ToastProvider } from '@/components/shared/Toast';
 import { TextSizeProvider } from '@/components/shared/TextSizeProvider';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
@@ -34,6 +35,7 @@ export default function RootLayout({
     <html lang="en">
         <body className={`${outfit.variable} ${jetbrainsMono.variable} flex flex-col min-h-screen bg-bg-primary text-text-primary font-body antialiased`}>
         <AuthProvider>
+        <QueryProvider>
         <ToastProvider>
           <ThemeProvider>
             <TextSizeProvider />
@@ -42,6 +44,7 @@ export default function RootLayout({
             <SebiDisclaimer />
           </ThemeProvider>
         </ToastProvider>
+        </QueryProvider>
         </AuthProvider>
       </body>
     </html>
