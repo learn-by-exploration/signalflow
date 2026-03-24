@@ -56,7 +56,7 @@ async def test_create_price_alert_invalid_condition(test_client):
         "threshold": "100000.00",
     }
     resp = await test_client.post("/api/v1/alerts/price", json=payload)
-    assert resp.status_code == 400
+    assert resp.status_code == 422
 
 
 @pytest.mark.asyncio

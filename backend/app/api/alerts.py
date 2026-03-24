@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.database import get_db
 from app.models.alert_config import AlertConfig
 from app.schemas.alert import AlertConfigCreate, AlertConfigData, AlertConfigUpdate, WatchlistUpdate
@@ -102,13 +103,21 @@ async def update_watchlist(
     watchlist = list(config.watchlist) if isinstance(config.watchlist, list) else []
     symbol_upper = payload.symbol.upper().strip()
 
+    # Validate symbol against tracked list
+    if payload.action == "add":
+        settings = get_settings()
+        all_tracked = set(settings.tracked_stocks + settings.tracked_crypto + settings.tracked_forex)
+        if symbol_upper not in all_tracked:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Symbol '{symbol_upper}' is not in the tracked symbols list",
+            )
+
     if payload.action == "add":
         if symbol_upper not in watchlist:
             watchlist.append(symbol_upper)
     elif payload.action == "remove":
         watchlist = [s for s in watchlist if s != symbol_upper]
-    else:
-        raise HTTPException(status_code=400, detail="action must be 'add' or 'remove'")
 
     config.watchlist = watchlist
     await db.flush()

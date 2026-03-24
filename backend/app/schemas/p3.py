@@ -10,10 +10,10 @@ from pydantic import BaseModel, Field
 class PriceAlertCreate(BaseModel):
     """Create a new price alert."""
 
-    telegram_chat_id: int
-    symbol: str
-    market_type: str
-    condition: str = Field(description="'above' or 'below'")
+    telegram_chat_id: int = Field(gt=0)
+    symbol: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9/.]+$")
+    market_type: str = Field(pattern=r"^(stock|crypto|forex)$")
+    condition: str = Field(description="'above' or 'below'", pattern=r"^(above|below)$")
     threshold: Decimal
 
 
@@ -37,13 +37,13 @@ class PriceAlertData(BaseModel):
 class TradeCreate(BaseModel):
     """Log a new trade."""
 
-    telegram_chat_id: int
-    symbol: str
-    market_type: str
-    side: str = Field(description="'buy' or 'sell'")
-    quantity: Decimal
-    price: Decimal
-    notes: str | None = None
+    telegram_chat_id: int = Field(gt=0)
+    symbol: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9/.]+$")
+    market_type: str = Field(pattern=r"^(stock|crypto|forex)$")
+    side: str = Field(description="'buy' or 'sell'", pattern=r"^(buy|sell)$")
+    quantity: Decimal = Field(gt=0)
+    price: Decimal = Field(gt=0)
+    notes: str | None = Field(default=None, max_length=500)
     signal_id: UUID | None = None
 
 
@@ -77,8 +77,8 @@ class PortfolioSummary(BaseModel):
 class BacktestCreate(BaseModel):
     """Kick off a backtest run."""
 
-    symbol: str
-    market_type: str
+    symbol: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9/.]+$")
+    market_type: str = Field(pattern=r"^(stock|crypto|forex)$")
     days: int = Field(default=90, ge=7, le=365)
 
 
@@ -108,5 +108,5 @@ class BacktestData(BaseModel):
 class AskQuestion(BaseModel):
     """Ask a question about a symbol."""
 
-    symbol: str
-    question: str = Field(max_length=500)
+    symbol: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9/.]+$")
+    question: str = Field(min_length=3, max_length=500)

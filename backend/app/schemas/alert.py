@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field
 class AlertConfigCreate(BaseModel):
     """Request schema for creating alert config."""
 
-    telegram_chat_id: int
-    username: str | None = None
+    telegram_chat_id: int = Field(gt=0)
+    username: str | None = Field(default=None, max_length=100, pattern=r"^[a-zA-Z0-9_]+$")
     markets: list[str] = ["stock", "crypto", "forex"]
     min_confidence: int = Field(default=60, ge=0, le=100)
     signal_types: list[str] = ["STRONG_BUY", "BUY", "SELL", "STRONG_SELL"]
@@ -31,8 +31,8 @@ class AlertConfigUpdate(BaseModel):
 class WatchlistUpdate(BaseModel):
     """Request schema for adding/removing watchlist symbols."""
 
-    symbol: str
-    action: str = Field(description="'add' or 'remove'")
+    symbol: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9/.]+$")
+    action: str = Field(description="'add' or 'remove'", pattern=r"^(add|remove)$")
 
 
 class AlertConfigData(BaseModel):

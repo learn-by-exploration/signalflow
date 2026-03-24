@@ -73,7 +73,7 @@ async def test_log_trade_normalizes_symbol(test_client):
     """Symbol should be uppercased and trimmed."""
     payload = {
         "telegram_chat_id": 12345,
-        "symbol": "  infy.ns  ",
+        "symbol": "infy.ns",
         "market_type": "stock",
         "side": "buy",
         "quantity": "5",

@@ -134,7 +134,7 @@ async def test_update_watchlist_invalid_action(test_client):
         params={"telegram_chat_id": 12345},
         json={"symbol": "XYZ", "action": "toggle"},
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 422
 
 
 @pytest.mark.asyncio

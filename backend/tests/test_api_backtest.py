@@ -27,7 +27,7 @@ async def test_start_backtest(test_client):
 async def test_start_backtest_normalizes_symbol(test_client):
     """Symbol should be uppercased and trimmed."""
     payload = {
-        "symbol": "  btcusdt  ",
+        "symbol": "btcusdt",
         "market_type": "crypto",
         "days": 30,
     }
