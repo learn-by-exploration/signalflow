@@ -83,11 +83,11 @@ class TestTutorialFormatter:
     def test_tutorial_content(self) -> None:
         result = format_tutorial()
         assert "How to Read" in result
-        assert "Signal Type" in result
-        assert "STRONG BUY" in result
-        assert "Confidence Score" in result
-        assert "Target" in result
-        assert "Stop-Loss" in result
+        assert "Analysis Type" in result
+        assert "STRONGLY BULLISH" in result
+        assert "Analysis Strength" in result
+        assert "Key Levels" in result
+        assert "support" in result
         assert "AI Reasoning" in result
         assert "RSI" in result
         assert "MACD" in result

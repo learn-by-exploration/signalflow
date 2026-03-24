@@ -66,7 +66,7 @@ class TestFormatSignalAlert:
     def test_stock_buy_signal(self, stock_signal: dict) -> None:
         result = format_signal_alert(stock_signal)
         assert "🟢" in result
-        assert "STRONG BUY" in result or "STRONG_BUY" in result
+        assert "STRONGLY BULLISH" in result
         assert "HDFCBANK" in result
         assert "₹1,678.90" in result
         assert "₹1,780.00" in result
@@ -77,14 +77,14 @@ class TestFormatSignalAlert:
     def test_crypto_sell_signal(self, crypto_signal: dict) -> None:
         result = format_signal_alert(crypto_signal)
         assert "🔴" in result
-        assert "SELL" in result
+        assert "BEARISH" in result
         assert "BTC" in result
         assert "Bearish divergence" in result
 
     def test_hold_signal_yellow_emoji(self, hold_signal: dict) -> None:
         result = format_signal_alert(hold_signal)
         assert "🟡" in result
-        assert "HOLD" in result
+        assert "NEUTRAL" in result
 
     def test_confidence_bar_in_signal(self, stock_signal: dict) -> None:
         result = format_signal_alert(stock_signal)
@@ -139,7 +139,7 @@ class TestFormatSignalsList:
         ]
         result = format_signals_list(signals)
         assert "TCS" in result
-        assert "BUY" in result
+        assert "Bullish" in result
 
     def test_signals_list_empty(self) -> None:
         result = format_signals_list([])

@@ -35,6 +35,7 @@ class TestCostTracker:
 
     def test_budget_available(self, tmp_path: Path) -> None:
         tracker = CostTracker(storage_path=str(tmp_path / "costs.json"))
+        tracker._redis = None  # Isolate from Docker Redis
         assert tracker.is_budget_available() is True
 
     def test_budget_exhausted(self, tmp_path: Path) -> None:
@@ -46,6 +47,7 @@ class TestCostTracker:
 
     def test_usage_summary(self, tmp_path: Path) -> None:
         tracker = CostTracker(storage_path=str(tmp_path / "costs.json"))
+        tracker._redis = None  # Isolate from Docker Redis
         tracker.record_usage(1000, 500, "sentiment", "BTC")
         tracker.record_usage(2000, 300, "reasoning", "ETH")
         summary = tracker.get_usage_summary()
@@ -69,8 +71,9 @@ class TestAISentimentEngine:
     @pytest.mark.asyncio
     async def test_neutral_fallback_on_no_news(self) -> None:
         engine = AISentimentEngine(redis_client=None)
-        with patch.object(engine, "_fetch_news", return_value=[]):
-            result = await engine.analyze_sentiment("BTCUSDT", "crypto")
+        with patch.object(engine.cost_tracker, "is_budget_available", return_value=True):
+            with patch.object(engine, "_fetch_news", return_value=[]):
+                result = await engine.analyze_sentiment("BTCUSDT", "crypto")
         assert result["sentiment_score"] == 50
         assert result["fallback_reason"] == "no_news"
 
@@ -103,16 +106,17 @@ class TestAISentimentEngine:
         mock_response.json.return_value = mock_claude_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(engine, "_fetch_news", return_value=["Stock XYZ rises 5%"]):
-            with patch("app.services.ai_engine.sentiment.httpx.AsyncClient") as MockClient:
-                mock_client_instance = AsyncMock()
-                mock_client_instance.post.return_value = mock_response
-                MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client_instance)
-                MockClient.return_value.__aexit__ = AsyncMock(return_value=None)
+        with patch.object(engine.cost_tracker, "is_budget_available", return_value=True):
+            with patch.object(engine, "_fetch_news", return_value=["Stock XYZ rises 5%"]):
+                with patch("app.services.ai_engine.sentiment.httpx.AsyncClient") as MockClient:
+                    mock_client_instance = AsyncMock()
+                    mock_client_instance.post.return_value = mock_response
+                    MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client_instance)
+                    MockClient.return_value.__aexit__ = AsyncMock(return_value=None)
 
-                result = await engine.analyze_sentiment("TEST", "stock")
-                assert result["sentiment_score"] == 72
-                assert "earnings beat" in result["key_factors"]
+                    result = await engine.analyze_sentiment("TEST", "stock")
+                    assert result["sentiment_score"] == 72
+                    assert "earnings beat" in result["key_factors"]
 
     def test_parse_rss(self) -> None:
         from app.services.ai_engine.news_fetcher import _parse_rss_titles
