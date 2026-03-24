@@ -6,11 +6,38 @@
   --bg-primary: #0A0B0F;
   --bg-secondary: #12131A;
   --text-primary: #F9FAFB;
-  --text-secondary: #9CA3AF;
+  --text-secondary: #D1D5DB;
+  --text-muted: #9CA3AF;
   --accent-purple: #6366F1;
   --signal-buy: #00E676;
   --signal-sell: #FF5252;
   --signal-hold: #FFD740;
+}
+
+/* Focus-visible system — keyboard-only focus indicators */
+:focus-visible {
+  outline: 2px solid var(--accent-purple);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Touch target utility — minimum 44px for mobile tappability */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Font size floor — enforce 12px minimum sitewide */
+.text-xs {
+  font-size: 0.75rem !important; /* 12px */
+  line-height: 1rem;
 }
 
 /* Light theme overrides */
@@ -19,6 +46,7 @@ html.theme-light {
   --bg-secondary: #FFFFFF;
   --text-primary: #111827;
   --text-secondary: #4B5563;
+  --text-muted: #6B7280;
   --accent-purple: #4F46E5;
   --signal-buy: #059669;
   --signal-sell: #DC2626;
@@ -38,6 +66,7 @@ html.theme-light .border-border-default { border-color: rgba(0, 0, 0, 0.08); }
 html.theme-light .border-border-hover { border-color: rgba(0, 0, 0, 0.15); }
 html.theme-light .hover\:border-border-hover:hover { border-color: rgba(0, 0, 0, 0.15); }
 html.theme-light .text-text-muted { color: #6B7280; }
+html.theme-light .text-text-secondary { color: #4B5563; }
 
 body {
   background: radial-gradient(ellipse at top, #12131A 0%, #0A0B0F 70%);
@@ -124,7 +153,11 @@ html.text-size-large { font-size: 18px; }
 
 @media (prefers-reduced-motion: reduce) {
   .landing-fade-in,
-  .landing-fade-in-up {
+  .landing-fade-in-up,
+  .animate-slide-in,
+  .animate-fade-in-down,
+  .price-flash-up,
+  .price-flash-down {
     animation: none;
     opacity: 1;
     transform: none;

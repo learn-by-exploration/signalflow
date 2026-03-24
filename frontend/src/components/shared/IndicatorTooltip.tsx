@@ -29,18 +29,18 @@ export function IndicatorTooltip({ term, children }: IndicatorTooltipProps) {
   if (!explanation) return <>{children}</>;
 
   return (
-    <span
-      className="relative inline-flex items-center gap-0.5 cursor-help"
+    <button
+      type="button"
+      className="relative inline-flex items-center gap-0.5 cursor-help touch-target"
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
       onFocus={() => setShow(true)}
       onBlur={() => setShow(false)}
-      tabIndex={0}
-      role="button"
+      onClick={() => setShow(!show)}
       aria-describedby={show ? `tooltip-${term}` : undefined}
     >
       {children}
-      <svg className="w-3 h-3 text-text-muted/50 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <svg className="w-4 h-4 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       {show && (
@@ -53,6 +53,6 @@ export function IndicatorTooltip({ term, children }: IndicatorTooltipProps) {
           <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-bg-secondary" />
         </span>
       )}
-    </span>
+    </button>
   );
 }

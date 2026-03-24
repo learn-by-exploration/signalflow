@@ -102,7 +102,7 @@ export default function BacktestPage() {
                 className="w-full bg-bg-secondary border border-border-default rounded-lg px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
               />
               {symbol.trim() && !EXAMPLE_SYMBOLS.some((s) => s.toLowerCase().includes(symbol.trim().toLowerCase())) && (
-                <p className="text-[10px] text-signal-hold mt-1">
+                <p className="text-xs text-signal-hold mt-1">
                   Tip: Try {EXAMPLE_SYMBOLS.slice(0, 3).join(', ')} or other tracked symbols
                 </p>
               )}
@@ -144,7 +144,7 @@ export default function BacktestPage() {
             <p className="text-xs text-text-muted uppercase mb-2">Strategy Parameters</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className="text-[10px] text-text-muted block mb-1">RSI Entry Threshold</label>
+                <label className="text-xs text-text-muted block mb-1">RSI Entry Threshold</label>
                 <input
                   type="range"
                   min={20}
@@ -154,10 +154,10 @@ export default function BacktestPage() {
                   onChange={(e) => setRsiThreshold(Number(e.target.value))}
                   className="w-full accent-accent-purple"
                 />
-                <span className="text-[10px] font-mono text-text-secondary">RSI &lt; {rsiThreshold}</span>
+                <span className="text-xs font-mono text-text-secondary">RSI &lt; {rsiThreshold}</span>
               </div>
               <div>
-                <label className="text-[10px] text-text-muted block mb-1">ATR Target Multiple</label>
+                <label className="text-xs text-text-muted block mb-1">ATR Target Multiple</label>
                 <input
                   type="range"
                   min={1.0}
@@ -167,15 +167,15 @@ export default function BacktestPage() {
                   onChange={(e) => setAtrMultiplier(Number(e.target.value))}
                   className="w-full accent-accent-purple"
                 />
-                <span className="text-[10px] font-mono text-text-secondary">{atrMultiplier}× ATR</span>
+                <span className="text-xs font-mono text-text-secondary">{atrMultiplier}× ATR</span>
               </div>
               <div>
-                <label className="text-[10px] text-text-muted block mb-1">Stop Loss</label>
-                <span className="text-[10px] font-mono text-text-secondary">{(atrMultiplier / 2).toFixed(1)}× ATR</span>
-                <p className="text-[10px] text-text-muted mt-0.5">Auto: half of target</p>
+                <label className="text-xs text-text-muted block mb-1">Stop Loss</label>
+                <span className="text-xs font-mono text-text-secondary">{(atrMultiplier / 2).toFixed(1)}× ATR</span>
+                <p className="text-xs text-text-muted mt-0.5">Auto: half of target</p>
               </div>
               <div>
-                <label className="text-[10px] text-text-muted block mb-1">Risk:Reward</label>
+                <label className="text-xs text-text-muted block mb-1">Risk:Reward</label>
                 <span className="text-sm font-mono text-accent-purple">1:{(atrMultiplier / (atrMultiplier / 2)).toFixed(0)}</span>
               </div>
             </div>
@@ -307,7 +307,7 @@ export default function BacktestPage() {
                       style={{ width: `${(result.losses / result.total_signals) * 100}%` }}
                     />
                   </div>
-                  <div className="flex justify-between text-[10px] text-text-muted mt-1">
+                  <div className="flex justify-between text-xs text-text-muted mt-1">
                     <span className="text-signal-buy">{result.wins} wins</span>
                     <span className="text-signal-sell">{result.losses} losses</span>
                   </div>

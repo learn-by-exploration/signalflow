@@ -212,7 +212,7 @@ export default function AlertsPage() {
                 onChange={(e) => setMinConfidence(Number(e.target.value))}
                 className="w-full accent-accent-purple"
               />
-              <div className="flex justify-between text-[10px] text-text-muted mt-1">
+              <div className="flex justify-between text-xs text-text-muted mt-1">
                 <span>0%</span>
                 <span>50%</span>
                 <span>100%</span>

@@ -46,14 +46,12 @@ export function SignalCard({ signal }: SignalCardProps) {
   const ageDays = Math.floor(ageHours / 24);
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       aria-expanded={isExpanded}
-      className="bg-bg-card/[0.04] border border-border-default rounded-xl p-4 hover:border-border-hover hover:-translate-y-px hover:shadow-lg hover:shadow-black/10 transition-all duration-200 cursor-pointer"
+      className="w-full text-left bg-bg-card/[0.04] border border-border-default rounded-xl p-4 hover:border-border-hover hover:-translate-y-px hover:shadow-lg hover:shadow-black/10 transition-all duration-200 cursor-pointer"
       style={{ borderLeftColor: color, borderLeftWidth: 3 }}
       onClick={() => setIsExpanded(!isExpanded)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(!isExpanded); } }}
     >
       {/* Header row */}
       <div className="flex items-center justify-between">
@@ -63,7 +61,7 @@ export function SignalCard({ signal }: SignalCardProps) {
           </span>
           <span
             className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-display font-semibold"
-            style={{ backgroundColor: `${color}20`, color }}
+            style={{ backgroundColor: `${color}38`, color }}
             title={`${signal.confidence}% confidence — combined score from technical analysis (60%) and AI news sentiment (40%). Higher = stronger consensus, not probability of profit.`}
           >
             <span aria-hidden="true">{BADGE_ICONS[signal.signal_type] ?? ''}</span>{' '}
@@ -143,12 +141,12 @@ export function SignalCard({ signal }: SignalCardProps) {
               View full analysis →
             </Link>
           </div>
-          <p className="text-[10px] text-text-muted mt-2">
+          <p className="text-xs text-text-muted mt-2">
             AI-generated analysis for informational purposes only — not investment advice.{' '}
             <Link href="/terms" className="underline hover:text-text-secondary">Terms</Link>
           </p>
           {signal.market_type === 'forex' && (
-            <p className="text-[10px] text-signal-hold/80 mt-1">
+            <p className="text-xs text-signal-hold/80 mt-1">
               ⚠ Forex: Retail forex trading on non-exchange platforms is not permitted for
               Indian residents under FEMA. Cross-currency pair analysis is for informational
               purposes only.
@@ -157,6 +155,6 @@ export function SignalCard({ signal }: SignalCardProps) {
         </div>
       )}
 
-    </div>
+    </button>
   );
 }

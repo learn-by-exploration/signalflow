@@ -21,10 +21,10 @@ function HeatmapCell({ snapshot }: { snapshot: MarketSnapshot }) {
       style={{ backgroundColor: bg }}
       title={`${shortSymbol(snapshot.symbol)}: ${formatPercent(pct)}`}
     >
-      <div className="text-[10px] font-display font-medium text-text-primary leading-tight">
+      <div className="text-xs font-display font-medium text-text-primary leading-tight">
         {shortSymbol(snapshot.symbol)}
       </div>
-      <div className={`text-[10px] font-mono font-semibold leading-tight ${textColor}`}>
+      <div className={`text-xs font-mono font-semibold leading-tight ${textColor}`}>
         {formatPercent(pct)}
       </div>
     </div>
@@ -48,7 +48,7 @@ export function MarketHeatmap() {
       <h3 className="text-sm font-display font-medium text-text-secondary">Market Pulse</h3>
       {sections.map((section) => (
         <div key={section.key}>
-          <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">{section.label}</p>
+          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">{section.label}</p>
           <div className="grid grid-cols-4 sm:grid-cols-5 gap-1">
             {section.data.map((snapshot) => (
               <HeatmapCell key={snapshot.symbol} snapshot={snapshot} />

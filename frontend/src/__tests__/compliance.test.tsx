@@ -102,7 +102,8 @@ describe('Disclaimer Compliance', () => {
     const { container } = render(<SebiDisclaimer />);
     const mainP = container.querySelector('p');
     expect(mainP?.className).toContain('text-xs');
-    expect(mainP?.className).not.toContain('text-[10px]');
+    // Ensure we don't use sub-12px arbitrary sizes
+    expect(mainP?.className).not.toMatch(/text-\[\d+px\]/);
   });
 
   it('Pricing page contains risk disclosure', async () => {

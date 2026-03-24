@@ -63,7 +63,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 }`}
               >
                 <span className="font-medium block">{opt.label}</span>
-                <span className="text-[10px] text-text-muted block mt-0.5">{opt.desc}</span>
+                <span className="text-xs text-text-muted block mt-0.5">{opt.desc}</span>
               </button>
             ))}
           </div>
@@ -86,7 +86,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   }`}
                 >
                   {opt.label}
-                  <span className="block text-[10px] font-normal text-text-muted mt-0.5">
+                  <span className="block text-xs font-normal text-text-muted mt-0.5">
                     {opt.value.charAt(0).toUpperCase() + opt.value.slice(1)}
                   </span>
                 </button>
@@ -113,7 +113,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 }`}
               >
                 <span className="font-medium block">{opt.label}</span>
-                <span className="text-[10px] text-text-muted block mt-0.5">{opt.desc}</span>
+                <span className="text-xs text-text-muted block mt-0.5">{opt.desc}</span>
               </button>
             ))}
           </div>

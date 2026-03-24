@@ -10,7 +10,7 @@ function DashboardSkeleton() {
       {/* Market overview skeleton */}
       <div className="border-b border-border-default bg-bg-secondary/50">
         <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-16 rounded-lg bg-bg-card animate-pulse" />
             ))}

@@ -49,7 +49,7 @@ export function PipCalculator({ signal }: PipCalculatorProps) {
             <button
               key={lot}
               onClick={() => setLotSize(lot)}
-              className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+              className={`px-2 py-1 text-xs rounded border transition-colors ${
                 lotSize === lot
                   ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                   : 'border-border-default text-text-muted hover:border-border-hover'
@@ -63,24 +63,24 @@ export function PipCalculator({ signal }: PipCalculatorProps) {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
         <div className="bg-bg-secondary rounded-lg p-2">
-          <p className="text-[10px] text-text-muted">{isBuy ? 'Target' : 'Target'} Distance</p>
+          <p className="text-xs text-text-muted">{isBuy ? 'Target' : 'Target'} Distance</p>
           <p className="text-sm font-mono text-signal-buy">{targetPips.toFixed(1)} pips</p>
         </div>
         <div className="bg-bg-secondary rounded-lg p-2">
-          <p className="text-[10px] text-text-muted">Stop Distance</p>
+          <p className="text-xs text-text-muted">Stop Distance</p>
           <p className="text-sm font-mono text-signal-sell">{stopPips.toFixed(1)} pips</p>
         </div>
         <div className="bg-bg-secondary rounded-lg p-2">
-          <p className="text-[10px] text-text-muted">Potential Profit</p>
+          <p className="text-xs text-text-muted">Potential Profit</p>
           <p className="text-sm font-mono text-signal-buy">${potentialProfit.toFixed(2)}</p>
         </div>
         <div className="bg-bg-secondary rounded-lg p-2">
-          <p className="text-[10px] text-text-muted">Potential Loss</p>
+          <p className="text-xs text-text-muted">Potential Loss</p>
           <p className="text-sm font-mono text-signal-sell">${potentialLoss.toFixed(2)}</p>
         </div>
       </div>
 
-      <p className="text-[10px] text-text-muted">
+      <p className="text-xs text-text-muted">
         Pip value: ${pipValue.toFixed(2)}/pip at {lotSize} lot{lotSize !== 1 ? 's' : ''}
         {' · '}R:R = 1:{(targetPips / stopPips).toFixed(1)}
       </p>

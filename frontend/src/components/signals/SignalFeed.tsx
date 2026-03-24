@@ -143,13 +143,14 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
 
       {/* Timeframe filter (U10-2) */}
       <div className="flex items-center gap-2 flex-wrap -mt-1">
-        <span className="text-[10px] text-text-muted">Timeframe:</span>
+        <span className="text-xs text-text-muted">Timeframe:</span>
         {TIMEFRAME_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             onClick={() => setTimeframeFilter(opt.value)}
             title={opt.desc}
-            className={`px-2 py-1 text-[10px] rounded-full border transition-colors ${
+            aria-pressed={timeframeFilter === opt.value}
+            className={`min-h-[44px] min-w-[44px] px-3 py-2 text-xs rounded-full border transition-colors ${
               timeframeFilter === opt.value
                 ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                 : 'border-border-default text-text-muted hover:border-border-hover'
@@ -195,8 +196,14 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
       )}
 
       {error && (
-        <div className="bg-signal-sell/10 border border-signal-sell/30 rounded-xl p-4 text-center">
+        <div className="bg-signal-sell/10 border border-signal-sell/30 rounded-xl p-4 text-center space-y-2">
           <p className="text-signal-sell text-sm">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 text-sm rounded-lg border border-signal-sell/50 text-signal-sell hover:bg-signal-sell/10 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 

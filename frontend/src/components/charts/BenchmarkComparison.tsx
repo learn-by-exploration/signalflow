@@ -57,19 +57,19 @@ export function BenchmarkComparison({
       {/* Metrics */}
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>
-          <p className="text-[10px] text-text-muted">Strategy</p>
+          <p className="text-xs text-text-muted">Strategy</p>
           <p className={`text-sm font-mono ${strategyReturns >= 0 ? 'text-signal-buy' : 'text-signal-sell'}`}>
             {strategyReturns >= 0 ? '+' : ''}{strategyReturns.toFixed(2)}%
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-text-muted">{benchmarkName}</p>
+          <p className="text-xs text-text-muted">{benchmarkName}</p>
           <p className={`text-sm font-mono ${benchmarkReturns >= 0 ? 'text-signal-buy' : 'text-signal-sell'}`}>
             {benchmarkReturns >= 0 ? '+' : ''}{benchmarkReturns.toFixed(2)}%
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-text-muted">Alpha</p>
+          <p className="text-xs text-text-muted">Alpha</p>
           <p className={`text-sm font-mono font-semibold ${outperformance >= 0 ? 'text-accent-purple' : 'text-signal-sell'}`}>
             {outperformance >= 0 ? '+' : ''}{outperformance.toFixed(2)}%
           </p>

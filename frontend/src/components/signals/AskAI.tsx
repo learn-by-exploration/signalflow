@@ -45,7 +45,8 @@ export function AskAI() {
             value={symbol}
             onChange={(e) => setSymbol(e.target.value.toUpperCase())}
             placeholder="Symbol (e.g. HDFCBANK)"
-            className="flex-shrink-0 w-36 bg-bg-secondary border border-border-default rounded-lg px-3 py-1.5 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
+            aria-label="Stock or crypto symbol"
+            className="flex-shrink-0 w-36 bg-bg-secondary border border-border-default rounded-lg px-3 py-1.5 text-sm font-mono text-text-primary placeholder:text-text-muted"
           />
           <input
             type="text"
@@ -53,11 +54,12 @@ export function AskAI() {
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Ask anything..."
             maxLength={500}
-            className="flex-1 bg-bg-secondary border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
+            aria-label="Question about the symbol"
+            className="flex-1 bg-bg-secondary border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted"
           />
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-text-muted">{question.length}/500</span>
+          <span className="text-xs text-text-muted">{question.length}/500</span>
           <button
             type="submit"
             disabled={loading || !symbol.trim() || !question.trim()}
@@ -76,7 +78,7 @@ export function AskAI() {
               : 'bg-bg-secondary text-text-secondary'
         }`}>
           {source === 'fallback' && (
-            <p className="text-[10px] text-signal-hold mb-1">⚠️ AI budget exhausted — showing cached data</p>
+            <p className="text-xs text-signal-hold mb-1">⚠️ AI budget exhausted — showing cached data</p>
           )}
           {answer}
         </div>

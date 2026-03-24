@@ -26,7 +26,8 @@ describe('SebiDisclaimer', () => {
     const { container } = render(<SebiDisclaimer />);
     const mainParagraph = container.querySelector('p');
     expect(mainParagraph?.className).toContain('text-xs');
-    expect(mainParagraph?.className).not.toContain('text-[10px]');
+    // Ensure we don't use sub-12px arbitrary sizes
+    expect(mainParagraph?.className).not.toMatch(/text-\[\d+px\]/);
   });
 
   it('contains links to Privacy Policy and Terms', () => {

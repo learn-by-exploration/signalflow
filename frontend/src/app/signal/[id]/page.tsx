@@ -151,7 +151,7 @@ export default function SignalDetailPage() {
               <span className="text-base">📊</span>
               <div>
                 <p className="text-xs font-display font-medium text-signal-hold">Earnings Season Active</p>
-                <p className="text-[10px] text-text-muted mt-0.5">
+                <p className="text-xs text-text-muted mt-0.5">
                   Quarterly results may be upcoming for this stock. Signals near earnings dates carry higher uncertainty. Consider waiting for results before acting.
                 </p>
               </div>
@@ -215,7 +215,7 @@ export default function SignalDetailPage() {
               <div className="flex gap-1">
                 <button
                   onClick={() => setChartView('candle')}
-                  className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                  className={`px-2 py-1 text-xs rounded border transition-colors ${
                     chartView === 'candle'
                       ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                       : 'border-border-default text-text-muted'
@@ -225,7 +225,7 @@ export default function SignalDetailPage() {
                 </button>
                 <button
                   onClick={() => setChartView('line')}
-                  className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                  className={`px-2 py-1 text-xs rounded border transition-colors ${
                     chartView === 'line'
                       ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                       : 'border-border-default text-text-muted'
@@ -235,7 +235,7 @@ export default function SignalDetailPage() {
                 </button>
               </div>
             </div>
-            <p className="text-[10px] text-text-muted mb-2">
+            <p className="text-xs text-text-muted mb-2">
               <span className="text-signal-buy">green: target</span> · <span className="text-signal-sell">red: stop-loss</span>
             </p>
             {chartView === 'candle' ? (
@@ -322,20 +322,20 @@ export default function SignalDetailPage() {
               )}
               {/* News sources */}
               {sentimentData?.source_count != null && (
-                <p className="mt-2 text-[10px] text-text-muted">
+                <p className="mt-2 text-xs text-text-muted">
                   Based on {String(sentimentData.source_count)} news article{Number(sentimentData.source_count) !== 1 ? 's' : ''} analyzed
                 </p>
               )}
               {Array.isArray(sentimentData?.sources) && (sentimentData.sources as { title: string; url: string }[]).length > 0 && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-[10px] text-text-muted">Sources:</p>
+                  <p className="text-xs text-text-muted">Sources:</p>
                   {(sentimentData.sources as { title: string; url: string }[]).slice(0, 3).map((src, i) => (
                     <a
                       key={i}
                       href={src.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-[10px] text-accent-purple hover:underline truncate"
+                      className="block text-xs text-accent-purple hover:underline truncate"
                     >
                       {src.title || src.url}
                     </a>
@@ -352,7 +352,7 @@ export default function SignalDetailPage() {
             <div className="flex items-center gap-2 mb-3">
               <span className="text-base">📰</span>
               <h2 className="text-sm font-display font-semibold">News Context</h2>
-              <span className="text-[10px] font-mono text-text-muted">
+              <span className="text-xs font-mono text-text-muted">
                 {newsContext.length} article{newsContext.length !== 1 ? 's' : ''}
               </span>
             </div>
@@ -376,7 +376,7 @@ export default function SignalDetailPage() {
                     ) : (
                       <p className="text-xs text-text-primary leading-snug">{item.headline}</p>
                     )}
-                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-muted">
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-text-muted">
                       {item.source && <span>{item.source}</span>}
                       {item.event_category && (
                         <span className="px-1 py-0.5 rounded bg-accent-purple/10 text-accent-purple">
@@ -453,7 +453,7 @@ export default function SignalDetailPage() {
         </div>
 
         {/* Disclaimer */}
-        <p className="text-[10px] text-text-muted text-center">
+        <p className="text-xs text-text-muted text-center">
           This is AI-generated analysis, not financial advice. Always do your own research before trading.
         </p>
       </div>
@@ -471,11 +471,11 @@ function IndicatorDetail({ label, value, signal, description }: {
   const colorClass = signal === 'buy' ? 'text-signal-buy' : signal === 'sell' ? 'text-signal-sell' : 'text-signal-hold';
   return (
     <div className="bg-bg-secondary rounded-lg p-3">
-      <p className="text-[10px] text-text-muted uppercase mb-1">
+      <p className="text-xs text-text-muted uppercase mb-1">
         <IndicatorTooltip term={label}>{label}</IndicatorTooltip>
       </p>
       <p className={`text-sm font-mono font-semibold ${colorClass}`}>{value}</p>
-      {description && <p className="text-[10px] text-text-muted mt-0.5">{description}</p>}
+      {description && <p className="text-xs text-text-muted mt-0.5">{description}</p>}
     </div>
   );
 }

@@ -76,7 +76,7 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
             <span className={`inline-block w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
           </div>
           {lastUpdated && (
-            <span className={`text-[10px] font-mono ${isStale ? 'text-signal-sell' : 'text-text-muted'}`}>
+            <span className={`text-xs font-mono ${isStale ? 'text-signal-sell' : 'text-text-muted'}`}>
               {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               {isStale && ' (stale)'}
             </span>
@@ -103,7 +103,7 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
       </div>
       {fetchError && (
         <div className="max-w-7xl mx-auto px-4 py-1">
-          <p className="text-[10px] text-signal-hold">{fetchError}</p>
+          <p className="text-xs text-signal-hold">{fetchError}</p>
         </div>
       )}
     </div>
@@ -113,7 +113,7 @@ export function MarketOverview({ stocks, crypto, forex, isLoading, lastUpdated }
 function MarketSection({ label, snapshots }: { label: string; snapshots: MarketSnapshot[] }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="text-[10px] text-text-muted uppercase tracking-wider">{label}</span>
+      <span className="text-xs text-text-muted uppercase tracking-wider">{label}</span>
       {snapshots.map((s) => (
         <MarketTicker key={s.symbol} snapshot={s} />
       ))}

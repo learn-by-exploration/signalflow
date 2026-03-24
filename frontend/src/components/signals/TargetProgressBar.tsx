@@ -28,7 +28,7 @@ export function TargetProgressBar({ signal, livePrice }: TargetProgressBarProps)
 
   return (
     <div className="mt-2">
-      <div className="flex items-center justify-between text-[10px] font-mono text-text-muted mb-0.5">
+      <div className="flex items-center justify-between text-xs font-mono text-text-muted mb-0.5">
         <span className="text-signal-sell">⛔ Stop</span>
         <span className="text-signal-buy">🎯 Target</span>
       </div>

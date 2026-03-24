@@ -419,7 +419,7 @@ function SortableHeader({ label, col, currentCol, dir, onSort, className }: {
       className={`flex items-center gap-0.5 hover:text-text-primary transition-colors ${className ?? ''} ${isActive ? 'text-accent-purple' : ''}`}
     >
       {label}
-      <span className="text-[8px]">
+      <span className="text-xs">
         {isActive ? (dir === 'desc' ? '▼' : '▲') : '⇅'}
       </span>
     </button>

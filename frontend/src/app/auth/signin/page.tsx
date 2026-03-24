@@ -149,7 +149,7 @@ function SignInForm() {
           >
             Use Demo Account
           </button>
-          <p className="text-[10px] text-text-muted font-mono">demo@signalflow.ai / demo123</p>
+          <p className="text-xs text-text-muted font-mono">demo@signalflow.ai / demo123</p>
         </div>
         )}
 

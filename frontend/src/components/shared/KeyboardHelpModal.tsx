@@ -8,7 +8,9 @@ interface KeyboardHelpModalProps {
 }
 
 export function KeyboardHelpModal({ isOpen, onClose }: KeyboardHelpModalProps) {
+  // Don't show on touch devices
   if (!isOpen) return null;
+  if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -30,7 +32,7 @@ export function KeyboardHelpModal({ isOpen, onClose }: KeyboardHelpModalProps) {
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-text-muted mt-4">Press <kbd className="font-mono">?</kbd> to toggle this panel</p>
+        <p className="text-xs text-text-muted mt-4">Press <kbd className="font-mono">?</kbd> to toggle this panel</p>
       </div>
     </div>
   );

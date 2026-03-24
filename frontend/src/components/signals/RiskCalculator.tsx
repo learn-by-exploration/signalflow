@@ -55,13 +55,14 @@ export function RiskCalculator({ signal }: RiskCalculatorProps) {
           type="number"
           value={customInput}
           placeholder="Custom"
+          aria-label="Custom investment amount"
           onClick={(e) => e.stopPropagation()}
           onChange={(e) => {
             setCustomInput(e.target.value);
             const v = parseFloat(e.target.value);
             if (v > 0) setAmount(v);
           }}
-          className="w-20 px-2 py-0.5 text-xs font-mono rounded border border-border-default text-text-primary bg-bg-secondary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
+          className="w-20 px-2 py-0.5 text-xs font-mono rounded border border-border-default text-text-primary bg-bg-secondary placeholder:text-text-muted"
         />
       </div>
 
@@ -71,7 +72,7 @@ export function RiskCalculator({ signal }: RiskCalculatorProps) {
           <div className="text-signal-buy text-sm font-mono font-bold">
             +{currencySymbol}{maxGain.toFixed(0)}
           </div>
-          <div className="text-[10px] text-text-muted">
+          <div className="text-xs text-text-muted">
             Max Gain ({gainPct.toFixed(1)}%)
           </div>
         </div>
@@ -79,7 +80,7 @@ export function RiskCalculator({ signal }: RiskCalculatorProps) {
           <div className="text-signal-sell text-sm font-mono font-bold">
             -{currencySymbol}{maxLoss.toFixed(0)}
           </div>
-          <div className="text-[10px] text-text-muted">
+          <div className="text-xs text-text-muted">
             Max Loss ({lossPct.toFixed(1)}%)
           </div>
         </div>
@@ -87,7 +88,7 @@ export function RiskCalculator({ signal }: RiskCalculatorProps) {
           <div className="text-accent-purple text-sm font-mono font-bold">
             1:{riskReward.toFixed(1)}
           </div>
-          <div className="text-[10px] text-text-muted">
+          <div className="text-xs text-text-muted">
             Risk:Reward
           </div>
         </div>

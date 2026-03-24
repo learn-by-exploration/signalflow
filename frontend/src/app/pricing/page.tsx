@@ -39,7 +39,7 @@ export default function PricingPage() {
                 }`}
               >
                 {highlight && (
-                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-accent-purple bg-accent-purple/10 px-2 py-0.5 rounded-full">
+                  <span className="inline-block text-xs font-bold uppercase tracking-wider text-accent-purple bg-accent-purple/10 px-2 py-0.5 rounded-full">
                     Recommended
                   </span>
                 )}
