@@ -1,6 +1,7 @@
 """FastAPI application entrypoint."""
 
 import logging
+import uuid
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
 from datetime import datetime, timezone
@@ -78,6 +79,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── Correlation ID middleware ──
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    """Attach a unique request_id to every request for tracing."""
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:8])
+    structlog.contextvars.clear_contextvars()
+    structlog.contextvars.bind_contextvars(
+        request_id=request_id,
+        method=request.method,
+        path=request.url.path,
+    )
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
 
 # ── Routers ──
 app.include_router(api_router)

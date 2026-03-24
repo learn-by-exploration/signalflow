@@ -11,6 +11,7 @@ from app.api.portfolio import router as portfolio_router
 from app.api.sharing import router as sharing_router
 from app.api.ai_qa import router as ai_qa_router
 from app.api.backtest import router as backtest_router
+from app.api.feedback import router as feedback_router
 
 api_router = APIRouter(prefix="/api/v1")
 # History must come before signals so /signals/history isn't caught by /signals/{signal_id}
@@ -24,3 +25,4 @@ api_router.include_router(price_alerts_router)
 api_router.include_router(portfolio_router)
 api_router.include_router(ai_qa_router)
 api_router.include_router(backtest_router)
+api_router.include_router(feedback_router)
