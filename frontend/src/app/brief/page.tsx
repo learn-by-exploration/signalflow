@@ -20,7 +20,8 @@ export default function MorningBriefPage() {
   useEffect(() => {
     async function fetchBrief() {
       try {
-        const res = (await api.get('/api/v1/signals?limit=5')) as { data: { symbol: string; signal_type: string; confidence: number; market_type: string }[] };
+        const params = new URLSearchParams({ limit: '5' });
+        const res = (await api.getSignals(params)) as { data: { symbol: string; signal_type: string; confidence: number; market_type: string }[] };
         const signals = res.data ?? [];
         const now = new Date();
         const hour = now.getHours();
