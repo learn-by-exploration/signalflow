@@ -139,8 +139,24 @@ make frontend-install # Install npm dependencies
 1. Run the full test suite before staging/committing any changes
 2. If any existing test fails, fix before committing
 3. New code must include corresponding tests
-4. **Test command**: `python -m pytest tests/ -v --override-ini="asyncio_mode=auto"` (from `backend/` directory)
-5. **Minimum bar**: All tests green (0 failures) before any commit
+4. **Backend test command**: `python -m pytest tests/ -v --override-ini="asyncio_mode=auto"` (from `backend/` directory)
+5. **Frontend test command**: `npx vitest run` (from `frontend/` directory)
+6. **Docker build verification**: `docker compose build` must succeed — no TypeScript compilation errors, no broken imports
+7. **Minimum bar**: All tests green (0 failures) AND Docker build clean before any commit
+
+### Pre-Tag / Release Gate (MANDATORY)
+
+**Before creating any git tag or version release, the FULL system must be verified end-to-end.** This is non-negotiable:
+
+1. **All backend tests pass**: `python -m pytest tests/ -v --override-ini="asyncio_mode=auto"`
+2. **All frontend tests pass**: `npx vitest run`
+3. **Docker build succeeds**: `docker compose build` — all 5 services (db, redis, backend, celery, frontend) must build without errors
+4. **Docker run verification**: `docker compose up -d` — all services must start and reach healthy state
+5. **Health check passes**: `curl http://localhost:8000/health` returns 200
+6. **Frontend loads**: `curl http://localhost:3000` returns 200
+7. **Clean shutdown**: `docker compose down` after verification
+8. **Never tag a broken build** — if any step above fails, fix it before tagging
+9. **Tag command**: Only after all checks pass: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
 
 ---
 
@@ -486,8 +502,24 @@ export default function SignalCard({ signal, expanded, onToggle }: any) {
 3. **If new code is added**, write corresponding tests for it in the same commit
 4. **If existing code is modified**, verify related tests still pass and update them if behavior changed intentionally
 5. **New features without tests will not be committed** — every service, utility, and API endpoint must have test coverage
-6. **Test command**: `python -m pytest tests/ -v --override-ini="asyncio_mode=auto"` (from `backend/` directory)
-7. **Minimum bar**: All tests green (0 failures) before any commit is made
+6. **Backend test command**: `python -m pytest tests/ -v --override-ini="asyncio_mode=auto"` (from `backend/` directory)
+7. **Frontend test command**: `npx vitest run` (from `frontend/` directory)
+8. **Docker build verification**: `docker compose build` must succeed — no TypeScript compilation errors, no broken imports
+9. **Minimum bar**: All tests green (0 failures) AND Docker build clean before any commit is made
+
+### Pre-Tag / Release Gate (MANDATORY)
+
+**Before creating any git tag or version release, the FULL system must be verified end-to-end.** This is non-negotiable:
+
+1. **All backend tests pass**: `python -m pytest tests/ -v --override-ini="asyncio_mode=auto"`
+2. **All frontend tests pass**: `npx vitest run`
+3. **Docker build succeeds**: `docker compose build` — all 5 services (db, redis, backend, celery, frontend) must build without errors
+4. **Docker run verification**: `docker compose up -d` — all services must start and reach healthy state
+5. **Health check passes**: `curl http://localhost:8000/health` returns 200
+6. **Frontend loads**: `curl http://localhost:3000` returns 200
+7. **Clean shutdown**: `docker compose down` after verification
+8. **Never tag a broken build** — if any step above fails, fix it before tagging
+9. **Tag command**: Only after all checks pass: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
 
 ---
 
@@ -921,7 +953,8 @@ tests/
 - **Mock external APIs**: Claude API, Binance, Yahoo Finance — never call real APIs in tests
 - **Integration tests** must test the full pipeline: data → indicators → AI → signal → delivery
 - **Tester agent writes tests alongside features**, not after
-- **Pre-commit gate**: The full test suite MUST pass before every commit. No exceptions. If code changes break existing tests, fix them before committing. If new code is added, include matching tests in the same commit. See "Pre-Commit Testing Rule" under Coding Standards for details.
+- **Pre-commit gate**: The full test suite MUST pass before every commit. No exceptions. If code changes break existing tests, fix them before committing. If new code is added, include matching tests in the same commit. Docker build (`docker compose build`) must also succeed. See "Pre-Commit Testing Rule" under Coding Standards for details.
+- **Pre-tag gate**: Before any git tag or release, the full system must be Docker-built, started, health-checked, and verified end-to-end. See "Pre-Tag / Release Gate" under Coding Standards for details.
 
 ---
 
