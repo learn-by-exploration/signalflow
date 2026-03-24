@@ -39,8 +39,8 @@ export function TargetProgressBar({ signal, livePrice }: TargetProgressBarProps)
         />
         {/* Current price marker */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-text-primary border-2 border-bg-primary shadow-sm transition-all duration-500"
-          style={{ left: `calc(${progress}% - 5px)` }}
+          className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-text-primary border-2 border-bg-primary shadow-sm"
+          style={{ left: `calc(${progress}% - 5px)`, transition: 'left 0.7s ease-out' }}
         />
       </div>
     </div>

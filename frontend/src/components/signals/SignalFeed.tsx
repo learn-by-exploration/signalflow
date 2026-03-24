@@ -5,7 +5,7 @@ import type { Signal, MarketType } from '@/lib/types';
 import { useSignalStore } from '@/store/signalStore';
 import { api } from '@/lib/api';
 import { SignalCard } from './SignalCard';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { SignalFeedSkeleton } from '@/components/shared/Skeleton';
 import { KeyboardHelpModal } from '@/components/shared/KeyboardHelpModal';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import Link from 'next/link';
@@ -87,7 +87,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
               onClick={() => setFilter(opt.value)}
               aria-label={`Filter by ${opt.label}`}
               aria-pressed={filter === opt.value}
-              className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+              className={`min-h-[44px] min-w-[44px] px-3 py-2 text-xs rounded-full border transition-colors ${
                 filter === opt.value
                   ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                   : 'border-border-default text-text-secondary hover:border-border-hover'
@@ -100,7 +100,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
           <button
             onClick={() => { setSearchOpen(!searchOpen); if (searchOpen) setSearch(''); }}
             aria-label="Search symbols"
-            className={`p-1.5 rounded-full border transition-colors ${
+            className={`min-h-[44px] min-w-[44px] p-2.5 rounded-full border transition-colors ${
               searchOpen
                 ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
                 : 'border-border-default text-text-muted hover:border-border-hover hover:text-text-secondary'
@@ -144,9 +144,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
 
       {/* Content */}
       {isLoading && (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner size="lg" />
-        </div>
+        <SignalFeedSkeleton count={5} />
       )}
 
       {error && (

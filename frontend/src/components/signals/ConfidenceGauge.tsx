@@ -7,12 +7,21 @@ interface ConfidenceGaugeProps {
   size?: number;
 }
 
+const SIGNAL_LABELS: Record<SignalType, string> = {
+  STRONG_BUY: 'Strong Buy',
+  BUY: 'Buy',
+  HOLD: 'Hold',
+  SELL: 'Sell',
+  STRONG_SELL: 'Strong Sell',
+};
+
 export function ConfidenceGauge({ confidence, signalType, size = 56 }: ConfidenceGaugeProps) {
   const color = SIGNAL_COLORS[signalType];
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (confidence / 100) * circumference;
   const center = size / 2;
+  const label = SIGNAL_LABELS[signalType];
 
   return (
     <div
@@ -20,7 +29,13 @@ export function ConfidenceGauge({ confidence, signalType, size = 56 }: Confidenc
       style={{ width: size, height: size }}
       title={`Signal Strength ${confidence}% — measures how strongly technical indicators and AI sentiment agree. Higher = stronger consensus, not probability of profit.`}
     >
-      <svg width={size} height={size} className="-rotate-90" role="img" aria-label={`Signal strength ${confidence}%`}>
+      <svg
+        width={size}
+        height={size}
+        className="-rotate-90"
+        role="img"
+        aria-label={`Confidence: ${confidence} percent, ${label}`}
+      >
         {/* Background track */}
         <circle
           cx={center}

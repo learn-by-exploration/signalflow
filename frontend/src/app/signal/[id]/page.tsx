@@ -15,6 +15,7 @@ import { RiskCalculator } from '@/components/signals/RiskCalculator';
 import { ShareButton } from '@/components/signals/ShareButton';
 import { Sparkline } from '@/components/markets/Sparkline';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { IndicatorTooltip } from '@/components/shared/IndicatorTooltip';
 
 interface SignalDetailResponse {
   data: Signal;
@@ -298,7 +299,9 @@ function IndicatorDetail({ label, value, signal, description }: {
   const colorClass = signal === 'buy' ? 'text-signal-buy' : signal === 'sell' ? 'text-signal-sell' : 'text-signal-hold';
   return (
     <div className="bg-bg-secondary rounded-lg p-3">
-      <p className="text-[10px] text-text-muted uppercase mb-1">{label}</p>
+      <p className="text-[10px] text-text-muted uppercase mb-1">
+        <IndicatorTooltip term={label}>{label}</IndicatorTooltip>
+      </p>
       <p className={`text-sm font-mono font-semibold ${colorClass}`}>{value}</p>
       {description && <p className="text-[10px] text-text-muted mt-0.5">{description}</p>}
     </div>

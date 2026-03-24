@@ -6,9 +6,10 @@ interface SparklineProps {
   target?: number;
   stopLoss?: number;
   responsive?: boolean;
+  label?: string;
 }
 
-export function Sparkline({ data, width = 60, height = 20, positive = true, target, stopLoss, responsive = false }: SparklineProps) {
+export function Sparkline({ data, width = 60, height = 20, positive = true, target, stopLoss, responsive = false, label }: SparklineProps) {
   if (data.length < 2) return null;
 
   // Include target and stop-loss in min/max calculation so lines are visible
@@ -31,6 +32,8 @@ export function Sparkline({ data, width = 60, height = 20, positive = true, targ
 
   return (
     <svg
+      role="img"
+      aria-label={label ?? `Price trend over ${data.length} periods, trending ${positive ? 'upward' : 'downward'}`}
       {...(responsive
         ? { viewBox: `0 0 ${width} ${height}`, className: 'w-full h-auto', preserveAspectRatio: 'none' }
         : { width, height, className: 'inline-block' }

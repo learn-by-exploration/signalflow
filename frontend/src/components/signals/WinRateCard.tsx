@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { SignalStats } from '@/lib/types';
+import { WinRateCardSkeleton } from '@/components/shared/Skeleton';
 
 export function WinRateCard() {
   const [stats, setStats] = useState<SignalStats | null>(null);
@@ -27,11 +28,7 @@ export function WinRateCard() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="bg-bg-card border border-border-default rounded-lg p-3 animate-pulse">
-        <div className="h-4 bg-bg-secondary rounded w-48" />
-      </div>
-    );
+    return <WinRateCardSkeleton />;
   }
 
   if (!stats || stats.total_signals === 0) {

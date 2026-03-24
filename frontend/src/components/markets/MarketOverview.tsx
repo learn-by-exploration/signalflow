@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import type { MarketSnapshot } from '@/lib/types';
 import { formatPrice, formatPercent, changeDirection, shortSymbol } from '@/utils/formatters';
 import { MARKET_LABELS } from '@/lib/constants';
@@ -24,9 +25,24 @@ function MarketTicker({ snapshot }: { snapshot: MarketSnapshot }) {
   const dir = changeDirection(snapshot.change_pct);
   const pctColor =
     dir === 'up' ? 'text-signal-buy' : dir === 'down' ? 'text-signal-sell' : 'text-text-muted';
+  const prevPriceRef = useRef<string>(snapshot.price);
+  const flashRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (prevPriceRef.current !== snapshot.price && flashRef.current) {
+      const newPrice = parseFloat(snapshot.price);
+      const oldPrice = parseFloat(prevPriceRef.current);
+      const cls = newPrice > oldPrice ? 'price-flash-up' : 'price-flash-down';
+      flashRef.current.classList.remove('price-flash-up', 'price-flash-down');
+      // Force reflow to restart animation
+      void flashRef.current.offsetWidth;
+      flashRef.current.classList.add(cls);
+      prevPriceRef.current = snapshot.price;
+    }
+  }, [snapshot.price]);
 
   return (
-    <div className="flex items-center gap-2 whitespace-nowrap">
+    <div ref={flashRef} className="flex items-center gap-2 whitespace-nowrap rounded px-1">
       <span className="text-text-muted text-xs">{shortSymbol(snapshot.symbol)}</span>
       <span className="font-mono text-xs text-text-primary">
         {formatPrice(snapshot.price, snapshot.market_type)}

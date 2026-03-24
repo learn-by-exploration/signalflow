@@ -9,6 +9,14 @@ import { useMarketStore } from '@/store/marketStore';
 import { AIReasoningPanel } from './AIReasoningPanel';
 import { TargetProgressBar } from './TargetProgressBar';
 
+const BADGE_ICONS: Record<string, string> = {
+  STRONG_BUY: '▲▲',
+  BUY: '▲',
+  HOLD: '◆',
+  SELL: '▼',
+  STRONG_SELL: '▼▼',
+};
+
 interface SignalCardProps {
   signal: Signal;
 }
@@ -42,7 +50,7 @@ export function SignalCard({ signal }: SignalCardProps) {
       role="button"
       tabIndex={0}
       aria-expanded={isExpanded}
-      className="bg-bg-card border border-border-default rounded-xl p-4 hover:border-border-hover transition-all duration-200 cursor-pointer"
+      className="bg-bg-card/[0.04] border border-border-default rounded-xl p-4 hover:border-border-hover hover:-translate-y-px hover:shadow-lg hover:shadow-black/10 transition-all duration-200 cursor-pointer"
       style={{ borderLeftColor: color, borderLeftWidth: 3 }}
       onClick={() => setIsExpanded(!isExpanded)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(!isExpanded); } }}
@@ -57,6 +65,7 @@ export function SignalCard({ signal }: SignalCardProps) {
             className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-display font-semibold"
             style={{ backgroundColor: `${color}20`, color }}
           >
+            <span aria-hidden="true">{BADGE_ICONS[signal.signal_type] ?? ''}</span>{' '}
             {BADGE_LABELS[signal.signal_type]} · {signal.confidence}%
           </span>
         </div>
@@ -94,8 +103,13 @@ export function SignalCard({ signal }: SignalCardProps) {
       {/* ── EXPANDED CONTENT (3 sections: progress, AI, action) ── */}
 
       {/* Progress section: live delta + target progress bar */}
-      {isExpanded && (
-        <div className="mt-3 pt-3 border-t border-border-default">
+      <div
+        className="grid transition-all duration-300 ease-in-out"
+        style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+        {isExpanded && (
+        <div className="mt-3 pt-3 border-t border-border-default animate-fade-in-down">
           {livePrice != null && priceChangePct != null && Math.abs(priceChangePct) >= 0.01 && (
             <p className="text-xs font-mono mb-2">
               <span className="text-text-muted">Live:</span>{' '}
@@ -114,13 +128,15 @@ export function SignalCard({ signal }: SignalCardProps) {
           )}
         </div>
       )}
+        </div>
+      </div>
 
       {/* AI Reasoning */}
       <AIReasoningPanel reasoning={signal.ai_reasoning} isExpanded={isExpanded} />
 
       {/* Action link */}
       {isExpanded && (
-        <div className="mt-3 pt-3 border-t border-border-default" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-3 pt-3 border-t border-border-default animate-fade-in-down" onClick={(e) => e.stopPropagation()}>
           <Link href={`/signal/${signal.id}`} className="text-xs text-accent-purple hover:underline">
             View full analysis →
           </Link>
