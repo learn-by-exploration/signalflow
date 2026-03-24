@@ -20,6 +20,11 @@ body {
   font-family: 'Outfit', sans-serif;
 }
 
+/* Text size scaling */
+html.text-size-small { font-size: 14px; }
+html.text-size-medium { font-size: 16px; }
+html.text-size-large { font-size: 18px; }
+
 @keyframes slide-in {
   from {
     opacity: 0;

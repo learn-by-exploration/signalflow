@@ -10,6 +10,7 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { WelcomeModal } from '@/components/shared/WelcomeModal';
+import { GuidedTour } from '@/components/shared/GuidedTour';
 import { useEffect } from 'react';
 
 export default function Dashboard() {
@@ -28,21 +29,26 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen pb-8">
       <WelcomeModal />
+      <GuidedTour />
 
       {/* Market Overview Bar */}
-      <ErrorBoundary name="Market Overview">
-        <MarketOverview stocks={stocks} crypto={crypto} forex={forex} isLoading={marketsLoading} lastUpdated={lastUpdated} />
-      </ErrorBoundary>
+      <div data-tour="market-overview">
+        <ErrorBoundary name="Market Overview">
+          <MarketOverview stocks={stocks} crypto={crypto} forex={forex} isLoading={marketsLoading} lastUpdated={lastUpdated} />
+        </ErrorBoundary>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Performance Summary (compact inline bar) */}
-        <ErrorBoundary name="Signal Performance">
-          <WinRateCard />
-        </ErrorBoundary>
+        <div data-tour="win-rate">
+          <ErrorBoundary name="Signal Performance">
+            <WinRateCard />
+          </ErrorBoundary>
+        </div>
 
         {/* Signal Feed (full width) */}
-        <div className="mt-6">
+        <div className="mt-6" data-tour="signal-feed">
           <ErrorBoundary name="Signal Feed">
             <SignalFeed signals={signals} isLoading={isLoading} error={error} />
           </ErrorBoundary>

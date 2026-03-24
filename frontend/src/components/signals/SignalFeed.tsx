@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import type { Signal, MarketType } from '@/lib/types';
 import { useSignalStore } from '@/store/signalStore';
+import { usePreferencesStore } from '@/store/preferencesStore';
 import { api } from '@/lib/api';
 import { SignalCard } from './SignalCard';
+import { SimpleSignalCard } from './SimpleSignalCard';
 import { SignalFeedSkeleton } from '@/components/shared/Skeleton';
 import { KeyboardHelpModal } from '@/components/shared/KeyboardHelpModal';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -26,7 +28,9 @@ const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
 ];
 
 export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
-  const [filter, setFilter] = useState<FilterType>('all');
+  const defaultFilter = usePreferencesStore((s) => s.defaultMarketFilter);
+  const setDefaultMarketFilter = usePreferencesStore((s) => s.setDefaultMarketFilter);
+  const [filter, setFilter] = useState<FilterType>(defaultFilter);
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -37,7 +41,8 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
 
   const handleFilterChange = useCallback((f: 'all' | 'stock' | 'crypto' | 'forex') => {
     setFilter(f);
-  }, []);
+    setDefaultMarketFilter(f);
+  }, [setDefaultMarketFilter]);
 
   const handleFocusSearch = useCallback(() => {
     searchRef.current?.focus();
@@ -47,6 +52,8 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
     onFilterChange: handleFilterChange,
     onFocusSearch: handleFocusSearch,
   });
+
+  const viewMode = usePreferencesStore((s) => s.viewMode);
 
   const handleLoadMore = useCallback(async () => {
     setLoadingMore(true);
@@ -79,12 +86,12 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
       {/* Header + Filters */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-display font-semibold">Active Signals</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-tour="signal-filters">
           {/* Market filter */}
           {FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setFilter(opt.value)}
+              onClick={() => { setFilter(opt.value); setDefaultMarketFilter(opt.value); }}
               aria-label={`Filter by ${opt.label}`}
               aria-pressed={filter === opt.value}
               className={`min-h-[44px] min-w-[44px] px-3 py-2 text-xs rounded-full border transition-colors ${
@@ -171,7 +178,9 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
       {!isLoading && (
         <div className="space-y-3">
           {filtered.map((signal) => (
-            <SignalCard key={signal.id} signal={signal} />
+            viewMode === 'simple'
+              ? <SimpleSignalCard key={signal.id} signal={signal} />
+              : <SignalCard key={signal.id} signal={signal} />
           ))}
         </div>
       )}

@@ -13,11 +13,11 @@ interface HistoryResponse {
   meta: { timestamp: string; count: number; total?: number };
 }
 
-const OUTCOME_LABELS: Record<string, { emoji: string; label: string; color: string }> = {
-  hit_target: { emoji: '🎯', label: 'Target Hit', color: '#00E676' },
-  hit_stop: { emoji: '🛑', label: 'Stop Hit', color: '#FF5252' },
-  expired: { emoji: '⏰', label: 'Expired', color: '#FFD740' },
-  pending: { emoji: '⏳', label: 'Pending', color: '#9CA3AF' },
+const OUTCOME_LABELS: Record<string, { emoji: string; label: string; color: string; plain: string }> = {
+  hit_target: { emoji: '🎯', label: 'Target Hit', color: '#00E676', plain: 'Target price was reached — profit!' },
+  hit_stop: { emoji: '🛑', label: 'Stop Hit', color: '#FF5252', plain: 'Stop-loss was triggered — limited loss' },
+  expired: { emoji: '⏰', label: 'Expired', color: '#FFD740', plain: 'Signal expired before hitting target or stop' },
+  pending: { emoji: '⏳', label: 'Pending', color: '#9CA3AF', plain: 'Still active — waiting for outcome' },
 };
 
 type OutcomeFilter = 'all' | 'hit_target' | 'hit_stop' | 'expired' | 'pending';
@@ -258,7 +258,7 @@ export default function HistoryPage() {
                         '—'
                       )}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1" title={outcome.plain}>
                       <span>{outcome.emoji}</span>
                       <span className="text-xs" style={{ color: outcome.color }}>
                         {outcome.label}
@@ -297,7 +297,7 @@ export default function HistoryPage() {
                           </span>
                         )}
                       </div>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1" title={outcome.plain}>
                         <span>{outcome.emoji}</span>
                         <span className="text-xs" style={{ color: outcome.color }}>
                           {outcome.label}

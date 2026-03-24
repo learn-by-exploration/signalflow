@@ -64,6 +64,7 @@ export function SignalCard({ signal }: SignalCardProps) {
           <span
             className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-display font-semibold"
             style={{ backgroundColor: `${color}20`, color }}
+            title={`${signal.confidence}% confidence — combined score from technical analysis (60%) and AI news sentiment (40%). Higher = stronger consensus, not probability of profit.`}
           >
             <span aria-hidden="true">{BADGE_ICONS[signal.signal_type] ?? ''}</span>{' '}
             {BADGE_LABELS[signal.signal_type]} · {signal.confidence}%
