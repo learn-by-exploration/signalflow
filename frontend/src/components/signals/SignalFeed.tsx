@@ -19,6 +19,7 @@ interface SignalFeedProps {
 }
 
 type FilterType = 'all' | MarketType;
+type TimeframeFilter = 'all' | 'short' | 'medium' | 'long';
 
 const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -27,10 +28,27 @@ const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
   { value: 'forex', label: 'Forex' },
 ];
 
+const TIMEFRAME_OPTIONS: { value: TimeframeFilter; label: string; desc: string }[] = [
+  { value: 'all', label: 'Any', desc: 'All timeframes' },
+  { value: 'short', label: 'Short', desc: 'Hours to days' },
+  { value: 'medium', label: 'Medium', desc: '1-4 weeks' },
+  { value: 'long', label: 'Long', desc: 'Months' },
+];
+
+/** Classify signal timeframe string into short/medium/long */
+function classifyTimeframe(tf?: string): 'short' | 'medium' | 'long' {
+  if (!tf) return 'medium';
+  const lower = tf.toLowerCase();
+  if (lower.includes('hour') || lower.includes('minute') || lower.includes('1 day') || lower.includes('1-2 day') || lower.includes('intraday')) return 'short';
+  if (lower.includes('month') || lower.includes('quarter') || lower.includes('6') || lower.includes('year')) return 'long';
+  return 'medium';
+}
+
 export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
   const defaultFilter = usePreferencesStore((s) => s.defaultMarketFilter);
   const setDefaultMarketFilter = usePreferencesStore((s) => s.setDefaultMarketFilter);
   const [filter, setFilter] = useState<FilterType>(defaultFilter);
+  const [timeframeFilter, setTimeframeFilter] = useState<TimeframeFilter>('all');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -72,6 +90,9 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
     if (filter !== 'all') {
       result = result.filter((s) => s.market_type === filter);
     }
+    if (timeframeFilter !== 'all') {
+      result = result.filter((s) => classifyTimeframe(s.timeframe) === timeframeFilter);
+    }
     if (search.trim()) {
       const q = search.trim().toUpperCase();
       result = result.filter((s) => s.symbol.toUpperCase().includes(q));
@@ -79,7 +100,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
     // Sort by confidence (default)
     result = [...result].sort((a, b) => b.confidence - a.confidence);
     return result;
-  }, [signals, filter, search]);
+  }, [signals, filter, timeframeFilter, search]);
 
   return (
     <div className="space-y-4">
@@ -118,6 +139,25 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
             </svg>
           </button>
         </div>
+      </div>
+
+      {/* Timeframe filter (U10-2) */}
+      <div className="flex items-center gap-2 flex-wrap -mt-1">
+        <span className="text-[10px] text-text-muted">Timeframe:</span>
+        {TIMEFRAME_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setTimeframeFilter(opt.value)}
+            title={opt.desc}
+            className={`px-2 py-1 text-[10px] rounded-full border transition-colors ${
+              timeframeFilter === opt.value
+                ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
+                : 'border-border-default text-text-muted hover:border-border-hover'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Expandable search input */}

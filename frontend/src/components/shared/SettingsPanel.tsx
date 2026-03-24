@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePreferencesStore, type ViewMode, type TextSize } from '@/store/preferencesStore';
+import { usePreferencesStore, type ViewMode, type TextSize, type ThemeMode } from '@/store/preferencesStore';
 import { isNotificationSupported, getNotificationPermission, requestNotificationPermission } from '@/lib/notifications';
 
 const VIEW_OPTIONS: { value: ViewMode; label: string; desc: string }[] = [
@@ -21,7 +21,7 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
-  const { viewMode, setViewMode, textSize, setTextSize } = usePreferencesStore();
+  const { viewMode, setViewMode, textSize, setTextSize, themeMode, setThemeMode } = usePreferencesStore();
   const [notifPermission, setNotifPermission] = useState<string>('default');
 
   useEffect(() => {
@@ -92,6 +92,30 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Theme Mode (L-1) */}
+        <div>
+          <label className="text-xs text-text-muted uppercase tracking-wider block mb-2">Theme</label>
+          <div className="flex gap-2">
+            {[
+              { value: 'dark' as ThemeMode, label: '🌙 Dark', desc: 'Trading terminal' },
+              { value: 'light' as ThemeMode, label: '☀️ Light', desc: 'Easy reading' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setThemeMode(opt.value)}
+                className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                  themeMode === opt.value
+                    ? 'border-accent-purple text-accent-purple bg-accent-purple/10'
+                    : 'border-border-default text-text-secondary hover:border-border-hover'
+                }`}
+              >
+                <span className="font-medium block">{opt.label}</span>
+                <span className="text-[10px] text-text-muted block mt-0.5">{opt.desc}</span>
+              </button>
+            ))}
           </div>
         </div>
 

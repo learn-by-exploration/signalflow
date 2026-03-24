@@ -4,6 +4,7 @@ import './globals.css';
 import { Navbar } from '@/components/shared/Navbar';
 import { ToastProvider } from '@/components/shared/Toast';
 import { TextSizeProvider } from '@/components/shared/TextSizeProvider';
+import { ThemeProvider } from '@/components/shared/ThemeProvider';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -31,9 +32,11 @@ export default function RootLayout({
     <html lang="en">
         <body className={`${outfit.variable} ${jetbrainsMono.variable} min-h-screen bg-bg-primary text-text-primary font-body antialiased`}>
         <ToastProvider>
-          <TextSizeProvider />
-          <Navbar />
-          {children}
+          <ThemeProvider>
+            <TextSizeProvider />
+            <Navbar />
+            {children}
+          </ThemeProvider>
         </ToastProvider>
       </body>
     </html>

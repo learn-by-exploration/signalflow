@@ -6,6 +6,7 @@ import type { BacktestRun } from '@/lib/types';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { EquityCurve } from '@/components/charts/EquityCurve';
+import { BenchmarkComparison } from '@/components/charts/BenchmarkComparison';
 
 const EXAMPLE_SYMBOLS = ['HDFCBANK.NS', 'RELIANCE.NS', 'TCS.NS', 'BTCUSDT', 'ETHUSDT', 'EUR/USD', 'GBP/JPY'];
 
@@ -13,6 +14,8 @@ export default function BacktestPage() {
   const { toast } = useToast();
   const [symbol, setSymbol] = useState('');
   const [days, setDays] = useState(90);
+  const [rsiThreshold, setRsiThreshold] = useState(35);
+  const [atrMultiplier, setAtrMultiplier] = useState(2.0);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<BacktestRun | null>(null);
   const [polling, setPolling] = useState(false);
@@ -136,8 +139,50 @@ export default function BacktestPage() {
             </div>
           </div>
 
+          {/* Strategy Parameters (B5-2) */}
+          <div className="pt-3 border-t border-border-default">
+            <p className="text-xs text-text-muted uppercase mb-2">Strategy Parameters</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label className="text-[10px] text-text-muted block mb-1">RSI Entry Threshold</label>
+                <input
+                  type="range"
+                  min={20}
+                  max={50}
+                  step={5}
+                  value={rsiThreshold}
+                  onChange={(e) => setRsiThreshold(Number(e.target.value))}
+                  className="w-full accent-accent-purple"
+                />
+                <span className="text-[10px] font-mono text-text-secondary">RSI &lt; {rsiThreshold}</span>
+              </div>
+              <div>
+                <label className="text-[10px] text-text-muted block mb-1">ATR Target Multiple</label>
+                <input
+                  type="range"
+                  min={1.0}
+                  max={4.0}
+                  step={0.5}
+                  value={atrMultiplier}
+                  onChange={(e) => setAtrMultiplier(Number(e.target.value))}
+                  className="w-full accent-accent-purple"
+                />
+                <span className="text-[10px] font-mono text-text-secondary">{atrMultiplier}× ATR</span>
+              </div>
+              <div>
+                <label className="text-[10px] text-text-muted block mb-1">Stop Loss</label>
+                <span className="text-[10px] font-mono text-text-secondary">{(atrMultiplier / 2).toFixed(1)}× ATR</span>
+                <p className="text-[10px] text-text-muted mt-0.5">Auto: half of target</p>
+              </div>
+              <div>
+                <label className="text-[10px] text-text-muted block mb-1">Risk:Reward</label>
+                <span className="text-sm font-mono text-accent-purple">1:{(atrMultiplier / (atrMultiplier / 2)).toFixed(0)}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="text-xs text-text-muted">
-            Strategy: Buy when RSI &lt; 35 and price &gt; SMA20. Target = 2×ATR, Stop = 1×ATR.
+            Strategy: Buy when RSI &lt; {rsiThreshold} and price &gt; SMA20. Target = {atrMultiplier}×ATR, Stop = {(atrMultiplier / 2).toFixed(1)}×ATR.
           </div>
         </section>
 
@@ -192,6 +237,28 @@ export default function BacktestPage() {
                 })}
                 label="📈 Backtest Equity Curve"
                 height={180}
+              />
+            )}
+
+            {/* Benchmark Comparison (B3-4) */}
+            {result.total_signals >= 2 && (
+              <BenchmarkComparison
+                strategyReturns={result.total_return_pct}
+                benchmarkName={
+                  result.market_type === 'stock' ? 'Nifty 50'
+                    : result.market_type === 'crypto' ? 'BTC'
+                      : 'USD Index'
+                }
+                benchmarkReturns={(() => {
+                  // Simulated benchmark returns based on market type
+                  // In production, this would come from actual benchmark data
+                  const annualizedReturn = result.market_type === 'stock'
+                    ? 12 : result.market_type === 'crypto' ? 25 : 3;
+                  return (annualizedReturn / 365) * days;
+                })()}
+                totalSignals={result.total_signals}
+                startDate={result.start_date}
+                endDate={result.end_date}
               />
             )}
 

@@ -15,6 +15,7 @@ const PRIMARY_LINKS = [
 const MORE_LINKS = [
   { href: '/portfolio', label: 'Portfolio', icon: '💼' },
   { href: '/backtest', label: 'Backtest', icon: '🧪' },
+  { href: '/brief', label: 'Daily Brief', icon: '📰' },
   { href: '/how-it-works', label: 'How It Works', icon: '💡' },
 ];
 

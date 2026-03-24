@@ -18,6 +18,8 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { IndicatorTooltip } from '@/components/shared/IndicatorTooltip';
 import { CandlestickChart } from '@/components/charts/CandlestickChart';
 import { ConfidenceBreakdown } from '@/components/signals/ConfidenceBreakdown';
+import { PipCalculator } from '@/components/signals/PipCalculator';
+import { TrailingStopSuggestion } from '@/components/signals/TrailingStopSuggestion';
 
 interface SignalDetailResponse {
   data: Signal;
@@ -345,6 +347,20 @@ export default function SignalDetailPage() {
         <div className="bg-bg-card border border-border-default rounded-xl p-5">
           <RiskCalculator signal={signal} />
         </div>
+
+        {/* Pip Calculator — Forex only */}
+        {signal.market_type === 'forex' && (
+          <div className="bg-bg-card border border-border-default rounded-xl p-5">
+            <PipCalculator signal={signal} />
+          </div>
+        )}
+
+        {/* Trailing Stop Suggestion */}
+        {(signal.signal_type.includes('BUY') || signal.signal_type.includes('SELL')) && signal.signal_type !== 'HOLD' && (
+          <div className="bg-bg-card border border-border-default rounded-xl p-5">
+            <TrailingStopSuggestion signal={signal} livePrice={livePrice ?? undefined} />
+          </div>
+        )}
 
         {/* Track Record */}
         {trackRecord && trackRecord.total_signals_30d > 0 && (

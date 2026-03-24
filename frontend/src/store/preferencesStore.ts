@@ -8,13 +8,16 @@ import type { MarketType } from '@/lib/types';
 
 export type ViewMode = 'standard' | 'simple';
 export type TextSize = 'small' | 'medium' | 'large';
+export type ThemeMode = 'dark' | 'light';
 
 interface PreferencesState {
   viewMode: ViewMode;
   textSize: TextSize;
+  themeMode: ThemeMode;
   defaultMarketFilter: 'all' | MarketType;
   setViewMode: (mode: ViewMode) => void;
   setTextSize: (size: TextSize) => void;
+  setThemeMode: (mode: ThemeMode) => void;
   setDefaultMarketFilter: (filter: 'all' | MarketType) => void;
 }
 
@@ -37,6 +40,7 @@ function setStored<T>(key: string, value: T) {
 export const usePreferencesStore = create<PreferencesState>((set) => ({
   viewMode: getStored<ViewMode>('sf_view_mode', 'standard'),
   textSize: getStored<TextSize>('sf_text_size', 'medium'),
+  themeMode: getStored<ThemeMode>('sf_theme_mode', 'dark'),
   defaultMarketFilter: getStored<'all' | MarketType>('sf_market_filter', 'all'),
 
   setViewMode: (mode) => {
@@ -46,6 +50,10 @@ export const usePreferencesStore = create<PreferencesState>((set) => ({
   setTextSize: (size) => {
     setStored('sf_text_size', size);
     set({ textSize: size });
+  },
+  setThemeMode: (mode) => {
+    setStored('sf_theme_mode', mode);
+    set({ themeMode: mode });
   },
   setDefaultMarketFilter: (filter) => {
     setStored('sf_market_filter', filter);

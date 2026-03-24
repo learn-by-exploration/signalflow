@@ -13,6 +13,32 @@
   --signal-hold: #FFD740;
 }
 
+/* Light theme overrides */
+html.theme-light {
+  --bg-primary: #F8F9FC;
+  --bg-secondary: #FFFFFF;
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --accent-purple: #4F46E5;
+  --signal-buy: #059669;
+  --signal-sell: #DC2626;
+  --signal-hold: #D97706;
+}
+
+html.theme-light body {
+  background: linear-gradient(135deg, #F8F9FC 0%, #EEF0F6 100%);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Light theme: override Tailwind color utilities that use rgba values */
+html.theme-light .bg-bg-card { background-color: rgba(0, 0, 0, 0.02); }
+html.theme-light .bg-bg-card\/\[0\.04\] { background-color: rgba(0, 0, 0, 0.03); }
+html.theme-light .border-border-default { border-color: rgba(0, 0, 0, 0.08); }
+html.theme-light .border-border-hover { border-color: rgba(0, 0, 0, 0.15); }
+html.theme-light .hover\:border-border-hover:hover { border-color: rgba(0, 0, 0, 0.15); }
+html.theme-light .text-text-muted { color: #6B7280; }
+
 body {
   background: radial-gradient(ellipse at top, #12131A 0%, #0A0B0F 70%);
   background-color: var(--bg-primary);
