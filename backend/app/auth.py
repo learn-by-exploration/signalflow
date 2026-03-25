@@ -77,8 +77,10 @@ def decode_jwt_token(token: str) -> dict:
     try:
         return jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
     except jwt.ExpiredSignatureError:
+        logger.warning("auth_failure", extra={"reason": "token_expired", "auth_type": "jwt"})
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
+        logger.warning("auth_failure", extra={"reason": "invalid_token", "auth_type": "jwt"})
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
@@ -97,6 +99,7 @@ async def require_api_key(
             detail="Server misconfiguration: API key not set",
         )
     if not api_key or api_key != settings.api_secret_key:
+        logger.warning("auth_failure", extra={"reason": "invalid_api_key", "auth_type": "api_key"})
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
     return api_key
 
@@ -140,6 +143,7 @@ async def get_current_user(auth: AuthContext = Depends(require_auth)) -> AuthCon
     Use this dependency on user-scoped endpoints that need user identity.
     """
     if auth.auth_type != "jwt":
+        logger.warning("auth_failure", extra={"reason": "jwt_required", "auth_type": auth.auth_type})
         raise HTTPException(status_code=401, detail="JWT authentication required")
     return auth
 

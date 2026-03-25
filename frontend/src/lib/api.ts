@@ -29,6 +29,11 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
+    // Handle 401 — clear auth state
+    if (res.status === 401 && typeof window !== 'undefined') {
+      sessionStorage.removeItem('signalflow_access_token');
+      sessionStorage.removeItem('signalflow_refresh_token');
+    }
     throw new Error(`API error: ${res.status} ${res.statusText}`);
   }
 

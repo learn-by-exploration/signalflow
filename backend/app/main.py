@@ -134,7 +134,34 @@ app.include_router(ws_router)
 
 # ── Rate limiting ──
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+def _rate_limit_exceeded_with_logging(request, exc):
+    """Log rate limit violations and return 429."""
+    logger.warning(
+        "rate_limit_exceeded",
+        client_ip=request.client.host if request.client else "unknown",
+        path=request.url.path,
+    )
+    return _rate_limit_exceeded_handler(request, exc)
+
+
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_with_logging)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch unhandled exceptions — log details but return sanitized message."""
+    logger.error(
+        "unhandled_exception",
+        error=str(exc),
+        path=request.url.path,
+        method=request.method,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 @app.get("/health")

@@ -98,10 +98,11 @@ class CostTracker:
         month_key = self._get_month_key()
 
         # Atomic Redis increment (production-safe)
+        new_total = None
         if self._redis:
             try:
                 redis_key = f"ai_cost:{month_key}"
-                new_total = self._redis.incrbyfloat(redis_key, cost)
+                new_total = float(self._redis.incrbyfloat(redis_key, cost))
                 self._redis.expire(redis_key, 40 * 86400)  # 40 days TTL
                 # Also track call count
                 count_key = f"ai_cost_count:{month_key}"
@@ -109,6 +110,20 @@ class CostTracker:
                 self._redis.expire(count_key, 40 * 86400)
             except Exception:
                 logger.warning("Redis cost tracking failed, file-only")
+
+        # Budget threshold alerting
+        if new_total is not None:
+            pct = new_total / self.monthly_budget * 100 if self.monthly_budget > 0 else 0
+            if pct >= 95:
+                logger.critical(
+                    "AI budget CRITICAL: %.1f%% used ($%.2f / $%.2f)",
+                    pct, new_total, self.monthly_budget,
+                )
+            elif pct >= 80:
+                logger.warning(
+                    "AI budget WARNING: %.1f%% used ($%.2f / $%.2f)",
+                    pct, new_total, self.monthly_budget,
+                )
 
         # Audit log to JSON file (best-effort, not source of truth)
         data = self._load_data()
