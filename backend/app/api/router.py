@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends
 
-from app.auth import require_api_key
+from app.auth import require_auth
 from app.api.signals import router as signals_router
 from app.api.markets import router as markets_router
 from app.api.alerts import router as alerts_router
@@ -14,9 +14,10 @@ from app.api.ai_qa import router as ai_qa_router
 from app.api.backtest import router as backtest_router
 from app.api.feedback import router as feedback_router
 from app.api.news import router as news_router
+from app.api.auth_routes import router as auth_router
 
-# Protected routes — require API key
-api_router = APIRouter(prefix="/api/v1", dependencies=[Depends(require_api_key)])
+# Protected routes — require API key or JWT
+api_router = APIRouter(prefix="/api/v1", dependencies=[Depends(require_auth)])
 # History must come before signals so /signals/history isn't caught by /signals/{signal_id}
 api_router.include_router(history_router)
 api_router.include_router(signals_router)
@@ -33,3 +34,7 @@ api_router.include_router(news_router)
 # Sharing router has both public (GET /shared) and protected (POST /share) routes
 # so we register it on the protected router
 api_router.include_router(sharing_router)
+
+# Auth routes — public (no auth required)
+public_router = APIRouter(prefix="/api/v1")
+public_router.include_router(auth_router)

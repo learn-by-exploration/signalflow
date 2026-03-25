@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api.router import api_router
+from app.api.router import api_router, public_router
 from app.api.websocket import router as ws_router
 from app.config import get_settings
 from app.rate_limit import limiter
@@ -129,6 +129,7 @@ async def correlation_id_middleware(request: Request, call_next):
 
 # ── Routers ──
 app.include_router(api_router)
+app.include_router(public_router)
 app.include_router(ws_router)
 
 # ── Rate limiting ──

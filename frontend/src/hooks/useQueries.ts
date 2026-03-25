@@ -19,8 +19,8 @@ export const queryKeys = {
   accuracyTrend: (weeks: number) => ['accuracy-trend', weeks] as const,
   signalHistory: (params?: string) => ['signal-history', params] as const,
   marketOverview: ['market-overview'] as const,
-  watchlist: (chatId: number) => ['watchlist', chatId] as const,
-  portfolio: (chatId: number) => ['portfolio', chatId] as const,
+  watchlist: ['watchlist'] as const,
+  portfolio: ['portfolio'] as const,
   feedback: ['feedback'] as const,
 };
 
@@ -91,22 +91,21 @@ export function useMarketOverviewQuery() {
 
 // ── Watchlist Hooks ──
 
-export function useWatchlistQuery(chatId: number) {
+export function useWatchlistQuery() {
   return useQuery({
-    queryKey: queryKeys.watchlist(chatId),
-    queryFn: () => api.getWatchlist(chatId) as Promise<{ data: { watchlist: string[] } }>,
-    enabled: !!chatId,
+    queryKey: queryKeys.watchlist,
+    queryFn: () => api.getWatchlist() as Promise<{ data: { watchlist: string[] } }>,
   });
 }
 
-export function useWatchlistMutation(chatId: number) {
+export function useWatchlistMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ symbol, action }: { symbol: string; action: 'add' | 'remove' }) =>
-      api.updateWatchlist(chatId, symbol, action),
+      api.updateWatchlist(symbol, action),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.watchlist(chatId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.watchlist });
     },
   });
 }

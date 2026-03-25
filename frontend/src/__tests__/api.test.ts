@@ -172,17 +172,17 @@ describe('api mutations', () => {
 });
 
 describe('api.getWatchlist', () => {
-  it('includes chatId in query', async () => {
+  it('calls watchlist endpoint', async () => {
     mockFetch.mockReturnValue(jsonResponse({ data: { watchlist: [] } }));
-    await api.getWatchlist(12345);
-    expect(mockFetch.mock.calls[0][0]).toContain('telegram_chat_id=12345');
+    await api.getWatchlist();
+    expect(mockFetch.mock.calls[0][0]).toContain('/alerts/watchlist');
   });
 });
 
 describe('api.updateWatchlist', () => {
   it('sends POST with symbol and action', async () => {
     mockFetch.mockReturnValue(jsonResponse({ data: {} }));
-    await api.updateWatchlist(123, 'RELIANCE.NS', 'add');
+    await api.updateWatchlist('RELIANCE.NS', 'add');
     expect(mockFetch.mock.calls[0][1].method).toBe('POST');
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.symbol).toBe('RELIANCE.NS');

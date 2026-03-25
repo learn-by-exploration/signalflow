@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import AuthContext, get_current_user
 from app.database import get_db
 from app.models.market_data import MarketData
 from app.models.trade import Trade
@@ -19,13 +20,13 @@ router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
 @router.get("/trades", response_model=dict)
 async def list_trades(
-    telegram_chat_id: int,
+    user: AuthContext = Depends(get_current_user),
     symbol: str | None = None,
     limit: int = Query(default=50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """List trades for a user, optionally filtered by symbol."""
-    query = select(Trade).where(Trade.telegram_chat_id == telegram_chat_id)
+    """List trades for the authenticated user, optionally filtered by symbol."""
+    query = select(Trade).where(Trade.telegram_chat_id == user.telegram_chat_id)
     if symbol:
         query = query.where(Trade.symbol.ilike(f"%{symbol}%"))
     query = query.order_by(Trade.created_at.desc()).limit(limit)
@@ -39,11 +40,12 @@ async def list_trades(
 async def log_trade(
     request: Request,
     payload: TradeCreate,
+    user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Log a new trade."""
+    """Log a new trade for the authenticated user."""
     trade = Trade(
-        telegram_chat_id=payload.telegram_chat_id,
+        telegram_chat_id=user.telegram_chat_id,
         symbol=payload.symbol.upper().strip(),
         market_type=payload.market_type,
         side=payload.side.lower(),
@@ -60,7 +62,7 @@ async def log_trade(
 
 @router.get("/summary", response_model=dict)
 async def portfolio_summary(
-    telegram_chat_id: int,
+    user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Get aggregated portfolio positions and P&L.
@@ -88,7 +90,7 @@ async def portfolio_summary(
             ).label("net_cost"),
             func.max(Trade.price).label("last_trade_price"),
         )
-        .where(Trade.telegram_chat_id == telegram_chat_id)
+        .where(Trade.telegram_chat_id == user.telegram_chat_id)
         .group_by(Trade.symbol, Trade.market_type)
     )
     rows = result.all()

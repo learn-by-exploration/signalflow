@@ -56,8 +56,8 @@ describe('queryKeys', () => {
     expect(queryKeys.signalStats).toEqual(['signal-stats']);
   });
 
-  it('returns watchlist keys with chatId', () => {
-    expect(queryKeys.watchlist(123)).toEqual(['watchlist', 123]);
+  it('returns watchlist keys', () => {
+    expect(queryKeys.watchlist).toEqual(['watchlist']);
   });
 });
 
@@ -155,18 +155,13 @@ describe('useMarketOverviewQuery', () => {
 });
 
 describe('useWatchlistQuery', () => {
-  it('fetches watchlist for chatId', async () => {
+  it('fetches watchlist', async () => {
     vi.mocked(api.getWatchlist).mockResolvedValue({ data: { watchlist: ['RELIANCE.NS'] } });
 
-    const { result } = renderHook(() => useWatchlistQuery(123), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWatchlistQuery(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data?.data.watchlist).toContain('RELIANCE.NS');
-  });
-
-  it('is disabled with chatId 0', () => {
-    const { result } = renderHook(() => useWatchlistQuery(0), { wrapper: createWrapper() });
-    expect(result.current.fetchStatus).toBe('idle');
   });
 });
 
@@ -174,9 +169,9 @@ describe('useWatchlistMutation', () => {
   it('calls updateWatchlist on mutate', async () => {
     vi.mocked(api.updateWatchlist).mockResolvedValue({ data: {} });
 
-    const { result } = renderHook(() => useWatchlistMutation(123), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWatchlistMutation(), { wrapper: createWrapper() });
 
     result.current.mutate({ symbol: 'RELIANCE.NS', action: 'add' });
-    await waitFor(() => expect(api.updateWatchlist).toHaveBeenCalledWith(123, 'RELIANCE.NS', 'add'));
+    await waitFor(() => expect(api.updateWatchlist).toHaveBeenCalledWith('RELIANCE.NS', 'add'));
   });
 });

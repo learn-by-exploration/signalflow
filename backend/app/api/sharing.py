@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import AuthContext, get_current_user
 from app.database import get_db
 from app.models.signal import Signal
 from app.models.signal_share import SignalShare
@@ -20,15 +21,16 @@ router = APIRouter(prefix="/signals", tags=["sharing"])
 async def share_signal(
     request: Request,
     signal_id: UUID,
+    user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Create a shareable token for a signal."""
+    """Create a shareable token for a signal (requires authentication)."""
     result = await db.execute(select(Signal).where(Signal.id == signal_id))
     signal = result.scalar_one_or_none()
     if not signal:
         raise HTTPException(status_code=404, detail="Signal not found")
 
-    share = SignalShare(signal_id=signal_id)
+    share = SignalShare(signal_id=signal_id, created_by=user.user_id)
     db.add(share)
     await db.flush()
     await db.refresh(share)

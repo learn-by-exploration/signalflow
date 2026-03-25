@@ -51,7 +51,6 @@ class TestPriceAlertCreate:
         from app.schemas.p3 import PriceAlertCreate
 
         alert = PriceAlertCreate(
-            telegram_chat_id=12345,
             symbol="ETHUSDT",
             market_type="crypto",
             condition="above",
@@ -138,7 +137,6 @@ class TestTradeModel:
         from app.schemas.p3 import TradeCreate, TradeData
 
         create = TradeCreate(
-            telegram_chat_id=12345,
             symbol="RELIANCE.NS",
             market_type="stock",
             side="buy",

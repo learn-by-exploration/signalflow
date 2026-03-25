@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     api_secret_key: str = ""  # Shared secret between frontend and backend
     allowed_hosts: str = ""  # Comma-separated allowed hosts for production
 
+    # ── JWT Auth ──
+    jwt_secret_key: str = ""  # HMAC signing key for JWT tokens
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 7
+
     # ── Database ──
     database_url: str = ""
     database_url_sync: str = ""

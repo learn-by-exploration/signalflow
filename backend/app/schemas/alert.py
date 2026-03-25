@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 class AlertConfigCreate(BaseModel):
     """Request schema for creating alert config."""
 
-    telegram_chat_id: int = Field(gt=0)
     username: str | None = Field(default=None, max_length=100, pattern=r"^[a-zA-Z0-9_]+$")
     markets: list[str] = ["stock", "crypto", "forex"]
     min_confidence: int = Field(default=60, ge=0, le=100)

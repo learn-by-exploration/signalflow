@@ -4,13 +4,22 @@
 
 import { API_URL } from './constants';
 
+function getAccessToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem('signalflow_access_token');
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
-  // Add API key if configured
-  if (process.env.NEXT_PUBLIC_API_KEY) {
+  // Add Bearer token if available
+  const token = getAccessToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else if (process.env.NEXT_PUBLIC_API_KEY) {
+    // Fallback to API key for SSR or unauthenticated requests
     headers['X-API-Key'] = process.env.NEXT_PUBLIC_API_KEY;
   }
 
@@ -48,8 +57,8 @@ export const api = {
   getMarketOverview: () =>
     apiFetch('/api/v1/markets/overview'),
 
-  getAlertConfig: (chatId: number) =>
-    apiFetch(`/api/v1/alerts/config?telegram_chat_id=${chatId}`),
+  getAlertConfig: () =>
+    apiFetch('/api/v1/alerts/config'),
 
   createAlertConfig: (data: Record<string, unknown>) =>
     apiFetch('/api/v1/alerts/config', { method: 'POST', body: JSON.stringify(data) }),
@@ -57,34 +66,34 @@ export const api = {
   updateAlertConfig: (id: string, data: Record<string, unknown>) =>
     apiFetch(`/api/v1/alerts/config/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
-  getWatchlist: (chatId: number) =>
-    apiFetch(`/api/v1/alerts/watchlist?telegram_chat_id=${chatId}`),
+  getWatchlist: () =>
+    apiFetch('/api/v1/alerts/watchlist'),
 
-  updateWatchlist: (chatId: number, symbol: string, action: 'add' | 'remove') =>
-    apiFetch(`/api/v1/alerts/watchlist?telegram_chat_id=${chatId}`, {
+  updateWatchlist: (symbol: string, action: 'add' | 'remove') =>
+    apiFetch('/api/v1/alerts/watchlist', {
       method: 'POST',
       body: JSON.stringify({ symbol, action }),
     }),
 
   // ── P3: Price Alerts ──
-  getPriceAlerts: (chatId: number) =>
-    apiFetch(`/api/v1/alerts/price?telegram_chat_id=${chatId}`),
+  getPriceAlerts: () =>
+    apiFetch('/api/v1/alerts/price'),
 
-  createPriceAlert: (data: { telegram_chat_id: number; symbol: string; market_type: string; condition: string; threshold: string }) =>
+  createPriceAlert: (data: { symbol: string; market_type: string; condition: string; threshold: string }) =>
     apiFetch('/api/v1/alerts/price', { method: 'POST', body: JSON.stringify(data) }),
 
   deletePriceAlert: (alertId: string) =>
     apiFetch(`/api/v1/alerts/price/${alertId}`, { method: 'DELETE' }),
 
   // ── P3: Portfolio ──
-  getTrades: (chatId: number, symbol?: string) =>
-    apiFetch(`/api/v1/portfolio/trades?telegram_chat_id=${chatId}${symbol ? `&symbol=${symbol}` : ''}`),
+  getTrades: (symbol?: string) =>
+    apiFetch(`/api/v1/portfolio/trades${symbol ? `?symbol=${symbol}` : ''}`),
 
-  logTrade: (data: { telegram_chat_id: number; symbol: string; market_type: string; side: string; quantity: string; price: string; notes?: string }) =>
+  logTrade: (data: { symbol: string; market_type: string; side: string; quantity: string; price: string; notes?: string }) =>
     apiFetch('/api/v1/portfolio/trades', { method: 'POST', body: JSON.stringify(data) }),
 
-  getPortfolioSummary: (chatId: number) =>
-    apiFetch(`/api/v1/portfolio/summary?telegram_chat_id=${chatId}`),
+  getPortfolioSummary: () =>
+    apiFetch('/api/v1/portfolio/summary'),
 
   // ── P3: Signal Sharing ──
   shareSignal: (signalId: string) =>
@@ -125,4 +134,20 @@ export const api = {
 
   createCalendarEvent: (data: { title: string; event_type: string; scheduled_at: string; affected_symbols?: string[]; impact_magnitude?: number; is_recurring?: boolean }) =>
     apiFetch('/api/v1/news/calendar', { method: 'POST', body: JSON.stringify(data) }),
+
+  // ── Auth ──
+  register: (data: { email: string; password: string; telegram_chat_id?: number }) =>
+    apiFetch('/api/v1/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+
+  login: (data: { email: string; password: string }) =>
+    apiFetch('/api/v1/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+
+  refreshToken: (refreshToken: string) =>
+    apiFetch('/api/v1/auth/refresh', { method: 'POST', body: JSON.stringify({ refresh_token: refreshToken }) }),
+
+  logout: (refreshToken: string) =>
+    apiFetch('/api/v1/auth/logout', { method: 'POST', body: JSON.stringify({ refresh_token: refreshToken }) }),
+
+  getProfile: () =>
+    apiFetch('/api/v1/auth/profile'),
 };

@@ -46,7 +46,7 @@ class TestSettings:
 
     def test_empty_api_keys_by_default(self):
         with patch.dict("os.environ", {}, clear=True):
-            s = Settings()
+            s = Settings(_env_file=None)
         assert s.anthropic_api_key == ""
         assert s.telegram_bot_token == ""
         assert s.sentry_dsn == ""

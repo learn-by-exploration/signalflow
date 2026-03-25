@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import type { Signal, MarketType } from '@/lib/types';
-import { useUserStore } from '@/store/userStore';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { SignalCard } from '@/components/signals/SignalCard';
@@ -28,7 +27,6 @@ function shortSymbol(s: string): string {
 
 export default function WatchlistPage() {
   const { toast } = useToast();
-  const chatId = useUserStore((s) => s.chatId) ?? 1;
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +35,7 @@ export default function WatchlistPage() {
   async function loadData() {
     try {
       const [watchRes, sigRes] = await Promise.all([
-        api.getWatchlist(chatId) as Promise<{ data: { watchlist: string[] } }>,
+        api.getWatchlist() as Promise<{ data: { watchlist: string[] } }>,
         api.getSignals() as Promise<{ data: Signal[] }>,
       ]);
       setWatchlist(watchRes.data?.watchlist ?? []);
@@ -52,7 +50,7 @@ export default function WatchlistPage() {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatId]);
+  }, []);
 
   const watchlistSignals = useMemo(
     () => signals.filter((s) => watchlist.includes(s.symbol)),
@@ -63,7 +61,7 @@ export default function WatchlistPage() {
     const s = symbol.toUpperCase().trim();
     if (!s || watchlist.includes(s)) return;
     try {
-      await api.updateWatchlist(chatId, s, 'add');
+      await api.updateWatchlist(s, 'add');
       setWatchlist((prev) => [...prev, s]);
       setNewSymbol('');
       toast(`${shortSymbol(s)} added to watchlist`, 'success');
@@ -74,7 +72,7 @@ export default function WatchlistPage() {
 
   async function removeSymbol(symbol: string) {
     try {
-      await api.updateWatchlist(chatId, symbol, 'remove');
+      await api.updateWatchlist(symbol, 'remove');
       setWatchlist((prev) => prev.filter((s) => s !== symbol));
       toast(`${shortSymbol(symbol)} removed`, 'success');
     } catch {

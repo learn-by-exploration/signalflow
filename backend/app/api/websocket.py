@@ -7,7 +7,10 @@ import time
 from collections import defaultdict
 from collections.abc import Set
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+
+from app.auth import decode_jwt_token
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -105,8 +108,36 @@ manager = ConnectionManager()
 
 
 @router.websocket("/ws/signals")
-async def websocket_signals(websocket: WebSocket) -> None:
-    """WebSocket endpoint for real-time signal and market updates."""
+async def websocket_signals(
+    websocket: WebSocket,
+    token: str | None = Query(default=None),
+) -> None:
+    """WebSocket endpoint for real-time signal and market updates.
+
+    Requires authentication via ?token=<jwt> query parameter or
+    ?api_key=<key> for internal callers.
+    """
+    # Validate authentication before accepting
+    settings = get_settings()
+    if token:
+        try:
+            payload = decode_jwt_token(token)
+            if payload.get("type") != "access":
+                await websocket.close(code=4001, reason="Invalid token type")
+                return
+        except Exception:
+            await websocket.close(code=4001, reason="Invalid or expired token")
+            return
+    elif settings.api_secret_key:
+        # Allow API key via query param for internal services
+        api_key = websocket.query_params.get("api_key")
+        if api_key != settings.api_secret_key:
+            await websocket.close(code=4001, reason="Authentication required")
+            return
+    else:
+        await websocket.close(code=4001, reason="Authentication required")
+        return
+
     connected = await manager.connect(websocket)
     if not connected:
         return

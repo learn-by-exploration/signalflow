@@ -7,8 +7,8 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_list_trades(test_client):
-    """GET /api/v1/portfolio/trades returns trades for a user."""
-    resp = await test_client.get("/api/v1/portfolio/trades", params={"telegram_chat_id": 12345})
+    """GET /api/v1/portfolio/trades returns trades for the authenticated user."""
+    resp = await test_client.get("/api/v1/portfolio/trades")
     assert resp.status_code == 200
     body = resp.json()
     assert "data" in body
@@ -20,7 +20,7 @@ async def test_list_trades_filter_by_symbol(test_client):
     """Filter trades by symbol substring."""
     resp = await test_client.get(
         "/api/v1/portfolio/trades",
-        params={"telegram_chat_id": 12345, "symbol": "BTC"},
+        params={"symbol": "BTC"},
     )
     body = resp.json()
     assert len(body["data"]) == 1
@@ -28,17 +28,9 @@ async def test_list_trades_filter_by_symbol(test_client):
 
 
 @pytest.mark.asyncio
-async def test_list_trades_unknown_user(test_client):
-    """Unknown chat_id returns empty list."""
-    resp = await test_client.get("/api/v1/portfolio/trades", params={"telegram_chat_id": 99999})
-    assert resp.status_code == 200
-    assert resp.json()["data"] == []
-
-
-@pytest.mark.asyncio
 async def test_list_trades_schema(test_client):
     """Trade items have required fields."""
-    resp = await test_client.get("/api/v1/portfolio/trades", params={"telegram_chat_id": 12345})
+    resp = await test_client.get("/api/v1/portfolio/trades")
     for trade in resp.json()["data"]:
         assert "id" in trade
         assert "symbol" in trade
@@ -54,7 +46,6 @@ async def test_list_trades_schema(test_client):
 async def test_log_trade(test_client):
     """POST /api/v1/portfolio/trades creates a new trade."""
     payload = {
-        "telegram_chat_id": 12345,
         "symbol": "ETHUSDT",
         "market_type": "crypto",
         "side": "buy",
@@ -72,7 +63,6 @@ async def test_log_trade(test_client):
 async def test_log_trade_normalizes_symbol(test_client):
     """Symbol should be uppercased and trimmed."""
     payload = {
-        "telegram_chat_id": 12345,
         "symbol": "infy.ns",
         "market_type": "stock",
         "side": "buy",
@@ -88,7 +78,6 @@ async def test_log_trade_normalizes_symbol(test_client):
 async def test_log_sell_trade(test_client):
     """Log a sell trade."""
     payload = {
-        "telegram_chat_id": 12345,
         "symbol": "HDFCBANK.NS",
         "market_type": "stock",
         "side": "sell",
@@ -108,7 +97,6 @@ async def test_log_trade_with_notes_and_signal_id(test_client):
     sig_id = signals.json()["data"][0]["id"]
 
     payload = {
-        "telegram_chat_id": 12345,
         "symbol": "TCS.NS",
         "market_type": "stock",
         "side": "buy",
@@ -129,9 +117,7 @@ async def test_log_trade_with_notes_and_signal_id(test_client):
 @pytest.mark.asyncio
 async def test_portfolio_summary(test_client):
     """GET /api/v1/portfolio/summary returns aggregated positions."""
-    resp = await test_client.get(
-        "/api/v1/portfolio/summary", params={"telegram_chat_id": 12345}
-    )
+    resp = await test_client.get("/api/v1/portfolio/summary")
     assert resp.status_code == 200
     body = resp.json()["data"]
     assert "total_invested" in body
@@ -139,15 +125,3 @@ async def test_portfolio_summary(test_client):
     assert "total_pnl" in body
     assert "total_pnl_pct" in body
     assert "positions" in body
-
-
-@pytest.mark.asyncio
-async def test_portfolio_summary_empty(test_client):
-    """Unknown user gets empty summary."""
-    resp = await test_client.get(
-        "/api/v1/portfolio/summary", params={"telegram_chat_id": 99999}
-    )
-    assert resp.status_code == 200
-    body = resp.json()["data"]
-    assert body["positions"] == []
-    assert float(body["total_invested"]) == 0

@@ -51,6 +51,7 @@ async def db_session() -> AsyncGenerator:
     import app.models.signal_news_link  # noqa: F401
     import app.models.signal_share  # noqa: F401
     import app.models.trade  # noqa: F401
+    import app.models.user  # noqa: F401
 
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -85,6 +86,7 @@ async def db_engine_and_session():
     import app.models.signal_news_link  # noqa: F401
     import app.models.signal_share  # noqa: F401
     import app.models.trade  # noqa: F401
+    import app.models.user  # noqa: F401
 
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -204,7 +206,7 @@ async def test_client(seeded_db):
     """HTTP test client with the database overridden to the seeded test DB."""
     from httpx import ASGITransport, AsyncClient
 
-    from app.auth import require_api_key
+    from app.auth import AuthContext, get_current_user, require_auth
     from app.database import get_db
     from app.main import app
 
@@ -217,11 +219,18 @@ async def test_client(seeded_db):
                 await session.rollback()
                 raise
 
-    async def override_api_key() -> str:
-        return "test-key"
+    async def override_require_auth() -> AuthContext:
+        return AuthContext(auth_type="api_key")
+
+    async def override_get_current_user() -> AuthContext:
+        return AuthContext(
+            auth_type="jwt", user_id="test-user-id",
+            telegram_chat_id=12345, tier="pro",
+        )
 
     app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[require_api_key] = override_api_key
+    app.dependency_overrides[require_auth] = override_require_auth
+    app.dependency_overrides[get_current_user] = override_get_current_user
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
@@ -236,14 +245,21 @@ async def client() -> AsyncGenerator:
     """
     from httpx import ASGITransport, AsyncClient
 
-    from app.auth import require_api_key
+    from app.auth import AuthContext, get_current_user, require_auth
     from app.database import get_db
     from app.main import app
 
-    async def override_api_key() -> str:
-        return "test-key"
+    async def override_require_auth() -> AuthContext:
+        return AuthContext(auth_type="api_key")
 
-    app.dependency_overrides[require_api_key] = override_api_key
+    async def override_get_current_user() -> AuthContext:
+        return AuthContext(
+            auth_type="jwt", user_id="test-user-id",
+            telegram_chat_id=12345, tier="pro",
+        )
+
+    app.dependency_overrides[require_auth] = override_require_auth
+    app.dependency_overrides[get_current_user] = override_get_current_user
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

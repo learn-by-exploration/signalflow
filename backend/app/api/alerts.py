@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import AuthContext, get_current_user
 from app.config import get_settings
 from app.database import get_db
 from app.models.alert_config import AlertConfig
@@ -17,12 +18,12 @@ router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 @router.get("/config", response_model=dict)
 async def get_alert_config(
-    telegram_chat_id: int,
+    user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Get alert preferences by Telegram chat ID."""
+    """Get alert preferences for the authenticated user."""
     result = await db.execute(
-        select(AlertConfig).where(AlertConfig.telegram_chat_id == telegram_chat_id)
+        select(AlertConfig).where(AlertConfig.telegram_chat_id == user.telegram_chat_id)
     )
     config = result.scalar_one_or_none()
     if not config:
@@ -35,11 +36,19 @@ async def get_alert_config(
 async def create_alert_config(
     request: Request,
     payload: AlertConfigCreate,
+    user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Create a new alert configuration."""
+    """Create a new alert configuration for the authenticated user."""
+    # Check for existing config
+    existing = await db.execute(
+        select(AlertConfig).where(AlertConfig.telegram_chat_id == user.telegram_chat_id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Alert config already exists for this user")
+
     config = AlertConfig(
-        telegram_chat_id=payload.telegram_chat_id,
+        telegram_chat_id=user.telegram_chat_id,
         username=payload.username,
         markets=payload.markets,
         min_confidence=payload.min_confidence,
@@ -56,13 +65,18 @@ async def create_alert_config(
 async def update_alert_config(
     config_id: UUID,
     payload: AlertConfigUpdate,
+    user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Update an existing alert configuration."""
+    """Update an existing alert configuration (must belong to user)."""
     result = await db.execute(select(AlertConfig).where(AlertConfig.id == config_id))
     config = result.scalar_one_or_none()
     if not config:
         raise HTTPException(status_code=404, detail="Alert config not found")
+
+    # Ownership check
+    if config.telegram_chat_id != user.telegram_chat_id:
+        raise HTTPException(status_code=403, detail="Not your alert config")
 
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -75,12 +89,12 @@ async def update_alert_config(
 
 @router.get("/watchlist", response_model=dict)
 async def get_watchlist(
-    telegram_chat_id: int,
+    user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Get a user's watchlist by chat ID."""
+    """Get the authenticated user's watchlist."""
     result = await db.execute(
-        select(AlertConfig).where(AlertConfig.telegram_chat_id == telegram_chat_id)
+        select(AlertConfig).where(AlertConfig.telegram_chat_id == user.telegram_chat_id)
     )
     config = result.scalar_one_or_none()
     if not config:
@@ -91,13 +105,13 @@ async def get_watchlist(
 
 @router.post("/watchlist", response_model=dict)
 async def update_watchlist(
-    telegram_chat_id: int,
     payload: WatchlistUpdate,
+    user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Add or remove a symbol from a user's watchlist."""
+    """Add or remove a symbol from the authenticated user's watchlist."""
     result = await db.execute(
-        select(AlertConfig).where(AlertConfig.telegram_chat_id == telegram_chat_id)
+        select(AlertConfig).where(AlertConfig.telegram_chat_id == user.telegram_chat_id)
     )
     config = result.scalar_one_or_none()
     if not config:

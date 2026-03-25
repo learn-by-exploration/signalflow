@@ -102,20 +102,20 @@ class TestMetaResponse:
 
 class TestAlertConfigCreate:
     def test_defaults(self):
-        config = AlertConfigCreate(telegram_chat_id=12345)
+        config = AlertConfigCreate()
         assert config.markets == ["stock", "crypto", "forex"]
         assert config.min_confidence == 60
         assert config.signal_types == ["STRONG_BUY", "BUY", "SELL", "STRONG_SELL"]
 
     def test_min_confidence_bounds(self):
         with pytest.raises(ValidationError):
-            AlertConfigCreate(telegram_chat_id=1, min_confidence=-1)
+            AlertConfigCreate(min_confidence=-1)
         with pytest.raises(ValidationError):
-            AlertConfigCreate(telegram_chat_id=1, min_confidence=101)
+            AlertConfigCreate(min_confidence=101)
 
     def test_custom_values(self):
         config = AlertConfigCreate(
-            telegram_chat_id=12345, username="test",
+            username="test",
             markets=["crypto"], min_confidence=80,
             signal_types=["STRONG_BUY"],
         )
@@ -172,7 +172,7 @@ class TestMarketSnapshot:
 class TestTradeCreate:
     def test_valid_trade(self):
         t = TradeCreate(
-            telegram_chat_id=12345, symbol="HDFCBANK.NS",
+            symbol="HDFCBANK.NS",
             market_type="stock", side="buy",
             quantity=Decimal("10"), price=Decimal("1650.00"),
         )
@@ -180,7 +180,7 @@ class TestTradeCreate:
 
     def test_optional_fields(self):
         t = TradeCreate(
-            telegram_chat_id=12345, symbol="X", market_type="stock",
+            symbol="X", market_type="stock",
             side="sell", quantity=Decimal("1"), price=Decimal("100"),
         )
         assert t.notes is None
@@ -192,7 +192,7 @@ class TestTradeCreate:
 class TestPriceAlertCreate:
     def test_valid(self):
         pa = PriceAlertCreate(
-            telegram_chat_id=12345, symbol="BTCUSDT",
+            symbol="BTCUSDT",
             market_type="crypto", condition="above",
             threshold=Decimal("100000"),
         )
@@ -200,7 +200,7 @@ class TestPriceAlertCreate:
 
     def test_missing_required_fields(self):
         with pytest.raises(ValidationError):
-            PriceAlertCreate(telegram_chat_id=12345)
+            PriceAlertCreate()
 
 
 # ─── BacktestCreate ────────────────────────────────────────

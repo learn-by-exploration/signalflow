@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field
 class PriceAlertCreate(BaseModel):
     """Create a new price alert."""
 
-    telegram_chat_id: int = Field(gt=0)
     symbol: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9/.]+$")
     market_type: str = Field(pattern=r"^(stock|crypto|forex)$")
     condition: str = Field(description="'above' or 'below'", pattern=r"^(above|below)$")
@@ -36,7 +35,6 @@ class PriceAlertData(BaseModel):
 class TradeCreate(BaseModel):
     """Log a new trade."""
 
-    telegram_chat_id: int = Field(gt=0)
     symbol: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9/.]+$")
     market_type: str = Field(pattern=r"^(stock|crypto|forex)$")
     side: str = Field(description="'buy' or 'sell'", pattern=r"^(buy|sell)$")

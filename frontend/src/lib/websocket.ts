@@ -25,7 +25,16 @@ export class SignalWebSocket {
     if (this.ws?.readyState === WebSocket.OPEN) return;
 
     this.onStatusChange?.('connecting');
-    this.ws = new WebSocket(`${WS_URL}/ws/signals`);
+
+    // Get auth token for WebSocket connection
+    let wsUrl = `${WS_URL}/ws/signals`;
+    if (typeof window !== 'undefined') {
+      const token = sessionStorage.getItem('signalflow_access_token');
+      if (token) {
+        wsUrl += `?token=${encodeURIComponent(token)}`;
+      }
+    }
+    this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
       this.reconnectAttempts = 0;

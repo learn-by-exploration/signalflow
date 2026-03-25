@@ -50,18 +50,26 @@ class TestWebSocketPing:
     """Test that WebSocket connections work with the ping system."""
 
     def test_websocket_connect_and_subscribe(self) -> None:
-        client = TestClient(app)
-        with client.websocket_connect("/ws/signals") as ws:
-            ws.send_text(json.dumps({
-                "type": "subscribe",
-                "markets": ["stock", "crypto"],
-            }))
-            # Send a pong response (as if responding to a server ping)
-            ws.send_text(json.dumps({"type": "pong"}))
+        from unittest.mock import patch, MagicMock
+        mock_settings = MagicMock()
+        mock_settings.api_secret_key = "test-ws-key"
+        with patch("app.api.websocket.get_settings", return_value=mock_settings):
+            client = TestClient(app)
+            with client.websocket_connect("/ws/signals?api_key=test-ws-key") as ws:
+                ws.send_text(json.dumps({
+                    "type": "subscribe",
+                    "markets": ["stock", "crypto"],
+                }))
+                # Send a pong response (as if responding to a server ping)
+                ws.send_text(json.dumps({"type": "pong"}))
 
     def test_websocket_handles_malformed_json(self) -> None:
-        client = TestClient(app)
-        with client.websocket_connect("/ws/signals") as ws:
-            ws.send_text("{malformed")
-            # Connection survives
-            ws.send_text(json.dumps({"type": "pong"}))
+        from unittest.mock import patch, MagicMock
+        mock_settings = MagicMock()
+        mock_settings.api_secret_key = "test-ws-key"
+        with patch("app.api.websocket.get_settings", return_value=mock_settings):
+            client = TestClient(app)
+            with client.websocket_connect("/ws/signals?api_key=test-ws-key") as ws:
+                ws.send_text("{malformed")
+                # Connection survives
+                ws.send_text(json.dumps({"type": "pong"}))

@@ -7,7 +7,6 @@ import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { EquityCurve } from '@/components/charts/EquityCurve';
 import { AllocationPieChart } from '@/components/charts/AllocationPieChart';
-import { useUserStore } from '@/store/userStore';
 
 interface PortfolioData {
   summary: PortfolioSummary | null;
@@ -18,7 +17,6 @@ interface PortfolioData {
 
 export default function PortfolioPage() {
   const { toast } = useToast();
-  const chatId = useUserStore((s) => s.chatId) ?? 1;
   const [data, setData] = useState<PortfolioData>({
     summary: null,
     trades: [],
@@ -37,8 +35,8 @@ export default function PortfolioPage() {
   async function loadData() {
     try {
       const [summaryRes, tradesRes] = await Promise.all([
-        api.getPortfolioSummary(chatId) as Promise<{ data: PortfolioSummary }>,
-        api.getTrades(chatId) as Promise<{ data: Trade[] }>,
+        api.getPortfolioSummary() as Promise<{ data: PortfolioSummary }>,
+        api.getTrades() as Promise<{ data: Trade[] }>,
       ]);
       setData({
         summary: summaryRes.data,
@@ -55,7 +53,7 @@ export default function PortfolioPage() {
     setData((prev) => ({ ...prev, loading: true }));
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatId]);
+  }, []);
 
   async function logTrade() {
     if (!tradeSymbol.trim() || !tradeQty || !tradePrice) return;
@@ -65,7 +63,6 @@ export default function PortfolioPage() {
     setSubmitting(true);
     try {
       await api.logTrade({
-        telegram_chat_id: chatId,
         symbol,
         market_type: marketType,
         side: tradeSide,
