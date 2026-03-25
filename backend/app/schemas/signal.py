@@ -2,9 +2,13 @@
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+MarketType = Literal["stock", "crypto", "forex"]
+SignalType = Literal["STRONG_BUY", "BUY", "HOLD", "SELL", "STRONG_SELL"]
 
 
 class SignalResponse(BaseModel):
@@ -12,8 +16,8 @@ class SignalResponse(BaseModel):
 
     id: UUID
     symbol: str
-    market_type: str
-    signal_type: str
+    market_type: MarketType
+    signal_type: SignalType
     confidence: int = Field(ge=0, le=100)
     current_price: Decimal
     target_price: Decimal

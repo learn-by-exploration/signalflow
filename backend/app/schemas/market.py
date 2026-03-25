@@ -1,8 +1,11 @@
 """Market-related Pydantic schemas."""
 
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel
+
+MarketType = Literal["stock", "crypto", "forex"]
 
 
 class MarketSnapshot(BaseModel):
@@ -12,7 +15,7 @@ class MarketSnapshot(BaseModel):
     price: Decimal
     change_pct: Decimal
     volume: Decimal | None = None
-    market_type: str
+    market_type: MarketType
 
 
 class MarketOverviewResponse(BaseModel):

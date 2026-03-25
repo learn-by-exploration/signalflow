@@ -111,6 +111,17 @@ async def correlation_id_middleware(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    # Content Security Policy
+    csp_directives = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        f"connect-src 'self' {settings.frontend_url}",
+        "font-src 'self' https://fonts.gstatic.com",
+        "frame-ancestors 'none'",
+    ]
+    response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
     if settings.environment == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response

@@ -1,9 +1,13 @@
 """API key authentication for backend endpoints."""
 
+import logging
+
 from fastapi import Security, HTTPException
 from fastapi.security import APIKeyHeader
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
@@ -13,12 +17,16 @@ async def require_api_key(
 ) -> str:
     """Validate API key from X-API-Key header.
 
-    If no API_SECRET_KEY is configured (dev without key), allow all requests.
-    In production, set API_SECRET_KEY to enforce authentication.
+    API_SECRET_KEY is required in all environments. If unset, requests are
+    rejected with 401 to prevent unauthenticated access.
     """
     settings = get_settings()
     if not settings.api_secret_key:
-        return "anonymous"
+        logger.error("API_SECRET_KEY not configured — rejecting request")
+        raise HTTPException(
+            status_code=401,
+            detail="Server misconfiguration: API key not set",
+        )
     if not api_key or api_key != settings.api_secret_key:
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
     return api_key

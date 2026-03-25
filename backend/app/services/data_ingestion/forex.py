@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.models.market_data import MarketData
 from app.services.data_ingestion.base import BaseFetcher
+from app.services.data_ingestion.validators import validate_candle
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -46,6 +47,17 @@ class ForexFetcher(BaseFetcher):
                     result = self._fetch_from_alpha_vantage(symbol)
 
                 if result is not None:
+                    candle = {
+                        "open": result["open"],
+                        "high": result["high"],
+                        "low": result["low"],
+                        "close": result["close"],
+                    }
+                    valid, err = validate_candle(candle, symbol)
+                    if not valid:
+                        logger.warning("Invalid candle for %s: %s", symbol, err)
+                        continue
+
                     record = MarketData(
                         symbol=symbol,
                         market_type="forex",

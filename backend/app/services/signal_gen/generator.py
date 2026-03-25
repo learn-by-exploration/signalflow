@@ -21,6 +21,7 @@ from app.services.ai_engine.sentiment import AISentimentEngine
 from app.services.analysis.indicators import TechnicalAnalyzer
 from app.services.signal_gen.scorer import compute_final_confidence
 from app.services.signal_gen.targets import calculate_targets
+from app.services.data_ingestion.validators import is_spot_only_candle
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,17 @@ class SignalGenerator:
                 len(df) if df is not None else 0,
                 MIN_DATA_POINTS,
             )
+            return None
+
+        # 1b. Skip spot-only data (e.g. CoinGecko fallback with fabricated OHLCV)
+        last_row = df.iloc[-1]
+        if is_spot_only_candle({
+            "open": last_row["open"],
+            "high": last_row["high"],
+            "low": last_row["low"],
+            "close": last_row["close"],
+        }):
+            logger.info("Spot-only data for %s, skipping technical analysis", symbol)
             return None
 
         # 2. Run technical analysis
