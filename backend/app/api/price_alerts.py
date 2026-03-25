@@ -3,7 +3,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import AuthContext, get_current_user
@@ -12,6 +12,9 @@ from app.models.price_alert import PriceAlert
 from app.schemas.p3 import PriceAlertCreate, PriceAlertData
 
 router = APIRouter(prefix="/alerts/price", tags=["price-alerts"])
+
+# Price alert limits per tier
+ALERT_LIMITS = {"free": 3, "pro": 50, "admin": 500}
 
 
 @router.get("", response_model=dict)
@@ -39,6 +42,20 @@ async def create_price_alert(
     """Create a new price alert for the authenticated user."""
     if payload.condition not in ("above", "below"):
         raise HTTPException(status_code=400, detail="condition must be 'above' or 'below'")
+
+    # Enforce tier-based alert limit
+    limit = ALERT_LIMITS.get(user.tier, ALERT_LIMITS["free"])
+    count_result = await db.execute(
+        select(func.count(PriceAlert.id))
+        .where(PriceAlert.telegram_chat_id == user.telegram_chat_id)
+        .where(PriceAlert.is_active.is_(True))
+    )
+    current_count = count_result.scalar() or 0
+    if current_count >= limit:
+        raise HTTPException(
+            status_code=402,
+            detail=f"Price alert limit reached ({limit} for {user.tier} tier)",
+        )
 
     alert = PriceAlert(
         telegram_chat_id=user.telegram_chat_id,

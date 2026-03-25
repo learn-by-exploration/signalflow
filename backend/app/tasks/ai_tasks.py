@@ -53,6 +53,15 @@ def _is_forex_market_hours() -> bool:
 async def _run_sentiment_async() -> dict:
     """Async sentiment analysis — budget-aware with market-hours gating."""
     settings = get_settings()
+
+    # Pre-check budget before starting any API calls
+    from app.services.ai_engine.cost_tracker import CostTracker
+    cost_tracker = CostTracker()
+    if not cost_tracker.is_budget_available():
+        logger.warning("AI budget exhausted, skipping all sentiment analysis")
+        total = len(settings.tracked_crypto) + len(settings.tracked_stocks) + len(settings.tracked_forex)
+        return {"status": "budget_exhausted", "analyzed": 0, "skipped": total, "errors": 0}
+
     redis_client = aioredis.from_url(settings.redis_url)
 
     try:

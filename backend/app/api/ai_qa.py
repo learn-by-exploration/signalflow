@@ -15,6 +15,7 @@ from app.rate_limit import limiter
 from app.schemas.p3 import AskQuestion
 from app.services.ai_engine.cost_tracker import CostTracker
 from app.services.ai_engine.prompts import SYMBOL_QA_PROMPT
+from app.services.ai_engine.sanitizer import sanitize_question
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -97,7 +98,7 @@ async def ask_about_symbol(
         market_type=market_type,
         market_data=market_data,
         signals_info=signals_info,
-        question=payload.question,
+        question=sanitize_question(payload.question),
     )
 
     try:

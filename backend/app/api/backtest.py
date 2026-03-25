@@ -24,6 +24,16 @@ async def start_backtest(
     Creates a BacktestRun row with status='pending' and dispatches
     the backtest_runner Celery task.
     """
+    # Enforce maximum backtest duration
+    MAX_BACKTEST_DAYS = 365
+    if payload.days > MAX_BACKTEST_DAYS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Backtest duration cannot exceed {MAX_BACKTEST_DAYS} days",
+        )
+    if payload.days < 1:
+        raise HTTPException(status_code=400, detail="Backtest duration must be at least 1 day")
+
     from app.tasks.backtest_tasks import run_backtest
 
     now = datetime.now(timezone.utc)

@@ -19,6 +19,7 @@ from app.services.ai_engine.news_fetcher import (
     fetch_news_for_symbol_structured,
 )
 from app.services.ai_engine.prompts import EVENT_CHAIN_PROMPT, SENTIMENT_PROMPT
+from app.services.ai_engine.sanitizer import sanitize_text
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ class AISentimentEngine:
         Falls back to standard sentiment prompt if event chain fails.
         """
         articles_text = "\n".join(
-            f"- [{a.get('source', 'unknown')}] {a['headline']}"
+            f"- [{sanitize_text(a.get('source', 'unknown'), max_length=100)}] {sanitize_text(a['headline'])}"
             for a in structured_articles
         )
         market_label = MARKET_LABELS.get(market_type, market_type)
@@ -201,11 +202,21 @@ class AISentimentEngine:
             content = data["content"][0]["text"].strip()
             result = json.loads(content)
 
-            # Extract sentiment score + event data
-            score = int(result.get("sentiment_score", 50))
-            events = result.get("events", [])
-            overall_direction = result.get("overall_direction", "neutral")
-            overall_confidence = result.get("overall_confidence", 0.5)
+            # Validate and clamp values
+            raw_score = result.get("sentiment_score", 50)
+            try:
+                score = int(raw_score)
+            except (TypeError, ValueError):
+                score = 50
+            events = result.get("events", []) if isinstance(result.get("events"), list) else []
+            overall_direction = str(result.get("overall_direction", "neutral"))
+            if overall_direction not in ("bullish", "bearish", "neutral"):
+                overall_direction = "neutral"
+            raw_confidence = result.get("overall_confidence", 0.5)
+            try:
+                overall_confidence = float(raw_confidence)
+            except (TypeError, ValueError):
+                overall_confidence = 0.5
 
             # Extract key factors from events
             key_factors = []
@@ -239,7 +250,7 @@ class AISentimentEngine:
         self, symbol: str, market_type: str, articles: list[str]
     ) -> dict[str, Any]:
         """Fallback to simple sentiment prompt if event chain extraction fails."""
-        articles_text = "\n".join(f"- {a}" for a in articles)
+        articles_text = "\n".join(f"- {sanitize_text(a)}" for a in articles)
         market_label = MARKET_LABELS.get(market_type, market_type)
 
         prompt = SENTIMENT_PROMPT.format(
@@ -277,13 +288,23 @@ class AISentimentEngine:
             content = data["content"][0]["text"].strip()
             result = json.loads(content)
 
-            score = int(result.get("sentiment_score", 50))
+            raw_score = result.get("sentiment_score", 50)
+            try:
+                score = int(raw_score)
+            except (TypeError, ValueError):
+                score = 50
+            key_factors = result.get("key_factors", [])
+            if not isinstance(key_factors, list):
+                key_factors = []
+            market_impact = str(result.get("market_impact", "neutral"))
+            if market_impact not in ("positive", "negative", "neutral"):
+                market_impact = "neutral"
             return {
                 "sentiment_score": max(0, min(100, score)),
-                "key_factors": result.get("key_factors", []),
-                "market_impact": result.get("market_impact", "neutral"),
-                "time_horizon": result.get("time_horizon", "short_term"),
-                "confidence_in_analysis": int(result.get("confidence_in_analysis", 50)),
+                "key_factors": key_factors[:5],
+                "market_impact": market_impact,
+                "time_horizon": str(result.get("time_horizon", "short_term")),
+                "confidence_in_analysis": max(0, min(100, int(result.get("confidence_in_analysis", 50)))),
             }
         except Exception:
             logger.exception("Sentiment fallback also failed for %s", symbol)

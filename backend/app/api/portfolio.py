@@ -28,7 +28,10 @@ async def list_trades(
     """List trades for the authenticated user, optionally filtered by symbol."""
     query = select(Trade).where(Trade.telegram_chat_id == user.telegram_chat_id)
     if symbol:
-        query = query.where(Trade.symbol.ilike(f"%{symbol}%"))
+        # Escape SQL LIKE wildcards to prevent pattern injection
+        safe_symbol = symbol.replace("%", "").replace("_", "").strip()
+        if safe_symbol:
+            query = query.where(Trade.symbol.ilike(f"%{safe_symbol}%"))
     query = query.order_by(Trade.created_at.desc()).limit(limit)
     result = await db.execute(query)
     trades = result.scalars().all()
