@@ -60,8 +60,13 @@ async def _resolve_signals_async() -> dict:
 
     try:
         async with session_factory() as db:
-            # Fetch all active signals
-            stmt = select(Signal).where(Signal.is_active.is_(True))
+            # Fetch all active signals with FOR UPDATE SKIP LOCKED
+            # to prevent concurrent workers from resolving the same signal
+            stmt = (
+                select(Signal)
+                .where(Signal.is_active.is_(True))
+                .with_for_update(skip_locked=True)
+            )
             result = await db.execute(stmt)
             active_signals = result.scalars().all()
 

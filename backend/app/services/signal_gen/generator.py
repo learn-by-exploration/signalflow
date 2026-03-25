@@ -228,11 +228,16 @@ class SignalGenerator:
         return df
 
     async def _has_recent_signal(self, symbol: str) -> bool:
-        """Check if a signal was generated for this symbol within the cooldown period."""
+        """Check if a signal was generated for this symbol within the cooldown period.
+
+        Uses FOR UPDATE SKIP LOCKED to prevent TOCTOU races — if another worker
+        is already generating a signal for this symbol, we skip it.
+        """
         cutoff = datetime.now(timezone.utc) - timedelta(hours=SIGNAL_COOLDOWN_HOURS)
         stmt = (
             select(Signal.id)
             .where(Signal.symbol == symbol, Signal.created_at >= cutoff)
+            .with_for_update(skip_locked=True)
             .limit(1)
         )
         result = await self.db.execute(stmt)

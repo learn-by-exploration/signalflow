@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,4 +32,10 @@ class SignalHistory(Base):
 
     signal_rel = relationship("Signal", lazy="joined")
 
-    __table_args__ = (Index("idx_history_outcome", "outcome", created_at.desc()),)
+    __table_args__ = (
+        Index("idx_history_outcome", "outcome", created_at.desc()),
+        CheckConstraint(
+            "outcome IN ('hit_target', 'hit_stop', 'expired', 'pending')",
+            name="ck_signal_history_outcome",
+        ),
+    )

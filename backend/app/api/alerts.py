@@ -69,7 +69,9 @@ async def update_alert_config(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Update an existing alert configuration (must belong to user)."""
-    result = await db.execute(select(AlertConfig).where(AlertConfig.id == config_id))
+    result = await db.execute(
+        select(AlertConfig).where(AlertConfig.id == config_id).with_for_update()
+    )
     config = result.scalar_one_or_none()
     if not config:
         raise HTTPException(status_code=404, detail="Alert config not found")

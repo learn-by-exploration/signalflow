@@ -19,9 +19,9 @@ class SignalResponse(BaseModel):
     market_type: MarketType
     signal_type: SignalType
     confidence: int = Field(ge=0, le=100)
-    current_price: Decimal
-    target_price: Decimal
-    stop_loss: Decimal
+    current_price: Decimal = Field(ge=0)
+    target_price: Decimal = Field(ge=0)
+    stop_loss: Decimal = Field(ge=0)
     timeframe: str | None = None
     ai_reasoning: str
     technical_data: dict

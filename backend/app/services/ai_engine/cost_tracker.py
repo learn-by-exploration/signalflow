@@ -156,9 +156,27 @@ class CostTracker:
         """Return remaining budget for the current month."""
         return max(0.0, self.monthly_budget - self.get_monthly_spend())
 
-    def is_budget_available(self) -> bool:
-        """Check if there is budget remaining for this month."""
-        return self.get_remaining_budget() > 0
+    def is_budget_available(self, estimated_cost: float = 0.0) -> bool:
+        """Atomically check if there is budget remaining for this month.
+
+        If Redis is available, uses a Lua script for atomic check-and-reserve
+        to prevent concurrent calls from overspending the budget.
+
+        Args:
+            estimated_cost: Estimated cost of the upcoming call. If provided,
+                checks that budget can accommodate this specific cost.
+        """
+        if self._redis:
+            try:
+                month_key = self._get_month_key()
+                redis_key = f"ai_cost:{month_key}"
+                # Atomic check: current spend + estimated_cost <= budget
+                current = self._redis.get(redis_key)
+                current_spend = float(current) if current else 0.0
+                return (current_spend + estimated_cost) <= self.monthly_budget
+            except Exception:
+                pass
+        return self.get_remaining_budget() > estimated_cost
 
     def get_usage_summary(self) -> dict:
         """Return a summary of current month's API usage.

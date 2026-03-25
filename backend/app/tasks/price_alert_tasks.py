@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 def _check_alerts_sync() -> list[dict]:
     """Check all active, untriggered price alerts against latest prices.
 
+    Uses atomic UPDATE...WHERE to prevent duplicate triggers when multiple
+    workers check the same alert concurrently.
+
     Returns list of triggered alerts with details for notification.
     """
     settings = get_settings()
@@ -66,22 +69,26 @@ def _check_alerts_sync() -> list[dict]:
                 )
 
                 if should_trigger:
-                    # Mark as triggered
-                    session.execute(
+                    # Atomic UPDATE with WHERE is_triggered=false to prevent double-trigger
+                    result = session.execute(
                         text(
                             "UPDATE price_alerts SET is_triggered = true, "
-                            "triggered_at = :now WHERE id = :aid"
+                            "triggered_at = :now "
+                            "WHERE id = :aid AND is_triggered = false "
+                            "RETURNING id"
                         ),
                         {"now": datetime.now(timezone.utc), "aid": str(alert_id)},
                     )
-                    triggered.append({
-                        "chat_id": chat_id,
-                        "symbol": symbol,
-                        "market_type": market_type,
-                        "condition": condition,
-                        "threshold": str(threshold),
-                        "current_price": str(current_price),
-                    })
+                    # Only proceed if WE were the one to mark it triggered
+                    if result.fetchone() is not None:
+                        triggered.append({
+                            "chat_id": chat_id,
+                            "symbol": symbol,
+                            "market_type": market_type,
+                            "condition": condition,
+                            "threshold": str(threshold),
+                            "current_price": str(current_price),
+                        })
 
             if triggered:
                 session.commit()

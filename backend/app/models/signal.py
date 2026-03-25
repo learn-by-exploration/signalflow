@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, Index, Integer, Numeric, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Index, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,4 +39,16 @@ class Signal(Base):
     __table_args__ = (
         Index("idx_signals_active", "is_active", created_at.desc()),
         Index("idx_signals_symbol", "symbol", created_at.desc()),
+        CheckConstraint("confidence >= 0 AND confidence <= 100", name="ck_signals_confidence"),
+        CheckConstraint("current_price >= 0", name="ck_signals_current_price"),
+        CheckConstraint("target_price >= 0", name="ck_signals_target_price"),
+        CheckConstraint("stop_loss >= 0", name="ck_signals_stop_loss"),
+        CheckConstraint(
+            "market_type IN ('stock', 'crypto', 'forex')",
+            name="ck_signals_market_type",
+        ),
+        CheckConstraint(
+            "signal_type IN ('STRONG_BUY', 'BUY', 'HOLD', 'SELL', 'STRONG_SELL')",
+            name="ck_signals_signal_type",
+        ),
     )

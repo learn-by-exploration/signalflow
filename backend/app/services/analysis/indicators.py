@@ -293,7 +293,7 @@ class TechnicalAnalyzer:
         fast_val = float(sma_fast.iloc[-1])
         slow_val = float(sma_slow.iloc[-1])
 
-        if any(np.isnan(v) for v in [fast_val, slow_val]):
+        if any(np.isnan(v) for v in [fast_val, slow_val]) or slow_val == 0:
             return {
                 "fast_sma": None,
                 "slow_sma": None,

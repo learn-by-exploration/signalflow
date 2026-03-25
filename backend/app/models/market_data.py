@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, DateTime, Index, Numeric, String, func
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, Index, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -30,4 +30,13 @@ class MarketData(Base):
 
     __table_args__ = (
         Index("idx_market_data_symbol_time", "symbol", timestamp.desc()),
+        CheckConstraint('"open" > 0', name="ck_market_data_open"),
+        CheckConstraint('"high" > 0', name="ck_market_data_high"),
+        CheckConstraint('"low" > 0', name="ck_market_data_low"),
+        CheckConstraint('"close" > 0', name="ck_market_data_close"),
+        CheckConstraint('"high" >= "low"', name="ck_market_data_high_gte_low"),
+        CheckConstraint(
+            "market_type IN ('stock', 'crypto', 'forex')",
+            name="ck_market_data_market_type",
+        ),
     )

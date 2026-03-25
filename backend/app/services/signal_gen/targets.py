@@ -70,6 +70,17 @@ def calculate_targets(
     target = max(Decimal("0"), target)
     stop_loss = max(Decimal("0"), stop_loss)
 
+    # Enforce minimum Risk:Reward ratio of 1:2
+    reward = abs(target - current_price)
+    risk = abs(stop_loss - current_price)
+    if risk > 0 and reward / risk < 2:
+        # Widen target to maintain 1:2 R:R
+        if signal_type in ("STRONG_BUY", "BUY"):
+            target = current_price + (risk * 2)
+        elif signal_type in ("STRONG_SELL", "SELL"):
+            target = current_price - (risk * 2)
+            target = max(Decimal("0"), target)
+
     timeframe = DEFAULT_TIMEFRAMES.get(market_type, "1-2 weeks")
 
     return {
