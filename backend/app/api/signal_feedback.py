@@ -1,5 +1,6 @@
 """Signal feedback endpoints — 'Did you take this trade?' tracking."""
 
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -32,7 +33,7 @@ class SignalFeedbackData(BaseModel):
     action: str
     entry_price: Decimal | None = None
     notes: str | None = None
-    created_at: str
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 

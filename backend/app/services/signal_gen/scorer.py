@@ -5,6 +5,7 @@ analysis to produce a final confidence score and signal type.
 """
 
 import logging
+import math
 from typing import Any
 
 from app.services.ai_engine.event_chain import compute_chain_score
@@ -139,6 +140,11 @@ def compute_final_confidence(
         if distance_from_center > max_distance:
             direction = 1 if final > 50 else -1
             final = 50 + direction * max_distance
+
+    # Guard against NaN/Infinity from corrupted inputs
+    if math.isnan(final) or math.isinf(final):
+        logger.warning("Final score is %s, falling back to neutral 50", final)
+        final = 50.0
 
     confidence = max(0, min(100, int(round(final))))
 
