@@ -35,10 +35,10 @@ export default function WatchlistPage() {
   async function loadData() {
     try {
       const [watchRes, sigRes] = await Promise.all([
-        api.getWatchlist() as Promise<{ data: { watchlist: string[] } }>,
+        api.getWatchlist() as Promise<{ data: string[] }>,
         api.getSignals() as Promise<{ data: Signal[] }>,
       ]);
-      setWatchlist(watchRes.data?.watchlist ?? []);
+      setWatchlist(Array.isArray(watchRes.data) ? watchRes.data : []);
       setSignals(sigRes.data ?? []);
     } catch {
       toast('Failed to load watchlist', 'error');

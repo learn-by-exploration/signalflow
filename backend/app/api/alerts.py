@@ -1,9 +1,9 @@
 """Alert configuration endpoints."""
 
-from uuid import UUID
+from uuid import UUID as PyUUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import AuthContext, get_current_user
@@ -16,6 +16,19 @@ from app.schemas.alert import AlertConfigCreate, AlertConfigData, AlertConfigUpd
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 
+def _user_config_filter(user: AuthContext):
+    """Build a filter for alert configs belonging to the authenticated user."""
+    conditions = []
+    if user.user_id:
+        uid = PyUUID(user.user_id) if isinstance(user.user_id, str) else user.user_id
+        conditions.append(AlertConfig.user_id == uid)
+    if user.telegram_chat_id:
+        conditions.append(AlertConfig.telegram_chat_id == user.telegram_chat_id)
+    if not conditions:
+        return AlertConfig.id == None  # noqa: E711
+    return or_(*conditions)
+
+
 @router.get("/config", response_model=dict)
 async def get_alert_config(
     user: AuthContext = Depends(get_current_user),
@@ -23,7 +36,7 @@ async def get_alert_config(
 ) -> dict:
     """Get alert preferences for the authenticated user."""
     result = await db.execute(
-        select(AlertConfig).where(AlertConfig.telegram_chat_id == user.telegram_chat_id)
+        select(AlertConfig).where(_user_config_filter(user))
     )
     config = result.scalar_one_or_none()
     if not config:
@@ -42,12 +55,13 @@ async def create_alert_config(
     """Create a new alert configuration for the authenticated user."""
     # Check for existing config
     existing = await db.execute(
-        select(AlertConfig).where(AlertConfig.telegram_chat_id == user.telegram_chat_id)
+        select(AlertConfig).where(_user_config_filter(user))
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Alert config already exists for this user")
 
     config = AlertConfig(
+        user_id=PyUUID(user.user_id) if isinstance(user.user_id, str) and user.user_id else user.user_id,
         telegram_chat_id=user.telegram_chat_id,
         username=payload.username,
         markets=payload.markets,
@@ -63,7 +77,7 @@ async def create_alert_config(
 
 @router.put("/config/{config_id}", response_model=dict)
 async def update_alert_config(
-    config_id: UUID,
+    config_id: PyUUID,
     payload: AlertConfigUpdate,
     user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -77,7 +91,12 @@ async def update_alert_config(
         raise HTTPException(status_code=404, detail="Alert config not found")
 
     # Ownership check
-    if config.telegram_chat_id != user.telegram_chat_id:
+    is_owner = False
+    if user.user_id and config.user_id and str(config.user_id) == str(user.user_id):
+        is_owner = True
+    if user.telegram_chat_id and config.telegram_chat_id == user.telegram_chat_id:
+        is_owner = True
+    if not is_owner:
         raise HTTPException(status_code=403, detail="Not your alert config")
 
     update_data = payload.model_dump(exclude_unset=True)
@@ -96,11 +115,18 @@ async def get_watchlist(
 ) -> dict:
     """Get the authenticated user's watchlist."""
     result = await db.execute(
-        select(AlertConfig).where(AlertConfig.telegram_chat_id == user.telegram_chat_id)
+        select(AlertConfig).where(_user_config_filter(user))
     )
     config = result.scalar_one_or_none()
     if not config:
-        raise HTTPException(status_code=404, detail="Alert config not found")
+        # Auto-create a default config for web users
+        config = AlertConfig(
+            user_id=PyUUID(user.user_id) if isinstance(user.user_id, str) and user.user_id else user.user_id,
+            telegram_chat_id=user.telegram_chat_id,
+        )
+        db.add(config)
+        await db.flush()
+        await db.refresh(config)
     watchlist = config.watchlist if isinstance(config.watchlist, list) else []
     return {"data": watchlist}
 
@@ -113,11 +139,18 @@ async def update_watchlist(
 ) -> dict:
     """Add or remove a symbol from the authenticated user's watchlist."""
     result = await db.execute(
-        select(AlertConfig).where(AlertConfig.telegram_chat_id == user.telegram_chat_id)
+        select(AlertConfig).where(_user_config_filter(user))
     )
     config = result.scalar_one_or_none()
     if not config:
-        raise HTTPException(status_code=404, detail="Alert config not found")
+        # Auto-create for web users
+        config = AlertConfig(
+            user_id=PyUUID(user.user_id) if isinstance(user.user_id, str) and user.user_id else user.user_id,
+            telegram_chat_id=user.telegram_chat_id,
+        )
+        db.add(config)
+        await db.flush()
+        await db.refresh(config)
 
     watchlist = list(config.watchlist) if isinstance(config.watchlist, list) else []
     symbol_upper = payload.symbol.upper().strip()

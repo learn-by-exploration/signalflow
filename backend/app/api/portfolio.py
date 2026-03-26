@@ -5,7 +5,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import func, select, case
+from sqlalchemy import func, select, case, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import AuthContext, get_current_user
@@ -18,6 +18,20 @@ from app.schemas.p3 import CurrencyBreakdown, PortfolioSummary, TradeCreate, Tra
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
 
+def _user_trade_filter(user: AuthContext):
+    """Build a filter for trades belonging to the authenticated user."""
+    conditions = []
+    if user.user_id:
+        uid = UUID(user.user_id) if isinstance(user.user_id, str) else user.user_id
+        conditions.append(Trade.user_id == uid)
+    if user.telegram_chat_id:
+        conditions.append(Trade.telegram_chat_id == user.telegram_chat_id)
+    if not conditions:
+        # No identity available — match nothing
+        return Trade.id == None  # noqa: E711
+    return or_(*conditions)
+
+
 @router.get("/trades", response_model=dict)
 async def list_trades(
     user: AuthContext = Depends(get_current_user),
@@ -26,7 +40,7 @@ async def list_trades(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """List trades for the authenticated user, optionally filtered by symbol."""
-    query = select(Trade).where(Trade.telegram_chat_id == user.telegram_chat_id)
+    query = select(Trade).where(_user_trade_filter(user))
     if symbol:
         # Escape SQL LIKE wildcards to prevent pattern injection
         safe_symbol = symbol.replace("%", "").replace("_", "").strip()
@@ -47,7 +61,9 @@ async def log_trade(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Log a new trade for the authenticated user."""
+    user_uuid = UUID(user.user_id) if user.user_id else None
     trade = Trade(
+        user_id=user_uuid,
         telegram_chat_id=user.telegram_chat_id,
         symbol=payload.symbol.upper().strip(),
         market_type=payload.market_type,
@@ -93,7 +109,7 @@ async def portfolio_summary(
             ).label("net_cost"),
             func.max(Trade.price).label("last_trade_price"),
         )
-        .where(Trade.telegram_chat_id == user.telegram_chat_id)
+        .where(_user_trade_filter(user))
         .group_by(Trade.symbol, Trade.market_type)
     )
     rows = result.all()

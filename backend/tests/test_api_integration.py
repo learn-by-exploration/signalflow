@@ -7,13 +7,38 @@ Skips gracefully if server isn't running.
 """
 
 import os
+import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 import httpx
+import jwt
 
 BASE_URL = "http://localhost:8000"
-API_KEY = os.environ.get("API_SECRET_KEY", "")
-AUTH_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
+
+
+def _build_auth_headers() -> dict[str, str]:
+    """Build JWT auth headers for integration tests."""
+    secret = os.environ.get("JWT_SECRET_KEY", "")
+    if not secret:
+        # Try API key fallback (legacy)
+        api_key = os.environ.get("API_SECRET_KEY", "")
+        return {"X-API-Key": api_key} if api_key else {}
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(uuid.uuid4()),
+        "jti": str(uuid.uuid4()),
+        "chat_id": None,
+        "tier": "free",
+        "iat": now,
+        "exp": now + timedelta(hours=1),
+        "type": "access",
+    }
+    token = jwt.encode(payload, secret, algorithm="HS256")
+    return {"Authorization": f"Bearer {token}"}
+
+
+AUTH_HEADERS = _build_auth_headers()
 
 
 def _server_available() -> bool:
@@ -24,9 +49,20 @@ def _server_available() -> bool:
         return False
 
 
+def _auth_working() -> bool:
+    """Check if JWT auth is accepted by the running server."""
+    if not AUTH_HEADERS:
+        return False
+    try:
+        resp = httpx.get(f"{BASE_URL}/api/v1/signals?limit=1", headers=AUTH_HEADERS, timeout=2)
+        return resp.status_code != 401
+    except httpx.ConnectError:
+        return False
+
+
 pytestmark = pytest.mark.skipif(
-    not _server_available(),
-    reason="Backend server not running at localhost:8000",
+    not _server_available() or not _auth_working(),
+    reason="Backend server not running at localhost:8000 or JWT auth not configured",
 )
 
 

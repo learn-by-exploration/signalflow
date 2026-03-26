@@ -18,7 +18,10 @@ class PriceAlert(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    telegram_chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
+    telegram_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     symbol: Mapped[str] = mapped_column(String(20), nullable=False)
     market_type: Mapped[str] = mapped_column(String(10), nullable=False)
     condition: Mapped[str] = mapped_column(

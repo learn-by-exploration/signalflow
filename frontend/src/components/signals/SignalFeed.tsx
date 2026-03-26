@@ -16,6 +16,7 @@ interface SignalFeedProps {
   signals: Signal[];
   isLoading: boolean;
   error: string | null;
+  watchlist?: string[];
 }
 
 type FilterType = 'all' | MarketType;
@@ -44,11 +45,12 @@ function classifyTimeframe(tf?: string): 'short' | 'medium' | 'long' {
   return 'medium';
 }
 
-export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
+export function SignalFeed({ signals, isLoading, error, watchlist = [] }: SignalFeedProps) {
   const defaultFilter = usePreferencesStore((s) => s.defaultMarketFilter);
   const setDefaultMarketFilter = usePreferencesStore((s) => s.setDefaultMarketFilter);
   const [filter, setFilter] = useState<FilterType>(defaultFilter);
   const [timeframeFilter, setTimeframeFilter] = useState<TimeframeFilter>('all');
+  const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -90,6 +92,9 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
     if (filter !== 'all') {
       result = result.filter((s) => s.market_type === filter);
     }
+    if (watchlistOnly && watchlist.length > 0) {
+      result = result.filter((s) => watchlist.includes(s.symbol));
+    }
     if (timeframeFilter !== 'all') {
       result = result.filter((s) => classifyTimeframe(s.timeframe ?? undefined) === timeframeFilter);
     }
@@ -100,7 +105,7 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
     // Sort by confidence (default)
     result = [...result].sort((a, b) => b.confidence - a.confidence);
     return result;
-  }, [signals, filter, timeframeFilter, search]);
+  }, [signals, filter, watchlistOnly, watchlist, timeframeFilter, search]);
 
   return (
     <div className="space-y-4">
@@ -108,6 +113,22 @@ export function SignalFeed({ signals, isLoading, error }: SignalFeedProps) {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-display font-semibold">Active Signals</h2>
         <div className="flex items-center gap-2" data-tour="signal-filters">
+          {/* Watchlist toggle */}
+          {watchlist.length > 0 && (
+            <button
+              onClick={() => setWatchlistOnly(!watchlistOnly)}
+              aria-pressed={watchlistOnly}
+              aria-label="Show watchlist signals only"
+              title={watchlistOnly ? 'Showing watchlist only' : 'Show all signals'}
+              className={`min-h-[44px] min-w-[44px] px-3 py-2 text-xs rounded-full border transition-colors ${
+                watchlistOnly
+                  ? 'border-signal-buy text-signal-buy bg-signal-buy/10'
+                  : 'border-border-default text-text-secondary hover:border-border-hover'
+              }`}
+            >
+              👁 My List
+            </button>
+          )}
           {/* Market filter */}
           {FILTER_OPTIONS.map((opt) => (
             <button

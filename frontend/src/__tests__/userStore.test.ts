@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useUserStore } from '@/store/userStore';
 
-// Mock sessionStorage
+// Mock sessionStorage (for tokens)
 const store: Record<string, string> = {};
 Object.defineProperty(globalThis, 'sessionStorage', {
   value: {
@@ -13,9 +13,22 @@ Object.defineProperty(globalThis, 'sessionStorage', {
   writable: true,
 });
 
+// Mock localStorage (for chatId)
+const localStore: Record<string, string> = {};
+Object.defineProperty(globalThis, 'localStorage', {
+  value: {
+    getItem: (key: string) => localStore[key] ?? null,
+    setItem: (key: string, val: string) => { localStore[key] = val; },
+    removeItem: (key: string) => { delete localStore[key]; },
+    clear: () => { Object.keys(localStore).forEach((k) => delete localStore[k]); },
+  },
+  writable: true,
+});
+
 describe('userStore', () => {
   beforeEach(() => {
     Object.keys(store).forEach((k) => delete store[k]);
+    Object.keys(localStore).forEach((k) => delete localStore[k]);
     useUserStore.setState({ chatId: null, accessToken: null, refreshToken: null, isAuthenticated: false });
   });
 
@@ -23,24 +36,24 @@ describe('userStore', () => {
     expect(useUserStore.getState().chatId).toBeNull();
   });
 
-  it('setChatId stores the ID and persists to sessionStorage', () => {
+  it('setChatId stores the ID and persists to localStorage', () => {
     useUserStore.getState().setChatId(123456789);
     expect(useUserStore.getState().chatId).toBe(123456789);
-    expect(store['signalflow_chat_id']).toBe('123456789');
+    expect(localStore['signalflow_chat_id']).toBe('123456789');
   });
 
-  it('clearChatId removes the ID and clears sessionStorage', () => {
+  it('clearChatId removes the ID and clears localStorage', () => {
     useUserStore.getState().setChatId(999);
     useUserStore.getState().clearChatId();
     expect(useUserStore.getState().chatId).toBeNull();
-    expect(store['signalflow_chat_id']).toBeUndefined();
+    expect(localStore['signalflow_chat_id']).toBeUndefined();
   });
 
   it('setChatId overwrites previous value', () => {
     useUserStore.getState().setChatId(111);
     useUserStore.getState().setChatId(222);
     expect(useUserStore.getState().chatId).toBe(222);
-    expect(store['signalflow_chat_id']).toBe('222');
+    expect(localStore['signalflow_chat_id']).toBe('222');
   });
 
   it('setTokens stores tokens in sessionStorage', () => {

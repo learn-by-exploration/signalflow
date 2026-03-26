@@ -277,7 +277,7 @@ class TestAuthSchemas:
         """Valid registration request."""
         from app.schemas.auth import RegisterRequest
 
-        req = RegisterRequest(email="test@example.com", password="secure123")
+        req = RegisterRequest(email="test@example.com", password="Secure@123")
         assert req.email == "test@example.com"
 
     def test_register_request_short_password(self):
@@ -301,7 +301,7 @@ class TestAuthSchemas:
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
-            RegisterRequest(email="not-an-email", password="secure123")
+            RegisterRequest(email="not-an-email", password="Secure@123")
 
 
 # ─── Ownership / Access Control Tests ───────────────────────

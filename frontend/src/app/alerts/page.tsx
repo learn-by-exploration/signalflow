@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { AlertConfig, PriceAlert, MarketType, SignalType } from '@/lib/types';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { SymbolAutocomplete } from '@/components/shared/SymbolAutocomplete';
 
 const MARKET_OPTIONS: { value: MarketType; label: string; icon: string }[] = [
   { value: 'stock', label: 'Stocks', icon: '📈' },
@@ -28,6 +30,9 @@ export default function AlertsPage() {
   const [markets, setMarkets] = useState<MarketType[]>(['stock', 'crypto', 'forex']);
   const [minConfidence, setMinConfidence] = useState(60);
   const [signalTypes, setSignalTypes] = useState<SignalType[]>(['STRONG_BUY', 'BUY', 'SELL', 'STRONG_SELL']);
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(false);
+  const [quietStart, setQuietStart] = useState('23:00');
+  const [quietEnd, setQuietEnd] = useState('07:00');
 
   // Price alerts state
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
@@ -38,6 +43,10 @@ export default function AlertsPage() {
   // Watchlist state
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [newWatchSymbol, setNewWatchSymbol] = useState('');
+
+  // Per-market confidence overrides
+  const [marketConfidence, setMarketConfidence] = useState<Record<string, number>>({});
+  const [showPerMarket, setShowPerMarket] = useState(false);
 
   useEffect(() => {
     async function loadAll() {
@@ -54,6 +63,11 @@ export default function AlertsPage() {
           setMarkets(c.markets);
           setMinConfidence(c.min_confidence);
           setSignalTypes(c.signal_types);
+          if (c.quiet_hours?.start && c.quiet_hours?.end) {
+            setQuietHoursEnabled(true);
+            setQuietStart(c.quiet_hours.start);
+            setQuietEnd(c.quiet_hours.end);
+          }
         }
         if (alertsRes.status === 'fulfilled') {
           setPriceAlerts(alertsRes.value.data);
@@ -73,19 +87,17 @@ export default function AlertsPage() {
 
   // ── Alert Config Actions ──
   async function saveConfig() {
+    const payload: Record<string, unknown> = {
+      markets,
+      min_confidence: minConfidence,
+      signal_types: signalTypes,
+      quiet_hours: quietHoursEnabled ? { start: quietStart, end: quietEnd } : null,
+    };
     try {
       if (config?.id) {
-        await api.updateAlertConfig(config.id, {
-          markets,
-          min_confidence: minConfidence,
-          signal_types: signalTypes,
-        });
+        await api.updateAlertConfig(config.id, payload);
       } else {
-        await api.createAlertConfig({
-          markets,
-          min_confidence: minConfidence,
-          signal_types: signalTypes,
-        });
+        await api.createAlertConfig(payload);
       }
       toast('Preferences saved!', 'success');
     } catch {
@@ -229,6 +241,37 @@ export default function AlertsPage() {
                 <span>50%</span>
                 <span>100%</span>
               </div>
+
+              {/* Per-market confidence overrides */}
+              <button
+                onClick={() => setShowPerMarket(!showPerMarket)}
+                className="text-xs text-accent-purple hover:underline mt-2"
+              >
+                {showPerMarket ? '▼ Hide' : '▶ Per-market'} confidence overrides
+              </button>
+              {showPerMarket && (
+                <div className="mt-2 space-y-2 pl-2 border-l-2 border-accent-purple/20">
+                  {MARKET_OPTIONS.filter(m => markets.includes(m.value)).map((opt) => (
+                    <div key={opt.value} className="flex items-center gap-3">
+                      <span className="text-xs text-text-secondary w-16">{opt.icon} {opt.label}</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={5}
+                        value={marketConfidence[opt.value] ?? minConfidence}
+                        onChange={(e) => setMarketConfidence(prev => ({ ...prev, [opt.value]: Number(e.target.value) }))}
+                        className="flex-1 accent-accent-purple"
+                        aria-label={`${opt.label} minimum confidence`}
+                      />
+                      <span className="text-xs font-mono text-accent-purple w-10 text-right">
+                        {marketConfidence[opt.value] ?? minConfidence}%
+                      </span>
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-text-muted">Override the global minimum for specific markets. e.g. require 80% for stocks but 60% for crypto.</p>
+                </div>
+              )}
             </div>
 
             {/* Signal types */}
@@ -251,6 +294,51 @@ export default function AlertsPage() {
               </div>
             </div>
 
+            {/* Quiet Hours */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm text-text-secondary">🌙 Quiet Hours</label>
+                <button
+                  onClick={() => setQuietHoursEnabled(!quietHoursEnabled)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${
+                    quietHoursEnabled ? 'bg-accent-purple' : 'bg-bg-secondary border border-border-default'
+                  }`}
+                  aria-pressed={quietHoursEnabled}
+                  aria-label="Toggle quiet hours"
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                      quietHoursEnabled ? 'translate-x-5' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="text-xs text-text-muted mb-2">Suppress alerts during sleep hours (IST)</p>
+              {quietHoursEnabled && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <label className="text-xs text-text-muted block mb-1">From</label>
+                    <input
+                      type="time"
+                      value={quietStart}
+                      onChange={(e) => setQuietStart(e.target.value)}
+                      className="w-full bg-bg-secondary border border-border-default rounded-lg px-3 py-2 text-sm font-mono text-text-primary focus:outline-none focus:border-accent-purple"
+                    />
+                  </div>
+                  <span className="text-text-muted mt-4">→</span>
+                  <div className="flex-1">
+                    <label className="text-xs text-text-muted block mb-1">To</label>
+                    <input
+                      type="time"
+                      value={quietEnd}
+                      onChange={(e) => setQuietEnd(e.target.value)}
+                      className="w-full bg-bg-secondary border border-border-default rounded-lg px-3 py-2 text-sm font-mono text-text-primary focus:outline-none focus:border-accent-purple"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={saveConfig}
               className="w-full py-2.5 bg-accent-purple text-white text-sm font-medium rounded-lg hover:bg-accent-purple/90 transition-colors"
@@ -266,13 +354,11 @@ export default function AlertsPage() {
 
             {/* Add symbol */}
             <div className="flex gap-2">
-              <input
-                type="text"
+              <SymbolAutocomplete
                 value={newWatchSymbol}
-                onChange={(e) => setNewWatchSymbol(e.target.value.toUpperCase())}
-                onKeyDown={(e) => e.key === 'Enter' && addToWatchlist()}
-                placeholder="e.g. HDFCBANK, BTCUSDT"
-                className="flex-1 bg-bg-secondary border border-border-default rounded-lg px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
+                onChange={setNewWatchSymbol}
+                onSubmit={addToWatchlist}
+                placeholder="e.g. HDFCBANK.NS, BTCUSDT"
               />
               <button
                 onClick={addToWatchlist}
@@ -299,8 +385,9 @@ export default function AlertsPage() {
                     <span className="text-sm font-mono text-text-primary">{symbol}</span>
                     <button
                       onClick={() => removeFromWatchlist(symbol)}
-                      className="text-text-muted hover:text-signal-sell transition-colors text-xs opacity-0 group-hover:opacity-100"
+                      className="text-text-muted hover:text-signal-sell transition-colors text-xs sm:opacity-0 sm:group-hover:opacity-100"
                       title="Remove"
+                      aria-label={`Remove ${symbol} from watchlist`}
                     >
                       ✕
                     </button>
@@ -318,10 +405,9 @@ export default function AlertsPage() {
 
           {/* Create new price alert */}
           <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
+            <SymbolAutocomplete
               value={newAlertSymbol}
-              onChange={(e) => setNewAlertSymbol(e.target.value.toUpperCase())}
+              onChange={setNewAlertSymbol}
               placeholder="Symbol (e.g. BTCUSDT)"
               className="flex-1 bg-bg-secondary border border-border-default rounded-lg px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-purple"
             />
@@ -391,6 +477,13 @@ export default function AlertsPage() {
             </div>
           )}
         </section>
+
+        {/* Cross-link to Settings */}
+        <div className="text-center text-xs text-text-muted pt-2">
+          <Link href="/settings" className="text-accent-purple hover:underline">
+            🎨 Display preferences, theme & account settings →
+          </Link>
+        </div>
       </div>
     </main>
   );

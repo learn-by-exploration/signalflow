@@ -7,6 +7,7 @@ import type { ConnectionStatus } from '@/lib/websocket';
 import { useSignalStore } from '@/store/signalStore';
 import { useMarketStore } from '@/store/marketStore';
 import { showSignalNotification } from '@/lib/notifications';
+import { addNotification } from '@/components/shared/NotificationCenter';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/hooks/useQueries';
 
@@ -38,6 +39,11 @@ export function useWebSocket(markets: string[] = DEFAULT_MARKETS) {
         const signal = msg.data as Signal;
         addSignal(signal);
         showSignalNotification(signal);
+        addNotification(
+          `${signal.signal_type} — ${signal.symbol}`,
+          `Confidence: ${signal.confidence}% | Price: ${signal.current_price} → Target: ${signal.target_price}`,
+          'signal'
+        );
         // Invalidate React Query signals cache
         queryClient?.invalidateQueries({ queryKey: queryKeys.signals });
         if (typeof window !== 'undefined' && window.location.pathname !== '/') {

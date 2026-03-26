@@ -18,7 +18,10 @@ class AlertConfig(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    telegram_chat_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
+    telegram_chat_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, nullable=True)
     username: Mapped[str | None] = mapped_column(String(100), nullable=True)
     markets: Mapped[dict] = mapped_column(JSONB, default=["stock", "crypto", "forex"])
     min_confidence: Mapped[int] = mapped_column(Integer, default=60)

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useSignalStore } from '@/store/signalStore';
+import { NotificationCenter } from './NotificationCenter';
 
 const PRIMARY_LINKS = [
   { href: '/', label: 'Dashboard' },
@@ -225,6 +226,7 @@ export function Navbar() {
                   </span>
                   <span className="max-w-[80px] truncate">{session.user?.name ?? 'User'}</span>
                 </button>
+                <NotificationCenter />
                 <Link
                   href="/settings"
                   className="p-2 text-text-secondary hover:text-text-primary transition-colors"

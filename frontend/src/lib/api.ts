@@ -9,6 +9,45 @@ function getAccessToken(): string | null {
   return sessionStorage.getItem('signalflow_access_token');
 }
 
+function getRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem('signalflow_refresh_token');
+}
+
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefreshToken(): Promise<boolean> {
+  const refresh = getRefreshToken();
+  if (!refresh) return false;
+
+  try {
+    const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refresh }),
+    });
+
+    if (!res.ok) {
+      // Refresh failed — clear all tokens
+      sessionStorage.removeItem('signalflow_access_token');
+      sessionStorage.removeItem('signalflow_refresh_token');
+      return false;
+    }
+
+    const json = await res.json();
+    const tokens = json.data?.tokens;
+    if (tokens?.access_token && tokens?.refresh_token) {
+      sessionStorage.setItem('signalflow_access_token', tokens.access_token);
+      sessionStorage.setItem('signalflow_refresh_token', tokens.refresh_token);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -18,9 +57,6 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getAccessToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-  } else if (process.env.NEXT_PUBLIC_API_KEY) {
-    // Fallback to API key for SSR or unauthenticated requests
-    headers['X-API-Key'] = process.env.NEXT_PUBLIC_API_KEY;
   }
 
   const res = await fetch(`${API_URL}${path}`, {
@@ -29,8 +65,37 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    // Handle 401 — clear auth state
+    // Handle 401 — attempt token refresh once
     if (res.status === 401 && typeof window !== 'undefined') {
+      // Deduplicate concurrent refresh attempts
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = tryRefreshToken().finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+      }
+
+      const refreshed = await (refreshPromise ?? Promise.resolve(false));
+      if (refreshed) {
+        // Retry original request with new token
+        const newToken = getAccessToken();
+        const retryHeaders: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        if (newToken) {
+          retryHeaders['Authorization'] = `Bearer ${newToken}`;
+        }
+        const retryRes = await fetch(`${API_URL}${path}`, {
+          headers: retryHeaders,
+          ...init,
+        });
+        if (retryRes.ok) {
+          return retryRes.json() as Promise<T>;
+        }
+      }
+
+      // Refresh failed — clear auth state
       sessionStorage.removeItem('signalflow_access_token');
       sessionStorage.removeItem('signalflow_refresh_token');
     }
@@ -162,4 +227,13 @@ export const api = {
 
   getProfile: () =>
     apiFetch('/api/v1/auth/profile'),
+
+  logoutAll: () =>
+    apiFetch('/api/v1/auth/logout-all', { method: 'POST' }),
+
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    apiFetch('/api/v1/auth/password', { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteAccount: (data: { password: string; confirm: boolean }) =>
+    apiFetch('/api/v1/auth/account', { method: 'DELETE', body: JSON.stringify(data) }),
 };

@@ -956,6 +956,30 @@ tests/
 - **Pre-commit gate**: The full test suite MUST pass before every commit. No exceptions. If code changes break existing tests, fix them before committing. If new code is added, include matching tests in the same commit. Docker build (`docker compose build`) must also succeed. See "Pre-Commit Testing Rule" under Coding Standards for details.
 - **Pre-tag gate**: Before any git tag or release, the full system must be Docker-built, started, health-checked, and verified end-to-end. See "Pre-Tag / Release Gate" under Coding Standards for details.
 
+### Identity & Auth Testing Rules (MANDATORY)
+
+> **Lesson learned**: When the JWT auth system was added, all user-scoped endpoints (portfolio, watchlist, price alerts) continued using `telegram_chat_id` for queries. Web-registered users have `telegram_chat_id = NULL`, causing silent failures — "Failed to load portfolio" and "Failed to load watchlist." This was missed because test fixtures always injected `telegram_chat_id=12345`.
+
+**Rules to prevent this class of bug:**
+
+1. **Every user-scoped endpoint must be tested with BOTH identity types:**
+   - `AuthContext(user_id="...", telegram_chat_id=12345)` — Telegram-connected user
+   - `AuthContext(user_id="...", telegram_chat_id=None)` — Web-only user (no Telegram)
+   - See `tests/test_web_user_identity.py` for the canonical pattern
+
+2. **After any auth or identity model change:**
+   - Verify ALL user-scoped endpoints still work (portfolio, watchlist, alerts, price alerts, trades)
+   - Test with web-only user fixture (telegram_chat_id=None)
+   - Run `pytest tests/test_web_user_identity.py` as a mandatory check
+
+3. **When adding `user_id` to existing tables:**
+   - Add nullable column (backward compat with Telegram-only users)
+   - Update ALL queries to use `or_(Model.user_id == uid, Model.telegram_chat_id == chat_id)`
+   - Update ALL create operations to store both `user_id` and `telegram_chat_id`
+   - Update ALL ownership checks to compare both identity fields
+
+4. **Test fixture rule:** Never rely on a single identity field. Both `test_client` (Telegram user) and `web_user_client` (web user) fixtures must exist and be used.
+
 ---
 
 ## Deployment

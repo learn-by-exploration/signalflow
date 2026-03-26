@@ -44,7 +44,7 @@ describe('WatchlistPage', () => {
   });
 
   it('renders Watchlist heading', async () => {
-    vi.mocked(api.getWatchlist).mockResolvedValue({ data: { watchlist: ['RELIANCE.NS'] } });
+    vi.mocked(api.getWatchlist).mockResolvedValue({ data: ['RELIANCE.NS'] });
     vi.mocked(api.getSignals).mockResolvedValue({ data: [] });
     const { default: Page } = await import('@/app/watchlist/page');
     render(<Page />);
@@ -55,7 +55,7 @@ describe('WatchlistPage', () => {
 
   it('shows watchlist items', async () => {
     vi.mocked(api.getWatchlist).mockResolvedValue({
-      data: { watchlist: ['RELIANCE.NS', 'TCS.NS'] },
+      data: ['RELIANCE.NS', 'TCS.NS'],
     });
     vi.mocked(api.getSignals).mockResolvedValue({ data: [] });
     const { default: Page } = await import('@/app/watchlist/page');
@@ -67,7 +67,7 @@ describe('WatchlistPage', () => {
   });
 
   it('shows empty state with no watched symbols', async () => {
-    vi.mocked(api.getWatchlist).mockResolvedValue({ data: { watchlist: [] } });
+    vi.mocked(api.getWatchlist).mockResolvedValue({ data: [] });
     vi.mocked(api.getSignals).mockResolvedValue({ data: [] });
     const { default: Page } = await import('@/app/watchlist/page');
     render(<Page />);
@@ -77,7 +77,7 @@ describe('WatchlistPage', () => {
   });
 
   it('has add symbol input', async () => {
-    vi.mocked(api.getWatchlist).mockResolvedValue({ data: { watchlist: [] } });
+    vi.mocked(api.getWatchlist).mockResolvedValue({ data: [] });
     vi.mocked(api.getSignals).mockResolvedValue({ data: [] });
     const { default: Page } = await import('@/app/watchlist/page');
     render(<Page />);

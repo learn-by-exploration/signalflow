@@ -4,7 +4,7 @@ import asyncio
 from collections.abc import AsyncGenerator, Generator
 from datetime import datetime, timezone
 from decimal import Decimal
-from uuid import uuid4
+from uuid import uuid4, UUID as PyUUID
 
 import pytest
 import pytest_asyncio
@@ -13,6 +13,52 @@ import pytest_asyncio
 from sqlalchemy.dialects.sqlite.base import SQLiteTypeCompiler
 
 SQLiteTypeCompiler.visit_JSONB = lambda self, type_, **kw: "JSON"
+
+# ── Teach SQLite to handle PostgreSQL UUID columns ──
+# SQLAlchemy's Uuid base type (used by postgresql.UUID) has bind/result
+# processors that fail on SQLite:
+#   bind_processor calls value.hex — fails on plain strings
+#   result_processor calls uuid.UUID(value) — fails on ints from RETURNING
+# Monkey-patch these processors so they handle strings, ints, and bytes.
+from sqlalchemy import types as _sqltypes
+import uuid as _uuid
+
+_orig_uuid_bp = _sqltypes.Uuid.bind_processor
+_orig_uuid_rp = _sqltypes.Uuid.result_processor
+
+
+def _patched_uuid_bind(self, dialect):
+    if not getattr(dialect, "supports_native_uuid", True) and self.as_uuid:
+        def process(value):
+            if value is not None:
+                if isinstance(value, _uuid.UUID):
+                    return value.hex
+                return _uuid.UUID(str(value)).hex
+            return value
+        return process
+    return _orig_uuid_bp(self, dialect)
+
+
+def _patched_uuid_result(self, dialect, coltype):
+    if not getattr(dialect, "supports_native_uuid", True) and self.as_uuid:
+        def process(value):
+            if value is not None:
+                if isinstance(value, _uuid.UUID):
+                    return value
+                if isinstance(value, int):
+                    # SQLite may return a numeric-looking hex string as an int.
+                    # Pad back to 32-char hex to reconstruct the original UUID.
+                    return _uuid.UUID(str(value).zfill(32))
+                if isinstance(value, bytes):
+                    return _uuid.UUID(bytes=value)
+                return _uuid.UUID(str(value))
+            return value
+        return process
+    return _orig_uuid_rp(self, dialect, coltype)
+
+
+_sqltypes.Uuid.bind_processor = _patched_uuid_bind
+_sqltypes.Uuid.result_processor = _patched_uuid_result
 
 # Use an in-memory SQLite for fast unit tests (swap for test PG in CI)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
@@ -224,7 +270,7 @@ async def test_client(seeded_db):
 
     async def override_get_current_user() -> AuthContext:
         return AuthContext(
-            auth_type="jwt", user_id="test-user-id",
+            auth_type="jwt", user_id="00000000-0000-0000-0000-000000000099",
             telegram_chat_id=12345, tier="pro",
         )
 
@@ -254,7 +300,7 @@ async def client() -> AsyncGenerator:
 
     async def override_get_current_user() -> AuthContext:
         return AuthContext(
-            auth_type="jwt", user_id="test-user-id",
+            auth_type="jwt", user_id="00000000-0000-0000-0000-000000000099",
             telegram_chat_id=12345, tier="pro",
         )
 

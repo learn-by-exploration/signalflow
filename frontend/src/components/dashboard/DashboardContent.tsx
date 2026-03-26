@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MarketOverview } from '@/components/markets/MarketOverview';
 import { SignalFeed } from '@/components/signals/SignalFeed';
 import { WinRateCard } from '@/components/signals/WinRateCard';
@@ -12,10 +12,22 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { WelcomeModal } from '@/components/shared/WelcomeModal';
 import { GuidedTour } from '@/components/shared/GuidedTour';
 import { AskAI } from '@/components/signals/AskAI';
+import { api } from '@/lib/api';
 import type { MarketSnapshot } from '@/lib/types';
 
 export default function DashboardContent() {
   const resetUnseen = useSignalStore((s) => s.resetUnseen);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+
+  // Fetch watchlist for filtering
+  useEffect(() => {
+    api.getWatchlist()
+      .then((res) => {
+        const data = res as { data?: { watchlist?: string[] } };
+        setWatchlist(data?.data?.watchlist ?? []);
+      })
+      .catch(() => { /* watchlist fetch is optional */ });
+  }, []);
 
   // React Query: signals
   const signalsQuery = useSignalsQuery();
@@ -72,7 +84,7 @@ export default function DashboardContent() {
 
         <div className="mt-6" data-tour="signal-feed">
           <ErrorBoundary name="Signal Feed">
-            <SignalFeed signals={signals} isLoading={signalsLoading} error={signalsError} />
+            <SignalFeed signals={signals} isLoading={signalsLoading} error={signalsError} watchlist={watchlist} />
           </ErrorBoundary>
         </div>
 

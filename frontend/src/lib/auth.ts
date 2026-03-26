@@ -2,6 +2,8 @@ import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -18,24 +20,30 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         const email = credentials?.email;
         const password = credentials?.password;
+        if (!email || !password) return null;
 
-        // Admin user
-        if (
-          email === process.env.ADMIN_EMAIL &&
-          password === process.env.ADMIN_PASSWORD
-        ) {
-          return { id: '1', email: email ?? '', name: 'Admin' };
+        try {
+          const res = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (!res.ok) return null;
+
+          const body = await res.json();
+          const { user, tokens } = body.data;
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.email.split('@')[0],
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token,
+          };
+        } catch {
+          return null;
         }
-
-        // Demo user — allows anyone to try the platform
-        if (
-          email === (process.env.DEMO_EMAIL ?? 'demo@signalflow.ai') &&
-          password === (process.env.DEMO_PASSWORD ?? 'demo123')
-        ) {
-          return { id: '2', email: email ?? '', name: 'Demo User' };
-        }
-
-        return null;
       },
     }),
   ],
@@ -50,11 +58,8 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.iat = Math.floor(Date.now() / 1000);
-      }
-      // Rotate token if older than 1 day
-      const tokenAge = Math.floor(Date.now() / 1000) - ((token.iat as number) || 0);
-      if (tokenAge > 86400) {
+        token.accessToken = (user as { accessToken?: string }).accessToken;
+        token.refreshToken = (user as { refreshToken?: string }).refreshToken;
         token.iat = Math.floor(Date.now() / 1000);
       }
       return token;
@@ -63,6 +68,9 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as { id?: string }).id = token.id as string;
       }
+      // Expose backend JWT to client for API calls
+      (session as { accessToken?: string }).accessToken = token.accessToken as string;
+      (session as { refreshToken?: string }).refreshToken = token.refreshToken as string;
       return session;
     },
   },

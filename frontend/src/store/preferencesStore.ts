@@ -15,10 +15,14 @@ interface PreferencesState {
   textSize: TextSize;
   themeMode: ThemeMode;
   defaultMarketFilter: 'all' | MarketType;
+  tradingCapital: number;
+  maxRiskPct: number;
   setViewMode: (mode: ViewMode) => void;
   setTextSize: (size: TextSize) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setDefaultMarketFilter: (filter: 'all' | MarketType) => void;
+  setTradingCapital: (amount: number) => void;
+  setMaxRiskPct: (pct: number) => void;
 }
 
 function getStored<T>(key: string, fallback: T): T {
@@ -42,6 +46,8 @@ export const usePreferencesStore = create<PreferencesState>((set) => ({
   textSize: getStored<TextSize>('sf_text_size', 'medium'),
   themeMode: getStored<ThemeMode>('sf_theme_mode', 'dark'),
   defaultMarketFilter: getStored<'all' | MarketType>('sf_market_filter', 'all'),
+  tradingCapital: getStored<number>('sf_trading_capital', 0),
+  maxRiskPct: getStored<number>('sf_max_risk_pct', 2),
 
   setViewMode: (mode) => {
     setStored('sf_view_mode', mode);
@@ -58,5 +64,13 @@ export const usePreferencesStore = create<PreferencesState>((set) => ({
   setDefaultMarketFilter: (filter) => {
     setStored('sf_market_filter', filter);
     set({ defaultMarketFilter: filter });
+  },
+  setTradingCapital: (amount) => {
+    setStored('sf_trading_capital', amount);
+    set({ tradingCapital: amount });
+  },
+  setMaxRiskPct: (pct) => {
+    setStored('sf_max_risk_pct', pct);
+    set({ maxRiskPct: pct });
   },
 }));

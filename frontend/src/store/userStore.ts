@@ -27,7 +27,9 @@ function getStored(key: string): string | null {
 }
 
 function getStoredChatId(): number | null {
-  const stored = getStored(CHAT_ID_KEY);
+  if (typeof window === 'undefined') return null;
+  // chatId persists in localStorage (survives tab close)
+  const stored = localStorage.getItem(CHAT_ID_KEY);
   if (stored) {
     const num = parseInt(stored, 10);
     return isNaN(num) ? null : num;
@@ -43,12 +45,12 @@ export const useUserStore = create<UserState>((set) => ({
   isAuthenticated: !!getStored(TOKEN_KEY),
 
   setChatId: (id: number) => {
-    sessionStorage.setItem(CHAT_ID_KEY, String(id));
+    localStorage.setItem(CHAT_ID_KEY, String(id));
     set({ chatId: id });
   },
 
   clearChatId: () => {
-    sessionStorage.removeItem(CHAT_ID_KEY);
+    localStorage.removeItem(CHAT_ID_KEY);
     set({ chatId: null });
   },
 
@@ -65,7 +67,7 @@ export const useUserStore = create<UserState>((set) => ({
   logout: () => {
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(REFRESH_KEY);
-    sessionStorage.removeItem(CHAT_ID_KEY);
+    localStorage.removeItem(CHAT_ID_KEY);
     set({ accessToken: null, refreshToken: null, chatId: null, tier: 'free', isAuthenticated: false });
   },
 }));

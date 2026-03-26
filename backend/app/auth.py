@@ -1,6 +1,7 @@
 """Authentication — API key and JWT Bearer token support."""
 
 import logging
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
@@ -45,6 +46,7 @@ def create_access_token(user_id: UUID, telegram_chat_id: int | None, tier: str) 
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(user_id),
+        "jti": str(uuid.uuid4()),
         "chat_id": telegram_chat_id,
         "tier": tier,
         "iat": now,
@@ -62,6 +64,7 @@ def create_refresh_token(user_id: UUID) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(user_id),
+        "jti": str(uuid.uuid4()),
         "iat": now,
         "exp": now + timedelta(days=settings.jwt_refresh_token_expire_days),
         "type": "refresh",

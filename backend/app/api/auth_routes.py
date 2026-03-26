@@ -3,7 +3,9 @@
 import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
+from uuid import UUID as PyUUID
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +24,8 @@ from app.database import get_db
 from app.models.user import RefreshToken, User
 from app.rate_limit import limiter
 from app.schemas.auth import (
+    ChangePasswordRequest,
+    DeleteAccountRequest,
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
@@ -32,6 +36,12 @@ from app.schemas.auth import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# ── Account lockout constants ──
+MAX_FAILED_ATTEMPTS = 5
+LOCKOUT_DURATION_SECONDS = 900  # 15 minutes
+FAILED_LOGIN_KEY_PREFIX = "failed_login:"
+LOCKOUT_KEY_PREFIX = "account_locked:"
 
 
 @router.post("/register", response_model=dict, status_code=201)
@@ -99,14 +109,63 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Authenticate and receive JWT tokens."""
+    settings = get_settings()
+
+    # ── Account lockout check via Redis ──
+    lockout_key = f"{LOCKOUT_KEY_PREFIX}{payload.email}"
+    failed_key = f"{FAILED_LOGIN_KEY_PREFIX}{payload.email}"
+    try:
+        redis_client = aioredis.from_url(settings.redis_url)
+        is_locked = await redis_client.get(lockout_key)
+        if is_locked:
+            ttl = await redis_client.ttl(lockout_key)
+            logger.warning("Login attempt on locked account: %s", payload.email)
+            raise HTTPException(
+                status_code=429,
+                detail=f"Account temporarily locked due to too many failed attempts. Try again in {max(ttl, 1)} seconds.",
+            )
+    except (ConnectionError, OSError, Exception) as exc:
+        if isinstance(exc, HTTPException):
+            raise
+        redis_client = None  # Redis unavailable — skip lockout check
+
     result = await db.execute(select(User).where(User.email == payload.email))
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(payload.password, user.password_hash):
+        # ── Track failed attempt ──
+        if redis_client:
+            try:
+                attempts = await redis_client.incr(failed_key)
+                await redis_client.expire(failed_key, LOCKOUT_DURATION_SECONDS)
+                if attempts >= MAX_FAILED_ATTEMPTS:
+                    await redis_client.setex(lockout_key, LOCKOUT_DURATION_SECONDS, "1")
+                    await redis_client.delete(failed_key)
+                    logger.warning(
+                        "Account locked after %d failed attempts: %s",
+                        MAX_FAILED_ATTEMPTS,
+                        payload.email,
+                    )
+                    raise HTTPException(
+                        status_code=429,
+                        detail=f"Account temporarily locked after {MAX_FAILED_ATTEMPTS} failed attempts. Try again in {LOCKOUT_DURATION_SECONDS // 60} minutes.",
+                    )
+            except (ConnectionError, OSError, Exception) as exc:
+                if isinstance(exc, HTTPException):
+                    raise
+                pass  # Redis down — still raise invalid credentials
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is deactivated")
+
+    # ── Clear failed attempts on success ──
+    if redis_client:
+        try:
+            await redis_client.delete(failed_key)
+            await redis_client.delete(lockout_key)
+        except (ConnectionError, OSError, Exception):
+            pass
 
     # Generate tokens
     settings = get_settings()
@@ -163,7 +222,7 @@ async def refresh(
     db_token.is_revoked = True
 
     # Fetch user
-    user_id = decoded["sub"]
+    user_id = PyUUID(decoded["sub"]) if isinstance(decoded["sub"], str) else decoded["sub"]
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user or not user.is_active:
@@ -215,8 +274,112 @@ async def get_profile(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Get current user's profile."""
-    result = await db.execute(select(User).where(User.id == user.user_id))
+    user_id = PyUUID(user.user_id) if isinstance(user.user_id, str) else user.user_id
+    result = await db.execute(select(User).where(User.id == user_id))
     db_user = result.scalar_one_or_none()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"data": UserProfile.model_validate(db_user).model_dump(mode="json")}
+
+
+@router.post("/logout-all", response_model=dict)
+async def logout_all(
+    user: AuthContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Revoke ALL refresh tokens for the current user (logout everywhere)."""
+    user_id = PyUUID(user.user_id) if isinstance(user.user_id, str) else user.user_id
+    result = await db.execute(
+        select(RefreshToken).where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.is_revoked.is_(False),
+        )
+    )
+    tokens = result.scalars().all()
+    for token in tokens:
+        token.is_revoked = True
+    logger.info("Revoked %d refresh tokens for user %s", len(tokens), user_id)
+    return {"data": {"revoked_count": len(tokens)}}
+
+
+@router.put("/password", response_model=dict)
+async def change_password(
+    payload: ChangePasswordRequest,
+    user: AuthContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Change the current user's password."""
+    user_id = PyUUID(user.user_id) if isinstance(user.user_id, str) else user.user_id
+    result = await db.execute(select(User).where(User.id == user_id))
+    db_user = result.scalar_one_or_none()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(payload.current_password, db_user.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    if payload.current_password == payload.new_password:
+        raise HTTPException(status_code=400, detail="New password must be different from current password")
+
+    db_user.password_hash = hash_password(payload.new_password)
+    logger.info("Password changed for user %s", user_id)
+    return {"data": "password_changed"}
+
+
+@router.delete("/account", response_model=dict)
+async def delete_account(
+    payload: DeleteAccountRequest,
+    user: AuthContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Permanently delete the current user's account and all associated data."""
+    if not payload.confirm:
+        raise HTTPException(status_code=400, detail="Must confirm account deletion")
+
+    user_id = PyUUID(user.user_id) if isinstance(user.user_id, str) else user.user_id
+    result = await db.execute(select(User).where(User.id == user_id))
+    db_user = result.scalar_one_or_none()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(payload.password, db_user.password_hash):
+        raise HTTPException(status_code=401, detail="Password is incorrect")
+
+    # Cascade delete associated data
+    from app.models.alert_config import AlertConfig
+    from app.models.price_alert import PriceAlert
+    from app.models.trade import Trade
+
+    # Delete refresh tokens
+    tokens_result = await db.execute(
+        select(RefreshToken).where(RefreshToken.user_id == user_id)
+    )
+    for token in tokens_result.scalars().all():
+        await db.delete(token)
+
+    # Delete alert configs
+    configs_result = await db.execute(
+        select(AlertConfig).where(AlertConfig.user_id == user_id)
+    )
+    for config in configs_result.scalars().all():
+        await db.delete(config)
+
+    # Delete price alerts
+    alerts_result = await db.execute(
+        select(PriceAlert).where(PriceAlert.user_id == user_id)
+    )
+    for alert in alerts_result.scalars().all():
+        await db.delete(alert)
+
+    # Delete trades
+    trades_result = await db.execute(
+        select(Trade).where(Trade.user_id == user_id)
+    )
+    for trade in trades_result.scalars().all():
+        await db.delete(trade)
+
+    # Delete the user
+    await db.delete(db_user)
+
+    logger.info("Account deleted for user %s (%s)", user_id, db_user.email)
+    return {"data": "account_deleted"}
