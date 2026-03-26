@@ -69,8 +69,8 @@ describe('AllocationPieChart', () => {
       makePosition({ symbol: 'BTCUSDT', market_type: 'crypto', value: '8000' }),
     ];
     render(<AllocationPieChart positions={positions} totalValue={23000} />);
-    expect(screen.getByTestId('slice-Stocks')).toBeInTheDocument();
-    expect(screen.getByTestId('slice-Crypto')).toBeInTheDocument();
+    expect(screen.getByTestId('slice-Stocks (₹)')).toBeInTheDocument();
+    expect(screen.getByTestId('slice-Crypto ($)')).toBeInTheDocument();
   });
 
   it('returns null for empty positions', () => {
@@ -91,8 +91,8 @@ describe('AllocationPieChart', () => {
       makePosition({ symbol: 'EUR/USD', market_type: 'forex', value: '3000' }),
     ];
     render(<AllocationPieChart positions={positions} totalValue={18000} />);
-    expect(screen.getByTestId('slice-Stocks')).toBeInTheDocument();
-    expect(screen.getByTestId('slice-Crypto')).toBeInTheDocument();
+    expect(screen.getByTestId('slice-Stocks (₹)')).toBeInTheDocument();
+    expect(screen.getByTestId('slice-Crypto ($)')).toBeInTheDocument();
     expect(screen.getByTestId('slice-Forex')).toBeInTheDocument();
   });
 });

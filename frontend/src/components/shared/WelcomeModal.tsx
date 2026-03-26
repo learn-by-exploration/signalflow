@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { FocusTrap } from './FocusTrap';
 
 const STORAGE_KEY = 'signalflow_welcomed';
 
@@ -53,7 +54,8 @@ export function WelcomeModal() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-bg-secondary border border-border-default rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <FocusTrap isOpen={isOpen} onClose={dismiss}>
+      <div role="dialog" aria-modal="true" aria-labelledby="welcome-title" className="bg-bg-secondary border border-border-default rounded-2xl max-w-md w-full p-6 shadow-2xl">
         {/* Progress dots */}
         <div className="flex justify-center gap-1.5 mb-6">
           {STEPS.map((_, i) => (
@@ -69,7 +71,7 @@ export function WelcomeModal() {
         {/* Content */}
         <div className="text-center mb-6">
           <div className="text-5xl mb-4">{current.emoji}</div>
-          <h2 className="text-xl font-display font-bold mb-2">{current.title}</h2>
+          <h2 id="welcome-title" className="text-xl font-display font-bold mb-2">{current.title}</h2>
           <p className="text-sm text-text-secondary leading-relaxed">{current.desc}</p>
         </div>
 
@@ -122,6 +124,7 @@ export function WelcomeModal() {
           </div>
         )}
       </div>
+      </FocusTrap>
     </div>
   );
 }

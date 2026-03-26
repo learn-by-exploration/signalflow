@@ -55,19 +55,24 @@ def _indicator_to_score(indicator: dict[str, Any]) -> float:
     return 50.0
 
 
-def compute_technical_score(technical_data: dict[str, Any]) -> float:
+def compute_technical_score(
+    technical_data: dict[str, Any],
+    weights: dict[str, float] | None = None,
+) -> float:
     """Compute weighted average technical score from indicator outputs.
 
     Args:
         technical_data: Output of TechnicalAnalyzer.full_analysis().
+        weights: Optional adaptive weights. Defaults to TECHNICAL_WEIGHTS.
 
     Returns:
         Technical score 0-100.
     """
+    active_weights = weights if weights is not None else TECHNICAL_WEIGHTS
     total_weight = 0.0
     weighted_sum = 0.0
 
-    for indicator_key, weight in TECHNICAL_WEIGHTS.items():
+    for indicator_key, weight in active_weights.items():
         indicator = technical_data.get(indicator_key, {})
         if indicator.get("signal") is not None:
             score = _indicator_to_score(indicator)
@@ -83,6 +88,7 @@ def compute_technical_score(technical_data: dict[str, Any]) -> float:
 def compute_final_confidence(
     technical_data: dict[str, Any],
     sentiment_data: dict[str, Any] | None,
+    adaptive_weights: dict[str, float] | None = None,
 ) -> tuple[int, str]:
     """Compute final confidence and signal type.
 
@@ -93,11 +99,12 @@ def compute_final_confidence(
     Args:
         technical_data: Output of TechnicalAnalyzer.full_analysis().
         sentiment_data: Output of AISentimentEngine.analyze_sentiment(), or None.
+        adaptive_weights: Optional feedback-loop-adjusted technical weights.
 
     Returns:
         Tuple of (confidence 0-100, signal_type string).
     """
-    tech_score = compute_technical_score(technical_data)
+    tech_score = compute_technical_score(technical_data, weights=adaptive_weights)
 
     has_sentiment = (
         sentiment_data is not None

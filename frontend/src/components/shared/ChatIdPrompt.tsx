@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/userStore';
+import { FocusTrap } from './FocusTrap';
 
 /**
  * Modal prompt that asks the user for their Telegram Chat ID.
@@ -31,8 +32,9 @@ export function ChatIdPrompt() {
   }
 
   return (
+    <FocusTrap isOpen={!chatId && !dismissed && shouldShow} onClose={() => setDismissed(true)}>
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-bg-secondary border border-border-default rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div role="dialog" aria-modal="true" aria-label="Connect Your Account" className="bg-bg-secondary border border-border-default rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
         <h2 className="text-lg font-display font-bold">Connect Your Account</h2>
         <p className="text-sm text-text-secondary leading-relaxed">
           Enter your Telegram Chat ID to sync your portfolio, alerts, and preferences.
@@ -75,5 +77,6 @@ export function ChatIdPrompt() {
         </p>
       </div>
     </div>
+    </FocusTrap>
   );
 }

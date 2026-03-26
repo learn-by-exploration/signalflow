@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { FocusTrap } from './FocusTrap';
 
 interface TourStep {
   target: string;
@@ -105,7 +106,7 @@ export function GuidedTour() {
   }
 
   return (
-    <div className="fixed inset-0 z-[100]" role="dialog" aria-label="Guided tour">
+    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Guided tour">
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/60" onClick={handleDismiss} />
 
@@ -121,6 +122,7 @@ export function GuidedTour() {
       />
 
       {/* Tooltip */}
+      <FocusTrap isOpen={currentStep >= 0} onClose={handleDismiss}>
       <div
         className="absolute z-[102] max-w-xs w-full bg-bg-secondary border border-accent-purple/30 rounded-xl p-4 shadow-2xl transition-all duration-300"
         style={tooltipStyle}
@@ -147,6 +149,7 @@ export function GuidedTour() {
           </button>
         </div>
       </div>
+      </FocusTrap>
     </div>
   );
 }

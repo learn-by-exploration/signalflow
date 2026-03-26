@@ -30,7 +30,7 @@ COINGECKO_IDS = {
     "DOGEUSDT": "dogecoin",
     "DOTUSDT": "polkadot",
     "AVAXUSDT": "avalanche-2",
-    "MATICUSDT": "matic-network",
+    "POLUSDT": "polygon-ecosystem-token",
 }
 
 

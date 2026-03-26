@@ -47,7 +47,7 @@ SECTOR_SYMBOLS: dict[str, list[str]] = {
     "fmcg": ["ITC.NS"],
     "infrastructure": ["LT.NS"],
     "crypto_major": ["BTCUSDT", "ETHUSDT"],
-    "crypto_alt": ["SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "DOTUSDT", "AVAXUSDT", "MATICUSDT"],
+    "crypto_alt": ["SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "DOTUSDT", "AVAXUSDT", "POLUSDT"],
     "forex_major": ["EUR/USD", "GBP/JPY", "GBP/USD"],
     "forex_inr": ["USD/INR"],
 }

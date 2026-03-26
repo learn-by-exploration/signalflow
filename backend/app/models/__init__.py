@@ -12,6 +12,7 @@ from app.models.event_entity import EventEntity
 from app.models.causal_link import CausalLink
 from app.models.signal_news_link import SignalNewsLink
 from app.models.event_calendar import EventCalendar
+from app.models.signal_feedback import SignalFeedback
 
 __all__ = [
     "MarketData",
@@ -27,4 +28,7 @@ __all__ = [
     "CausalLink",
     "SignalNewsLink",
     "EventCalendar",
+    "SignalFeedback",
+    "User",
+    "RefreshToken",
 ]

@@ -13,10 +13,10 @@ export function formatPrice(price: string | number, marketType?: string): string
     return num.toFixed(4);
   }
   if (marketType === 'crypto' && num >= 1000) {
-    return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   if (marketType === 'crypto') {
-    return num.toFixed(4);
+    return '$' + num.toFixed(4);
   }
   // Stocks — Indian rupee formatting
   return '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -74,6 +74,26 @@ export function formatTime(iso: string): string {
     minute: '2-digit',
     hour12: false,
   });
+}
+
+/**
+ * Return the currency symbol for a given market type.
+ */
+export function currencySymbol(marketType: string): string {
+  if (marketType === 'crypto') return '$';
+  if (marketType === 'stock') return '₹';
+  return '';
+}
+
+/**
+ * Format a portfolio monetary value with currency symbol based on market type.
+ */
+export function formatPortfolioValue(value: string | number, marketType?: string): string {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '—';
+  const prefix = marketType ? currencySymbol(marketType) : '';
+  const locale = marketType === 'stock' ? 'en-IN' : 'en-US';
+  return prefix + num.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /**

@@ -15,6 +15,7 @@ from app.api.backtest import router as backtest_router
 from app.api.feedback import router as feedback_router
 from app.api.news import router as news_router
 from app.api.auth_routes import router as auth_router
+from app.api.signal_feedback import router as signal_feedback_router
 
 # Protected routes — require API key or JWT
 api_router = APIRouter(prefix="/api/v1", dependencies=[Depends(require_auth)])
@@ -29,6 +30,7 @@ api_router.include_router(ai_qa_router)
 api_router.include_router(backtest_router)
 api_router.include_router(feedback_router)
 api_router.include_router(news_router)
+api_router.include_router(signal_feedback_router)
 
 # Public routes — no API key required (shared signal view)
 # Sharing router has both public (GET /shared) and protected (POST /share) routes

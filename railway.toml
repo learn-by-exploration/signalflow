@@ -3,7 +3,7 @@ builder = "dockerfile"
 dockerfilePath = "backend/Dockerfile"
 
 [deploy]
-startCommand = "bash -c 'PYTHONPATH=/app alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2'"
+startCommand = "bash -c 'PYTHONPATH=/app alembic upgrade head && celery -A app.tasks.celery_app worker --beat --loglevel=info --concurrency=2 & uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2'"
 restartPolicyType = "always"
 healthcheckPath = "/health"
 healthcheckTimeout = 30

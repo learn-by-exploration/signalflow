@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import type { PortfolioSummary, Trade } from '@/lib/types';
+import type { PortfolioSummary, Trade, CurrencyBreakdown } from '@/lib/types';
 import { useToast } from '@/components/shared/Toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { EquityCurve } from '@/components/charts/EquityCurve';
 import { AllocationPieChart } from '@/components/charts/AllocationPieChart';
+import { formatPortfolioValue, currencySymbol } from '@/utils/formatters';
 
 interface PortfolioData {
   summary: PortfolioSummary | null;
@@ -107,8 +108,7 @@ export default function PortfolioPage() {
   }
 
   const summary = data.summary;
-  const pnlColor = summary && summary.total_pnl_pct >= 0 ? 'text-signal-buy' : 'text-signal-sell';
-  const pnlSign = summary && summary.total_pnl_pct >= 0 ? '+' : '';
+  const hasMultipleMarkets = summary ? (summary.by_currency?.length ?? 0) > 1 : false;
 
   return (
     <main className="min-h-screen pb-12">
@@ -196,48 +196,100 @@ export default function PortfolioPage() {
           </section>
         )}
 
-        {/* Summary Cards */}
+        {/* Summary Cards — per-currency to avoid mixing INR/USD/EUR */}
         {summary && (summary.positions.length > 0 || data.trades.length > 0) && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl bg-bg-card border border-border-default p-4">
-              <p className="text-xs text-text-muted uppercase">Invested</p>
-              <p className="text-lg font-mono mt-1">{parseFloat(summary.total_invested).toLocaleString()}</p>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {!hasMultipleMarkets && (
+                <div className="rounded-xl bg-bg-card border border-border-default p-4">
+                  <p className="text-xs text-text-muted uppercase">Return</p>
+                  <p className={`text-lg font-mono mt-1 ${summary.total_pnl_pct >= 0 ? 'text-signal-buy' : 'text-signal-sell'}`}>
+                    {summary.total_pnl_pct >= 0 ? '+' : ''}{summary.total_pnl_pct}%
+                  </p>
+                </div>
+              )}
+              {(summary.by_currency ?? []).map((group: CurrencyBreakdown) => {
+                const sym = group.currency === 'INR' ? '₹' : group.currency === 'USD' ? '$' : '';
+                const locale = group.currency === 'INR' ? 'en-IN' : 'en-US';
+                const gPnl = parseFloat(group.pnl);
+                const gColor = gPnl >= 0 ? 'text-signal-buy' : 'text-signal-sell';
+                const gSign = gPnl >= 0 ? '+' : '';
+                const label = group.market_type === 'stock' ? `Stocks (${group.currency})` : group.market_type === 'crypto' ? `Crypto (${group.currency})` : `Forex (${group.currency})`;
+                const val = parseFloat(group.current_value);
+                return (
+                  <div key={`${group.currency}:${group.market_type}`} className="rounded-xl bg-bg-card border border-border-default p-4">
+                    <p className="text-xs text-text-muted uppercase">{label}</p>
+                    <p className="text-sm font-mono mt-1">
+                      {sym}{val.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    <p className={`text-xs font-mono ${gColor}`}>
+                      {gSign}{sym}{Math.abs(gPnl).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({gSign}{group.pnl_pct}%)
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-            <div className="rounded-xl bg-bg-card border border-border-default p-4">
-              <p className="text-xs text-text-muted uppercase">Current Value</p>
-              <p className="text-lg font-mono mt-1">{parseFloat(summary.current_value).toLocaleString()}</p>
-            </div>
-            <div className="rounded-xl bg-bg-card border border-border-default p-4">
-              <p className="text-xs text-text-muted uppercase">P&L</p>
-              <p className={`text-lg font-mono mt-1 ${pnlColor}`}>
-                {pnlSign}{parseFloat(summary.total_pnl).toLocaleString()}
+            {hasMultipleMarkets && (
+              <p className="text-xs text-text-muted -mt-4">
+                Returns shown per market to avoid mixing currencies (₹/$/€).
               </p>
-            </div>
-            <div className="rounded-xl bg-bg-card border border-border-default p-4">
-              <p className="text-xs text-text-muted uppercase">Return</p>
-              <p className={`text-lg font-mono mt-1 ${pnlColor}`}>
-                {pnlSign}{summary.total_pnl_pct}%
-              </p>
-            </div>
-          </div>
+            )}
+          </>
         )}
 
-        {/* Equity Curve */}
-        {data.trades.length >= 2 && (
-          <EquityCurve
-            data={data.trades
-              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-              .reduce<{ date: string; value: number }[]>((acc, trade) => {
-                const prev = acc.length > 0 ? acc[acc.length - 1].value : 0;
-                const tradeValue = parseFloat(trade.price) * parseFloat(trade.quantity) * (trade.side === 'buy' ? 1 : -1);
-                return [...acc, {
-                  date: new Date(trade.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
-                  value: prev + tradeValue,
-                }];
-              }, [])}
-            label="📈 Portfolio Equity Curve"
-          />
-        )}
+        {/* Equity Curve — per market to avoid mixing currencies */}
+        {data.trades.length >= 2 && (() => {
+          const sortedTrades = [...data.trades].sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+          // Group trades by market type
+          const tradesByMarket: Record<string, typeof sortedTrades> = {};
+          for (const t of sortedTrades) {
+            const mt = t.market_type;
+            if (!tradesByMarket[mt]) tradesByMarket[mt] = [];
+            tradesByMarket[mt].push(t);
+          }
+          const marketKeys = Object.keys(tradesByMarket);
+          // If only one market, show single curve; otherwise show per-market curves
+          if (marketKeys.length <= 1) {
+            return (
+              <EquityCurve
+                data={sortedTrades.reduce<{ date: string; value: number }[]>((acc, trade) => {
+                  const prev = acc.length > 0 ? acc[acc.length - 1].value : 0;
+                  const tradeValue = parseFloat(trade.price) * parseFloat(trade.quantity) * (trade.side === 'buy' ? 1 : -1);
+                  return [...acc, {
+                    date: new Date(trade.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+                    value: prev + tradeValue,
+                  }];
+                }, [])}
+                label={`📈 Portfolio Equity Curve (${marketKeys[0] === 'stock' ? '₹ INR' : marketKeys[0] === 'crypto' ? '$ USD' : 'Forex'})`}
+              />
+            );
+          }
+          return (
+            <div className="space-y-4">
+              {marketKeys.map((mt) => {
+                const trades = tradesByMarket[mt];
+                if (trades.length < 2) return null;
+                const label = mt === 'stock' ? '📈 Stocks (₹)' : mt === 'crypto' ? '📈 Crypto ($)' : '📈 Forex';
+                return (
+                  <EquityCurve
+                    key={mt}
+                    data={trades.reduce<{ date: string; value: number }[]>((acc, trade) => {
+                      const prev = acc.length > 0 ? acc[acc.length - 1].value : 0;
+                      const tradeValue = parseFloat(trade.price) * parseFloat(trade.quantity) * (trade.side === 'buy' ? 1 : -1);
+                      return [...acc, {
+                        date: new Date(trade.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+                        value: prev + tradeValue,
+                      }];
+                    }, [])}
+                    label={label}
+                  />
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* Allocation Pie Chart */}
         {summary && summary.positions.length > 0 && (
@@ -276,7 +328,7 @@ export default function PortfolioPage() {
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10">
                         <div className="bg-bg-secondary border border-border-default rounded px-2 py-1 text-xs text-text-secondary whitespace-nowrap shadow-lg">
                           <p className="font-mono font-semibold text-text-primary">{pos.symbol.replace('.NS', '').replace('USDT', '')}</p>
-                          <p>{pct.toFixed(1)}% · {value.toLocaleString()}</p>
+                          <p>{pct.toFixed(1)}% · {currencySymbol(pos.market_type)}{value.toLocaleString()}</p>
                           <p className={isProfit ? 'text-signal-buy' : 'text-signal-sell'}>{isProfit ? '+' : ''}{pos.pnl_pct}%</p>
                         </div>
                       </div>
@@ -309,7 +361,7 @@ export default function PortfolioPage() {
                           />
                         </div>
                         <span className={`text-xs font-mono w-20 text-right ${isProfit ? 'text-signal-buy' : 'text-signal-sell'}`}>
-                          {isProfit ? '+' : ''}{pnl.toLocaleString()}
+                          {isProfit ? '+' : ''}{currencySymbol(pos.market_type)}{Math.abs(pnl).toLocaleString()}
                         </span>
                       </div>
                     );
@@ -345,8 +397,8 @@ export default function PortfolioPage() {
                           <span className="ml-2 text-xs text-text-muted">{pos.market_type}</span>
                         </td>
                         <td className="text-right p-3 font-mono">{parseFloat(pos.quantity).toLocaleString()}</td>
-                        <td className="text-right p-3 font-mono hidden sm:table-cell">{parseFloat(pos.avg_price).toLocaleString()}</td>
-                        <td className="text-right p-3 font-mono">{parseFloat(pos.value).toLocaleString()}</td>
+                        <td className="text-right p-3 font-mono hidden sm:table-cell">{formatPortfolioValue(pos.avg_price, pos.market_type)}</td>
+                        <td className="text-right p-3 font-mono">{formatPortfolioValue(pos.value, pos.market_type)}</td>
                         <td className={`text-right p-3 font-mono ${posColor}`}>
                           {posSign}{pos.pnl_pct}%
                         </td>
@@ -378,7 +430,7 @@ export default function PortfolioPage() {
                       <span className="font-mono text-sm">{trade.symbol.replace('.NS', '').replace('USDT', '')}</span>
                     </div>
                     <div className="text-right text-sm font-mono text-text-secondary">
-                      {parseFloat(trade.quantity).toLocaleString()} × {parseFloat(trade.price).toLocaleString()}
+                      {parseFloat(trade.quantity).toLocaleString()} × {formatPortfolioValue(trade.price, trade.market_type)}
                     </div>
                   </div>
                 );

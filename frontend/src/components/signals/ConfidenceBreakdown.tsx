@@ -10,7 +10,7 @@ interface ConfidenceBreakdownProps {
 }
 
 /**
- * Stacked bar showing the breakdown of confidence: technical (60%) vs sentiment (40%).
+ * Stacked bar showing the breakdown of confidence: technical (50%) vs event chains (35%) vs sentiment (15%).
  */
 export function ConfidenceBreakdown({ technicalScore, sentimentScore, signalType }: ConfidenceBreakdownProps) {
   const color = SIGNAL_COLORS[signalType];
@@ -43,7 +43,7 @@ export function ConfidenceBreakdown({ technicalScore, sentimentScore, signalType
         </div>
       </div>
       <p className="text-xs text-text-muted">
-        Final = Technical × 60% + Sentiment × 40%
+        Final = Technical × 50% + Event Chains × 35% + Sentiment × 15%
       </p>
     </div>
   );

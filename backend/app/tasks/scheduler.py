@@ -66,4 +66,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "app.tasks.ai_tasks.expire_stale_events",
         "schedule": 3600.0,  # Every hour
     },
+    # ── Calendar Seeding (refresh known events daily) ──
+    "seed-calendar-events": {
+        "task": "app.tasks.calendar_tasks.seed_calendar_events",
+        "schedule": crontab(hour=6, minute=0),  # 6:00 AM IST daily
+    },
 }

@@ -60,14 +60,26 @@ class TradeData(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CurrencyBreakdown(BaseModel):
+    """P&L breakdown for a single currency."""
+
+    currency: str
+    market_type: str
+    invested: Decimal
+    current_value: Decimal
+    pnl: Decimal
+    pnl_pct: float
+
+
 class PortfolioSummary(BaseModel):
-    """Aggregated portfolio summary."""
+    """Aggregated portfolio summary with per-currency breakdowns."""
 
     total_invested: Decimal
     current_value: Decimal
     total_pnl: Decimal
     total_pnl_pct: float
     positions: list[dict]
+    by_currency: list[CurrencyBreakdown] = []
 
 
 class BacktestCreate(BaseModel):

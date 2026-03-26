@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePreferencesStore, type ViewMode, type TextSize, type ThemeMode } from '@/store/preferencesStore';
 import { isNotificationSupported, getNotificationPermission, requestNotificationPermission } from '@/lib/notifications';
+import { FocusTrap } from './FocusTrap';
 
 const VIEW_OPTIONS: { value: ViewMode; label: string; desc: string }[] = [
   { value: 'simple', label: 'Simple', desc: 'Symbol, action, AI reason only' },
@@ -38,8 +39,12 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   if (!isOpen) return null;
 
   return (
+    <FocusTrap isOpen={isOpen} onClose={onClose}>
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings"
         className="bg-bg-secondary border border-border-default rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
@@ -152,5 +157,6 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         </button>
       </div>
     </div>
+    </FocusTrap>
   );
 }

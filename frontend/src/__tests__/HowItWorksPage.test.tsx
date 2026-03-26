@@ -13,7 +13,7 @@ describe('HowItWorksPage', () => {
     render(<Page />);
     expect(screen.getByText('Data Collection')).toBeInTheDocument();
     expect(screen.getByText(/Technical Analysis/)).toBeInTheDocument();
-    expect(screen.getByText(/AI Sentiment Analysis/)).toBeInTheDocument();
+    expect(screen.getByText(/AI Sentiment & Event Chain Analysis/)).toBeInTheDocument();
     expect(screen.getByText('Signal Generation')).toBeInTheDocument();
     expect(screen.getByText('Target & Stop-Loss')).toBeInTheDocument();
     expect(screen.getByText('AI Reasoning')).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe('HowItWorksPage', () => {
   it('shows the confidence formula', async () => {
     const { default: Page } = await import('@/app/how-it-works/page');
     render(<Page />);
-    expect(screen.getByText(/technical_score.*0\.60.*ai_sentiment.*0\.40/)).toBeInTheDocument();
+    expect(screen.getByText(/technical.*0\.50.*event_chain.*0\.35.*sentiment.*0\.15/)).toBeInTheDocument();
   });
 
   it('shows target/stop-loss formulas', async () => {

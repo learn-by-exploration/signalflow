@@ -48,7 +48,7 @@ export default function HowItWorksPage() {
         <section className="space-y-4">
           <h2 className="text-xl font-display font-semibold flex items-center gap-2">
             <span className="w-7 h-7 rounded-full bg-accent-purple/20 text-accent-purple text-sm flex items-center justify-center font-mono">2</span>
-            Technical Analysis (60% of score)
+            Technical Analysis (50% of score)
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed">
             Five technical indicators are computed and each produces a buy/sell/neutral signal.
@@ -70,22 +70,30 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* Step 3: AI Sentiment */}
+        {/* Step 3: AI Sentiment & Event Chain Analysis */}
         <section className="space-y-3">
           <h2 className="text-xl font-display font-semibold flex items-center gap-2">
             <span className="w-7 h-7 rounded-full bg-accent-purple/20 text-accent-purple text-sm flex items-center justify-center font-mono">3</span>
-            AI Sentiment Analysis (40% of score)
+            AI Sentiment & Event Chain Analysis (50% of score)
           </h2>
           <p className="text-text-secondary text-sm leading-relaxed">
             Recent news articles for each symbol are fetched from financial RSS feeds
             and analyzed by Claude AI (Anthropic). The AI produces a sentiment score (0–100,
-            bearish to bullish), identifies key factors, and assesses market impact. This
-            score makes up 40% of the final confidence.
+            bearish to bullish), identifies key factors, and extracts causal event chains
+            — sequences of events that may propagate through markets.
           </p>
-          <div className="bg-bg-card border border-border-default rounded-lg p-4">
+          <p className="text-text-secondary text-sm leading-relaxed">
+            When event chains are detected, the AI layer contributes 50% of the final score:
+            35% from event chain analysis and 15% from raw sentiment. When no causal chains
+            are found, sentiment contributes 40% alongside 60% technical.
+          </p>
+          <div className="bg-bg-card border border-border-default rounded-lg p-4 space-y-2">
             <p className="text-xs font-display font-medium text-accent-purple mb-2">Formula</p>
             <p className="text-sm font-mono text-text-primary">
-              final_confidence = (technical_score × 0.60) + (ai_sentiment × 0.40)
+              With event chains: final = (technical × 0.50) + (event_chain × 0.35) + (sentiment × 0.15)
+            </p>
+            <p className="text-sm font-mono text-text-muted">
+              Without chains: final = (technical × 0.60) + (sentiment × 0.40)
             </p>
           </div>
         </section>

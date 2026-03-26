@@ -107,6 +107,13 @@ export const api = {
   getSharedSignal: (shareId: string) =>
     apiFetch(`/api/v1/signals/shared/${shareId}`),
 
+  // ── Signal Feedback ──
+  submitSignalFeedback: (signalId: string, data: { action: 'took' | 'skipped' | 'watching'; entry_price?: string; notes?: string }) =>
+    apiFetch(`/api/v1/signals/${signalId}/feedback`, { method: 'POST', body: JSON.stringify(data) }),
+
+  getSignalFeedback: (signalId: string) =>
+    apiFetch(`/api/v1/signals/${signalId}/feedback`),
+
   // ── P3: AI Q&A ──
   askAboutSymbol: (symbol: string, question: string) =>
     apiFetch('/api/v1/ai/ask', { method: 'POST', body: JSON.stringify({ symbol, question }) }),

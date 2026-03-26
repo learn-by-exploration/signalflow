@@ -13,7 +13,7 @@ from app.database import get_db
 from app.models.market_data import MarketData
 from app.models.trade import Trade
 from app.rate_limit import limiter
-from app.schemas.p3 import PortfolioSummary, TradeCreate, TradeData
+from app.schemas.p3 import CurrencyBreakdown, PortfolioSummary, TradeCreate, TradeData
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
@@ -127,6 +127,10 @@ async def portfolio_summary(
     total_invested = Decimal("0")
     current_value = Decimal("0")
 
+    # Per-currency accumulators
+    currency_map = {"stock": "INR", "crypto": "USD", "forex": "USD"}
+    currency_totals: dict[str, dict] = {}
+
     for row in rows:
         net_qty = Decimal(str(row.net_qty or 0))
         net_cost = Decimal(str(row.net_cost or 0))
@@ -155,8 +159,35 @@ async def portfolio_summary(
         total_invested += net_cost
         current_value += position_value
 
+        # Accumulate per-currency
+        currency = currency_map.get(row.market_type, "USD")
+        key = f"{currency}:{row.market_type}"
+        if key not in currency_totals:
+            currency_totals[key] = {
+                "currency": currency,
+                "market_type": row.market_type,
+                "invested": Decimal("0"),
+                "current_value": Decimal("0"),
+            }
+        currency_totals[key]["invested"] += net_cost
+        currency_totals[key]["current_value"] += position_value
+
     total_pnl = current_value - total_invested
     total_pnl_pct = float(total_pnl / total_invested * 100) if total_invested > 0 else 0.0
+
+    # Build per-currency breakdowns
+    by_currency = []
+    for ct in currency_totals.values():
+        ct_pnl = ct["current_value"] - ct["invested"]
+        ct_pnl_pct = float(ct_pnl / ct["invested"] * 100) if ct["invested"] > 0 else 0.0
+        by_currency.append(CurrencyBreakdown(
+            currency=ct["currency"],
+            market_type=ct["market_type"],
+            invested=ct["invested"],
+            current_value=ct["current_value"],
+            pnl=ct_pnl,
+            pnl_pct=round(ct_pnl_pct, 2),
+        ))
 
     return {
         "data": PortfolioSummary(
@@ -165,5 +196,6 @@ async def portfolio_summary(
             total_pnl=total_pnl,
             total_pnl_pct=round(total_pnl_pct, 2),
             positions=positions,
+            by_currency=by_currency,
         )
     }

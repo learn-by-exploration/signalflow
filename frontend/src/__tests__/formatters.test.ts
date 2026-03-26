@@ -28,7 +28,7 @@ describe('formatPrice', () => {
   });
 
   it('formats crypto prices < 1000 with 4 decimals', () => {
-    expect(formatPrice('0.5432', 'crypto')).toBe('0.5432');
+    expect(formatPrice('0.5432', 'crypto')).toBe('$0.5432');
   });
 
   it('returns dash for NaN', () => {

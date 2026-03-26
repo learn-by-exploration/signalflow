@@ -16,11 +16,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_settings
 from app.models.market_data import MarketData
 from app.models.signal import Signal
+from app.models.event_calendar import EventCalendar
 from app.services.ai_engine.reasoner import AIReasoner
 from app.services.ai_engine.sentiment import AISentimentEngine
 from app.services.analysis.indicators import TechnicalAnalyzer
 from app.services.signal_gen.scorer import compute_final_confidence
 from app.services.signal_gen.targets import calculate_targets
+from app.services.signal_gen.feedback import compute_adaptive_weights
 from app.services.data_ingestion.validators import is_spot_only_candle
 
 logger = logging.getLogger(__name__)
@@ -30,6 +32,12 @@ MIN_DATA_POINTS = 50
 
 # Cooldown period: don't generate a new signal for the same symbol within this window
 SIGNAL_COOLDOWN_HOURS = 1
+
+# High-impact event types that suppress signal generation
+HIGH_IMPACT_EVENT_TYPES = {"fomc", "rbi_mpc", "ecb", "boj", "rba", "boe"}
+
+# Hours before/after a high-impact event to suppress signals
+EVENT_SUPPRESSION_HOURS = 4
 
 
 def detect_market_type(symbol: str) -> str:
@@ -100,6 +108,15 @@ class SignalGenerator:
             logger.debug("Cooldown active for %s, skipping", symbol)
             return None
 
+        # 0b. Event suppression — skip forex/stock signals near high-impact events
+        if await self._is_event_suppressed(symbol, market_type):
+            logger.info(
+                "High-impact event within %dh for %s, suppressing signal",
+                EVENT_SUPPRESSION_HOURS,
+                symbol,
+            )
+            return None
+
         # 1. Fetch recent market data
         df = await self._fetch_market_data(symbol)
         if df is None or len(df) < MIN_DATA_POINTS:
@@ -129,8 +146,13 @@ class SignalGenerator:
         # 3. Run AI sentiment analysis
         sentiment_data = await self.sentiment_engine.analyze_sentiment(symbol, market_type)
 
+        # 3b. Get adaptive weights from feedback loop
+        adaptive_weights = await compute_adaptive_weights(self.db, market_type)
+
         # 4. Score and determine signal type
-        confidence, signal_type = compute_final_confidence(technical_data, sentiment_data)
+        confidence, signal_type = compute_final_confidence(
+            technical_data, sentiment_data, adaptive_weights=adaptive_weights
+        )
 
         # Skip HOLD signals — only generate actionable signals
         if signal_type == "HOLD":
@@ -240,6 +262,52 @@ class SignalGenerator:
             .with_for_update(skip_locked=True)
             .limit(1)
         )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
+    async def _is_event_suppressed(self, symbol: str, market_type: str) -> bool:
+        """Check if a high-impact economic event is scheduled near now.
+
+        Suppresses forex signals within ±EVENT_SUPPRESSION_HOURS of FOMC, RBI MPC,
+        ECB, BOJ, etc. Also suppresses stock signals near earnings for the specific symbol.
+
+        Args:
+            symbol: Market symbol.
+            market_type: stock, crypto, or forex.
+
+        Returns:
+            True if signal generation should be suppressed.
+        """
+        # Crypto is never suppressed by central bank events
+        if market_type == "crypto":
+            return False
+
+        now = datetime.now(timezone.utc)
+        window_start = now - timedelta(hours=EVENT_SUPPRESSION_HOURS)
+        window_end = now + timedelta(hours=EVENT_SUPPRESSION_HOURS)
+
+        # Check for high-impact events affecting this market
+        stmt = (
+            select(EventCalendar.id)
+            .where(
+                EventCalendar.scheduled_at >= window_start,
+                EventCalendar.scheduled_at <= window_end,
+                EventCalendar.is_completed == False,  # noqa: E712
+                EventCalendar.impact_magnitude >= 4,
+            )
+        )
+
+        if market_type == "forex":
+            # Suppress forex near any central bank event
+            stmt = stmt.where(EventCalendar.event_type.in_(HIGH_IMPACT_EVENT_TYPES))
+        elif market_type == "stock":
+            # Suppress stock signals only for earnings events affecting this symbol
+            stmt = stmt.where(
+                EventCalendar.event_type == "earnings",
+                EventCalendar.affected_symbols.contains([symbol]),
+            )
+
+        stmt = stmt.limit(1)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none() is not None
 

@@ -8,6 +8,7 @@ import { SIGNAL_COLORS, MARKET_LABELS, BADGE_LABELS } from '@/lib/constants';
 import { useMarketStore } from '@/store/marketStore';
 import { AIReasoningPanel } from './AIReasoningPanel';
 import { TargetProgressBar } from './TargetProgressBar';
+import { api } from '@/lib/api';
 
 const BADGE_ICONS: Record<string, string> = {
   STRONG_BUY: '▲▲',
@@ -23,6 +24,8 @@ interface SignalCardProps {
 
 export function SignalCard({ signal }: SignalCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [feedbackAction, setFeedbackAction] = useState<string | null>(null);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const color = SIGNAL_COLORS[signal.signal_type];
 
   // Live price from market store
@@ -68,7 +71,7 @@ export function SignalCard({ signal }: SignalCardProps) {
           <span
             className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-display font-semibold"
             style={{ backgroundColor: `${color}38`, color }}
-            title={`${signal.confidence}% confidence — combined score from technical analysis (60%) and AI news sentiment (40%). Higher = stronger consensus, not probability of profit.`}
+            title={`${signal.confidence}% confidence — combined score from technical analysis (50%), AI event chain analysis (35%), and news sentiment (15%). Higher = stronger consensus, not probability of profit.`}
           >
             <span aria-hidden="true">{BADGE_ICONS[signal.signal_type] ?? ''}</span>{' '}
             {BADGE_LABELS[signal.signal_type]} · {signal.confidence}%
@@ -139,9 +142,45 @@ export function SignalCard({ signal }: SignalCardProps) {
       {/* AI Reasoning */}
       <AIReasoningPanel reasoning={signal.ai_reasoning} isExpanded={isExpanded} />
 
-      {/* Action link + per-signal disclaimer */}
+      {/* Action link + feedback + per-signal disclaimer */}
       {isExpanded && (
         <div className="mt-3 pt-3 border-t border-border-default animate-fade-in-down" onClick={(e) => e.stopPropagation()}>
+          {/* Did you take this trade? */}
+          {!feedbackAction ? (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs text-text-muted">Did you take this trade?</span>
+              <div className="flex gap-1">
+                {(['took', 'watching', 'skipped'] as const).map((action) => (
+                  <button
+                    key={action}
+                    disabled={feedbackSubmitting}
+                    onClick={async () => {
+                      setFeedbackSubmitting(true);
+                      try {
+                        await api.submitSignalFeedback(signal.id, { action });
+                        setFeedbackAction(action);
+                      } catch { /* silently fail */ }
+                      setFeedbackSubmitting(false);
+                    }}
+                    className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                      action === 'took'
+                        ? 'border-signal-buy/40 text-signal-buy hover:bg-signal-buy/10'
+                        : action === 'skipped'
+                        ? 'border-signal-sell/40 text-signal-sell hover:bg-signal-sell/10'
+                        : 'border-accent-purple/40 text-accent-purple hover:bg-accent-purple/10'
+                    } disabled:opacity-40`}
+                  >
+                    {action === 'took' ? '✓ Took it' : action === 'watching' ? '👀 Watching' : '✕ Skipped'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-text-muted mb-3">
+              {feedbackAction === 'took' ? '✓ Marked as taken' : feedbackAction === 'watching' ? '👀 Watching this signal' : '✕ Skipped'}
+            </p>
+          )}
+
           <div className="flex items-center justify-between">
             <Link href={`/signal/${signal.id}`} className="text-xs text-accent-purple hover:underline">
               View full analysis →

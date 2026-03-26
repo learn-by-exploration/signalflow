@@ -78,7 +78,7 @@ class Settings(BaseSettings):
         "DOGEUSDT",
         "DOTUSDT",
         "AVAXUSDT",
-        "MATICUSDT",
+        "POLUSDT",
     ]
     tracked_forex: list[str] = [
         "USD/INR",

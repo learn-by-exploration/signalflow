@@ -127,12 +127,22 @@ export interface PortfolioPosition {
   pnl_pct: number;
 }
 
+export interface CurrencyBreakdown {
+  currency: string;
+  market_type: MarketType;
+  invested: string;
+  current_value: string;
+  pnl: string;
+  pnl_pct: number;
+}
+
 export interface PortfolioSummary {
   total_invested: string;
   current_value: string;
   total_pnl: string;
   total_pnl_pct: number;
   positions: PortfolioPosition[];
+  by_currency: CurrencyBreakdown[];
 }
 
 export interface BacktestRun {

@@ -18,7 +18,7 @@ describe('ConfidenceBreakdown', () => {
 
   it('shows formula explanation', () => {
     render(<ConfidenceBreakdown technicalScore={60} sentimentScore={40} signalType="HOLD" />);
-    expect(screen.getByText(/Technical × 60% \+ Sentiment × 40%/)).toBeInTheDocument();
+    expect(screen.getByText(/Technical × 50% \+ Event Chains × 35% \+ Sentiment × 15%/)).toBeInTheDocument();
   });
 
   it('renders with SELL signal type', () => {
