@@ -3,7 +3,8 @@ import { Outfit, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/shared/Navbar';
 import { OfflineBanner } from '@/components/shared/OfflineBanner';
-import { SebiDisclaimer } from '@/components/shared/SebiDisclaimer';
+import { BottomNav } from '@/components/shared/BottomNav';
+import { SiteFooter } from '@/components/shared/SiteFooter';
 import { CookieConsent } from '@/components/shared/CookieConsent';
 import { AuthProvider } from '@/components/shared/AuthProvider';
 import { QueryProvider } from '@/components/shared/QueryProvider';
@@ -43,8 +44,9 @@ export default function RootLayout({
             <TextSizeProvider />
             <Navbar />
             <OfflineBanner />
-            <main className="flex-1">{children}</main>
-            <SebiDisclaimer />
+            <main className="flex-1 pb-[72px] md:pb-0">{children}</main>
+            <BottomNav />
+            <SiteFooter />
             <CookieConsent />
           </ThemeProvider>
         </ToastProvider>

@@ -41,11 +41,13 @@ describe('Navbar (authenticated)', () => {
     expect(screen.getByText('AI')).toBeInTheDocument();
   });
 
-  it('renders primary navigation links', () => {
+  it('renders 5 primary navigation links', () => {
     render(<Navbar />);
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Watchlist')).toBeInTheDocument();
+    expect(screen.getByText('Portfolio')).toBeInTheDocument();
+    expect(screen.getByText('Brief')).toBeInTheDocument();
     expect(screen.getByText('Track Record')).toBeInTheDocument();
-    expect(screen.getByText('Alerts')).toBeInTheDocument();
   });
 
   it('highlights active page with aria-current', () => {
@@ -76,30 +78,35 @@ describe('Navbar (authenticated)', () => {
     expect(screen.getByText('9+')).toBeInTheDocument();
   });
 
-  it('renders Settings link with proper aria-label', () => {
+  it('renders Settings link with proper aria-label on desktop', () => {
     render(<Navbar />);
     const settingsLink = screen.getByLabelText('Settings');
     expect(settingsLink).toBeInTheDocument();
     expect(settingsLink.closest('a')).toHaveAttribute('href', '/settings');
   });
 
-  it('renders "More" dropdown with additional links on click', () => {
+  it('renders Research dropdown with links on click', () => {
     render(<Navbar />);
-    fireEvent.click(screen.getByText('More ▾'));
+    fireEvent.click(screen.getByText('Research ▾'));
+    expect(screen.getByText('News')).toBeInTheDocument();
+    expect(screen.getByText('Calendar')).toBeInTheDocument();
+    expect(screen.getByText('Backtest')).toBeInTheDocument();
     expect(screen.getByText('Signal History')).toBeInTheDocument();
+    expect(screen.getByText('Alerts')).toBeInTheDocument();
     expect(screen.getByText('How It Works')).toBeInTheDocument();
+    expect(screen.getByText('Pricing')).toBeInTheDocument();
   });
 
-  it('renders mobile toggle button', () => {
+  it('highlights Research label when child route is active', () => {
+    mockPathname = '/news';
     render(<Navbar />);
-    expect(screen.getByLabelText('Toggle menu')).toBeInTheDocument();
+    const researchBtn = screen.getByText('Research ▾');
+    expect(researchBtn.className).toContain('text-accent-purple');
   });
 
-  it('shows mobile menu when hamburger is clicked', () => {
+  it('does not render hamburger toggle button', () => {
     render(<Navbar />);
-    fireEvent.click(screen.getByLabelText('Toggle menu'));
-    const alertLinks = screen.getAllByText('Alerts');
-    expect(alertLinks.length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByLabelText('Toggle menu')).not.toBeInTheDocument();
   });
 });
 
@@ -108,12 +115,12 @@ describe('Navbar (unauthenticated)', () => {
     mockSession = { data: null, status: 'unauthenticated' };
   });
 
-  it('shows only public links for visitors', () => {
+  it('shows public links for visitors', () => {
     render(<Navbar />);
     expect(screen.getByText('How It Works')).toBeInTheDocument();
+    expect(screen.getByText('Pricing')).toBeInTheDocument();
     expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
-    expect(screen.queryByText('Track Record')).not.toBeInTheDocument();
-    expect(screen.queryByText('More')).not.toBeInTheDocument();
+    expect(screen.queryByText('Research ▾')).not.toBeInTheDocument();
   });
 
   it('shows Sign In button for visitors', () => {
@@ -125,13 +132,5 @@ describe('Navbar (unauthenticated)', () => {
   it('does not show Settings for visitors', () => {
     render(<Navbar />);
     expect(screen.queryByLabelText('Settings')).not.toBeInTheDocument();
-  });
-
-  it('mobile menu shows public links and Sign In for visitors', () => {
-    render(<Navbar />);
-    fireEvent.click(screen.getByLabelText('Toggle menu'));
-    const signInLinks = screen.getAllByText('Sign In');
-    expect(signInLinks.length).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByText('Portfolio')).not.toBeInTheDocument();
   });
 });

@@ -34,3 +34,76 @@ export const BADGE_LABELS = {
   SELL: 'BEARISH',
   STRONG_SELL: 'STRONGLY BEARISH',
 } as const;
+
+export const NAV_PRIMARY_LINKS = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/watchlist', label: 'Watchlist' },
+  { href: '/portfolio', label: 'Portfolio' },
+  { href: '/brief', label: 'Brief' },
+  { href: '/track-record', label: 'Track Record' },
+];
+
+export const NAV_RESEARCH_LINKS = [
+  { href: '/news', label: 'News', icon: '📰' },
+  { href: '/calendar', label: 'Calendar', icon: '📅' },
+  { href: '/backtest', label: 'Backtest', icon: '🔬' },
+  { href: '/history', label: 'Signal History', icon: '📜' },
+  { href: '/alerts', label: 'Alerts', icon: '🔔' },
+];
+
+export const NAV_INFO_LINKS = [
+  { href: '/how-it-works', label: 'How It Works', icon: '❓' },
+  { href: '/pricing', label: 'Pricing', icon: '💎' },
+];
+
+export const NAV_MOBILE_TABS = [
+  { href: '/', label: 'Home', id: 'home' },
+  { href: '/watchlist', label: 'Watchlist', id: 'watchlist' },
+  { href: '/brief', label: 'Brief', id: 'brief' },
+  { href: '/portfolio', label: 'Portfolio', id: 'portfolio' },
+  { id: 'menu', label: 'Menu' },
+] as const;
+
+export const NAV_MOBILE_MENU_GROUPS = [
+  {
+    title: 'Performance',
+    links: [
+      { href: '/track-record', label: 'Track Record', icon: '📊' },
+      { href: '/history', label: 'Signal History', icon: '📜' },
+    ],
+  },
+  {
+    title: 'Research',
+    links: [
+      { href: '/news', label: 'News', icon: '📰' },
+      { href: '/calendar', label: 'Calendar', icon: '📅' },
+      { href: '/backtest', label: 'Backtest', icon: '🔬' },
+    ],
+  },
+  {
+    title: 'Account',
+    links: [
+      { href: '/alerts', label: 'Alert Settings', icon: '🔔' },
+      { href: '/settings', label: 'Settings', icon: '⚙️' },
+    ],
+  },
+  {
+    title: 'About',
+    links: [
+      { href: '/how-it-works', label: 'How It Works', icon: '❓' },
+      { href: '/pricing', label: 'Pricing', icon: '💎' },
+    ],
+  },
+];
+
+export const NAV_LEGAL_LINKS = [
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/terms', label: 'Terms' },
+  { href: '/refund-policy', label: 'Refund Policy' },
+  { href: '/contact', label: 'Contact' },
+];
+
+export const NAV_PUBLIC_LINKS = [
+  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/pricing', label: 'Pricing' },
+];

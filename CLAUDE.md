@@ -160,27 +160,28 @@ make frontend-install # Install npm dependencies
 
 ---
 
-## Project Structure (as of v1.0.0)
+## Project Structure (as of v1.4.0)
 
 ```
 signalflow/
 ├── CLAUDE.md                        # THIS FILE — master instructions
 ├── README.md                        # Project readme with setup guide
 ├── Makefile                         # Development shortcuts (make up/test/lint)
-├── docker-compose.yml               # Local dev: 5 services
+├── docker-compose.yml               # Local dev: 6 services (db, redis, backend, celery, flower, frontend)
 ├── docker-compose.prod.yml          # Production overrides
 ├── railway.toml                     # Railway PaaS deployment config
+├── supervisord.conf                 # Process manager: web + celery-worker + celery-beat + migrate
 ├── start.sh                         # Service bootstrap script
-├── .env.example                     # 19 environment variables template
+├── .env.example                     # Environment variables template
 │
 ├── backend/
 │   ├── app/
 │   │   ├── main.py                  # FastAPI app, CORS, health endpoint, rate limiting
-│   │   ├── config.py                # Settings: 21 env vars + 31 tracked symbols
+│   │   ├── config.py                # Settings: 36 env vars + 31 tracked symbols
 │   │   ├── database.py              # SQLAlchemy async (pool=20, overflow=10)
 │   │   ├── rate_limit.py            # Slowapi rate limiting config
 │   │   │
-│   │   ├── models/                  # 8 SQLAlchemy ORM models
+│   │   ├── models/                  # 19 SQLAlchemy ORM models
 │   │   │   ├── market_data.py       # TimescaleDB hypertable (OHLCV)
 │   │   │   ├── signal.py            # Signal + SignalHistory
 │   │   │   ├── alert_config.py      # Alert preferences + watchlist
@@ -280,16 +281,17 @@ signalflow/
 │   │   │   ├── shared/[id]/page.tsx # Public shared signal view
 │   │   │   └── globals.css          # Tailwind + dark theme CSS vars
 │   │   │
-│   │   ├── components/              # 19 React components
+│   │   ├── components/              # 22 React components
 │   │   │   ├── signals/             # SignalFeed, SignalCard, SignalBadge,
 │   │   │   │                        # ConfidenceGauge, AIReasoningPanel,
 │   │   │   │                        # TargetProgressBar, RiskCalculator,
 │   │   │   │                        # WinRateCard, AccuracyChart, ShareButton, AskAI
 │   │   │   ├── markets/             # MarketOverview, MarketHeatmap, Sparkline
 │   │   │   ├── alerts/              # AlertTimeline, AlertConfig
-│   │   │   └── shared/              # Navbar, WelcomeModal, ChatIdPrompt,
-│   │   │                            # LoadingSpinner, ErrorBoundary,
-│   │   │                            # KeyboardHelpModal, Toast, IndicatorPill
+│   │   │   └── shared/              # Navbar, BottomNav, MobileMenuSheet, SiteFooter,
+│   │   │                            # WelcomeModal, ChatIdPrompt, LoadingSpinner,
+│   │   │                            # ErrorBoundary, KeyboardHelpModal, Toast,
+│   │   │                            # IndicatorPill
 │   │   │
 │   │   ├── hooks/                   # 4 custom hooks
 │   │   │   ├── useSignals.ts        # REST signal fetching
@@ -306,7 +308,7 @@ signalflow/
 │   │   │   ├── api.ts               # REST client for /api/v1
 │   │   │   ├── websocket.ts         # WebSocket client class
 │   │   │   ├── types.ts             # 15+ TypeScript interfaces
-│   │   │   └── constants.ts         # Colors, thresholds, badge labels
+│   │   │   └── constants.ts         # Colors, thresholds, badge labels, nav links
 │   │   │
 │   │   └── utils/
 │   │       ├── formatters.ts        # Price, %, date, time formatting
@@ -986,18 +988,24 @@ tests/
 
 ### Railway Configuration
 
-```yaml
+```toml
 # railway.toml (Backend)
 [build]
-  builder = "dockerfile"
-  dockerfilePath = "backend/Dockerfile"
+builder = "dockerfile"
+dockerfilePath = "backend/Dockerfile"
 
 [deploy]
-  startCommand = "bash -c 'alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT & celery -A app.tasks.celery_app worker --beat --loglevel=info'"
-  restartPolicyType = "always"
-  healthcheckPath = "/health"
-  healthcheckTimeout = 30
+startCommand = "supervisord -c supervisord.conf"
+restartPolicyType = "always"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
 ```
+
+**Process model**: `supervisord.conf` manages 4 programs in a single container:
+1. `migrate` — runs `alembic upgrade head` once at startup (priority 1, no restart)
+2. `web` — `uvicorn app.main:app` on `$PORT` (auto-restart)
+3. `celery-worker` — 2 concurrent workers (auto-restart)
+4. `celery-beat` — scheduler (auto-restart)
 
 ### Production Checklist
 
@@ -1056,7 +1064,7 @@ tests/
 
 ## Project History & Current State
 
-### Version: v1.0.0 (Released 21 March 2026)
+### Version: v1.4.0 (27 March 2026)
 
 ### Development Phases
 
@@ -1073,29 +1081,30 @@ tests/
 | Sprint 1–10 | `8cbc471`–`2cdf2dd` | 10 iterative sprints fixing UX, adding detail pages, mobile fixes |
 | V1 UI | `dbec9da` | First UI simplification (20→8 data points per card) |
 | V2 UI | `c3fe1ab` | Second UI simplification (8→6 data points, 3-section expand) |
+| v1.4.0 | `6151b07` | Security hardening, JWT auth, Razorpay payments, causal event chains, SEO, engagement, Prometheus metrics, structured logging, tier gating |
 
 ### Key Metrics
 
 | Metric | Count |
 |--------|-------|
-| Backend Python files | ~30 (6,000+ lines) |
-| Frontend TypeScript files | 46 |
-| API endpoints | ~25 REST + 1 WebSocket |
-| Database tables | 8 |
+| Backend Python files | ~60 (12,000+ lines) |
+| Frontend TypeScript files | 76 |
+| API endpoints | ~30 REST + 1 WebSocket |
+| Database tables | 19 |
+| SQLAlchemy models | 19 |
 | Tracked symbols | 31 (15 stocks, 10 crypto, 6 forex) |
-| Test files | 40 |
-| Passing tests | 480+ |
-| React components | 19 |
+| Test files | 55+ |
+| Passing tests | 1,970+ (backend 1,230 + frontend 741) |
+| React components | 22 |
 | Zustand stores | 3 |
-| Celery scheduled tasks | 12+ |
+| Celery scheduled tasks | 15+ |
 | Alembic migrations | 3 |
-| Git tags | v0.0.1, v1.0.0 |
+| Git tags | v0.0.1, v1.0.0, v1.4.0 |
 
 ### Known Issues
 
-- 4 test failures in `test_ai_engine.py` — related to environment config for AI budget checking, not functional bugs
 - `origin/feature/phase4-integration-deploy` remote branch still exists (was GitHub default branch; needs manual GitHub settings change to delete)
 
 ---
 
-*Last updated: 21 March 2026 | SignalFlow AI v1.0.0*
+*Last updated: 27 March 2026 | SignalFlow AI v1.4.0*
