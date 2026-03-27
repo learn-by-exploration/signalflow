@@ -13,6 +13,9 @@ from app.models.causal_link import CausalLink
 from app.models.signal_news_link import SignalNewsLink
 from app.models.event_calendar import EventCalendar
 from app.models.signal_feedback import SignalFeedback
+from app.models.seo_page import SeoPage
+from app.models.subscription import Subscription
+from app.models.confidence_calibration import ConfidenceCalibration
 
 __all__ = [
     "MarketData",
@@ -29,6 +32,9 @@ __all__ = [
     "SignalNewsLink",
     "EventCalendar",
     "SignalFeedback",
+    "SeoPage",
+    "Subscription",
+    "ConfidenceCalibration",
     "User",
     "RefreshToken",
 ]

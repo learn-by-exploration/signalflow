@@ -78,7 +78,7 @@ def send_free_tier_digest(self) -> dict:
         await engine.dispose()
         return sent_count
 
-    count = asyncio.get_event_loop().run_until_complete(_send())
+    count = asyncio.run(_send())
     return {"sent": count}
 
 
@@ -150,5 +150,5 @@ def send_reengagement_nudge(self) -> dict:
         await engine.dispose()
         return sent_count
 
-    count = asyncio.get_event_loop().run_until_complete(_nudge())
+    count = asyncio.run(_nudge())
     return {"nudged": count}

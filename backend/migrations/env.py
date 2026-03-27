@@ -7,7 +7,13 @@ from alembic import context
 from sqlalchemy import create_engine, pool
 
 from app.database import Base
-from app.models import MarketData, Signal, AlertConfig, SignalHistory  # noqa: F401
+from app.models import (  # noqa: F401
+    MarketData, Signal, AlertConfig, SignalHistory,
+    PriceAlert, User, RefreshToken, Trade, SignalShare,
+    BacktestRun, NewsEvent, EventEntity, CausalLink,
+    SignalNewsLink, EventCalendar, SignalFeedback,
+    SeoPage, Subscription, ConfidenceCalibration,
+)
 
 config = context.config
 

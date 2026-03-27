@@ -67,7 +67,7 @@ def generate_seo_pages(self) -> dict:
         await engine.dispose()
         return pages_created
 
-    pages = asyncio.get_event_loop().run_until_complete(_generate())
+    pages = asyncio.run(_generate())
     return {"pages_created": pages}
 
 

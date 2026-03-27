@@ -21,6 +21,9 @@ from app.services.data_ingestion.validators import validate_candle
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
+# Rate limit spacing between API calls (seconds) — Twelve Data free tier: 8 calls/min
+RATE_LIMIT_DELAY_SECONDS = 8
+
 TWELVE_DATA_URL = "https://api.twelvedata.com/time_series"
 ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query"
 
@@ -79,9 +82,9 @@ class ForexFetcher(BaseFetcher):
                     session.merge(record)
                     fetched_symbols.append(symbol)
 
-                # Rate limit spacing: ~8 sec between calls for Twelve Data free tier
+                # Rate limit spacing for Twelve Data free tier
                 if i < len(self.symbols) - 1:
-                    time.sleep(8)
+                    time.sleep(RATE_LIMIT_DELAY_SECONDS)
 
             session.commit()
 

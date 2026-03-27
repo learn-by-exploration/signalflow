@@ -54,6 +54,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if not settings.database_url:
         raise RuntimeError("DATABASE_URL environment variable is required")
 
+    if settings.environment == "production":
+        missing_secrets = []
+        if not settings.jwt_secret_key:
+            missing_secrets.append("JWT_SECRET_KEY")
+        if not settings.api_secret_key:
+            missing_secrets.append("API_SECRET_KEY")
+        if missing_secrets:
+            raise RuntimeError(f"Required secrets not set: {', '.join(missing_secrets)}")
+
     # Sentry init (if DSN provided)
     if settings.sentry_dsn:
         import sentry_sdk

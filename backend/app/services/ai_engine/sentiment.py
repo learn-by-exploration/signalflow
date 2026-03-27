@@ -232,13 +232,22 @@ class AISentimentEngine:
         event_ids: list[str] = []
         try:
             for article in articles[:10]:
+                published_at = None
+                pub_str = article.get("published_at")
+                if pub_str:
+                    try:
+                        from dateutil.parser import parse as parse_dt
+
+                        published_at = parse_dt(pub_str)
+                    except (ValueError, TypeError):
+                        pass
                 news_event = NewsEvent(
                     headline=article["headline"],
                     source=article.get("source"),
                     source_url=article.get("source_url"),
                     symbol=symbol,
                     market_type=market_type,
-                    published_at=None,  # TODO: parse published_at string
+                    published_at=published_at,
                     fetched_at=datetime.now(timezone.utc),
                 )
                 self.db.add(news_event)

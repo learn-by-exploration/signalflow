@@ -59,12 +59,13 @@ def dispose_engine(**kwargs):
         import asyncio
 
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(_engine.dispose())
-            else:
-                loop.run_until_complete(_engine.dispose())
+            loop = asyncio.get_running_loop()
         except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            loop.create_task(_engine.dispose())
+        else:
             asyncio.run(_engine.dispose())
         _engine = None
         _session_factory = None

@@ -283,9 +283,15 @@ class SignalFlowBot:
 
         settings = get_settings()
         try:
+            backend_host = (
+                settings.api_host
+                if settings.environment == "production"
+                else "localhost"
+            )
+            api_url = f"http://{backend_host}:{settings.api_port}/api/v1/ai/ask"
             async with httpx.AsyncClient(timeout=35.0) as client:
                 resp = await client.post(
-                    f"http://localhost:{settings.api_port}/api/v1/ai/ask",
+                    api_url,
                     json={"symbol": symbol, "question": question},
                 )
                 resp.raise_for_status()
