@@ -76,7 +76,9 @@ async def create_alert_config(
 
 
 @router.put("/config/{config_id}", response_model=dict)
+@limiter.limit("10/minute")
 async def update_alert_config(
+    request: Request,
     config_id: PyUUID,
     payload: AlertConfigUpdate,
     user: AuthContext = Depends(get_current_user),
@@ -132,7 +134,9 @@ async def get_watchlist(
 
 
 @router.post("/watchlist", response_model=dict)
+@limiter.limit("10/minute")
 async def update_watchlist(
+    request: Request,
     payload: WatchlistUpdate,
     user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

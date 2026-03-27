@@ -2,13 +2,14 @@
 
 from uuid import UUID as PyUUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import AuthContext, get_current_user
 from app.database import get_db
 from app.models.price_alert import PriceAlert
+from app.rate_limit import limiter
 from app.schemas.p3 import PriceAlertCreate, PriceAlertData
 
 router = APIRouter(prefix="/alerts/price", tags=["price-alerts"])
@@ -48,7 +49,9 @@ async def list_price_alerts(
 
 
 @router.post("", response_model=dict, status_code=201)
+@limiter.limit("10/minute")
 async def create_price_alert(
+    request: Request,
     payload: PriceAlertCreate,
     user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -86,7 +89,9 @@ async def create_price_alert(
 
 
 @router.delete("/{alert_id}", response_model=dict)
+@limiter.limit("10/minute")
 async def delete_price_alert(
+    request: Request,
     alert_id: PyUUID,
     user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

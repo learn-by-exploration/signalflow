@@ -1,7 +1,8 @@
 """AI sentiment analysis using Claude API.
 
 Fetches recent news for a symbol and uses Claude to score sentiment 0-100.
-Results cached in Redis for 15 minutes.
+Results cached in Redis for 60 minutes (market-specific TTLs available).
+Uses Claude tool_use for guaranteed structured JSON output.
 Now also stores news events in DB and extracts event chains (V2+).
 """
 
@@ -30,6 +31,104 @@ MARKET_LABELS = {
     "forex": "Forex Currency Pair",
 }
 
+# Market-specific sentiment cache TTLs (seconds)
+SENTIMENT_CACHE_TTLS = {
+    "crypto": 1800,   # 30 min — crypto news moves fast
+    "stock": 3600,    # 60 min
+    "forex": 5400,    # 90 min — forex is more macro-driven
+}
+
+# Claude tool_use schema for sentiment analysis (guaranteed structured output)
+SENTIMENT_TOOL = {
+    "name": "report_sentiment",
+    "description": "Report the sentiment analysis result for the given symbol.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "sentiment_score": {
+                "type": "integer",
+                "description": "Sentiment score 0-100 (0=extremely bearish, 100=extremely bullish)",
+                "minimum": 0,
+                "maximum": 100,
+            },
+            "key_factors": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Top 3 key factors driving sentiment",
+                "maxItems": 5,
+            },
+            "market_impact": {
+                "type": "string",
+                "enum": ["positive", "negative", "neutral"],
+                "description": "Expected market impact direction",
+            },
+            "time_horizon": {
+                "type": "string",
+                "enum": ["short_term", "medium_term", "long_term"],
+            },
+            "confidence_in_analysis": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100,
+            },
+        },
+        "required": ["sentiment_score", "key_factors", "market_impact", "time_horizon", "confidence_in_analysis"],
+    },
+}
+
+# Claude tool_use schema for event chain extraction
+EVENT_CHAIN_TOOL = {
+    "name": "report_event_chains",
+    "description": "Report extracted causal event chains from news articles.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "sentiment_score": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100,
+            },
+            "overall_direction": {
+                "type": "string",
+                "enum": ["bullish", "bearish", "neutral"],
+            },
+            "overall_confidence": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0,
+            },
+            "events": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "description": {"type": "string"},
+                        "category": {"type": "string"},
+                        "sentiment_direction": {
+                            "type": "string",
+                            "enum": ["bullish", "bearish", "neutral"],
+                        },
+                        "magnitude": {"type": "number"},
+                    },
+                    "required": ["description", "sentiment_direction"],
+                },
+            },
+            "cross_event_interactions": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "events": {"type": "array", "items": {"type": "integer"}},
+                        "interaction": {"type": "string"},
+                        "net_effect": {"type": "string"},
+                    },
+                },
+            },
+        },
+        "required": ["sentiment_score", "overall_direction", "overall_confidence", "events"],
+    },
+}
+
 
 class AISentimentEngine:
     """Score market sentiment for symbols using Claude AI + news data.
@@ -39,7 +138,7 @@ class AISentimentEngine:
         db_session: Optional async DB session for persisting news events.
     """
 
-    CACHE_TTL = 3600  # 60 minutes (matches sentiment task schedule)
+    CACHE_TTL = 3600  # Default 60 minutes; overridden by SENTIMENT_CACHE_TTLS per market
 
     def __init__(
         self,
@@ -111,9 +210,10 @@ class AISentimentEngine:
             for a in structured_articles[:5]
         ]
 
-        # Cache the result
+        # Cache the result (market-specific TTL)
         if self.redis and result:
-            await self._set_cached(cache_key, result)
+            ttl = SENTIMENT_CACHE_TTLS.get(market_type, self.CACHE_TTL)
+            await self._set_cached(cache_key, result, ttl=ttl)
 
         return result
 
@@ -173,6 +273,14 @@ class AISentimentEngine:
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
+                request_body: dict[str, Any] = {
+                    "model": self.settings.claude_model,
+                    "max_tokens": 800,
+                    "temperature": 0,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "tools": [EVENT_CHAIN_TOOL],
+                    "tool_choice": {"type": "tool", "name": "report_event_chains"},
+                }
                 resp = await client.post(
                     "https://api.anthropic.com/v1/messages",
                     headers={
@@ -180,11 +288,7 @@ class AISentimentEngine:
                         "anthropic-version": "2023-06-01",
                         "content-type": "application/json",
                     },
-                    json={
-                        "model": self.settings.claude_model,
-                        "max_tokens": 800,
-                        "messages": [{"role": "user", "content": prompt}],
-                    },
+                    json=request_body,
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -198,9 +302,12 @@ class AISentimentEngine:
                 symbol=symbol,
             )
 
-            # Parse JSON response
-            content = data["content"][0]["text"].strip()
-            result = json.loads(content)
+            # Extract tool_use result (guaranteed structured JSON)
+            result = self._extract_tool_result(data, "report_event_chains")
+            if result is None:
+                # Fallback: try parsing text content (backward compat)
+                content = data["content"][0]["text"].strip()
+                result = json.loads(content)
 
             # Validate and clamp values
             raw_score = result.get("sentiment_score", 50)
@@ -261,6 +368,14 @@ class AISentimentEngine:
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
+                request_body: dict[str, Any] = {
+                    "model": self.settings.claude_model,
+                    "max_tokens": 300,
+                    "temperature": 0,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "tools": [SENTIMENT_TOOL],
+                    "tool_choice": {"type": "tool", "name": "report_sentiment"},
+                }
                 resp = await client.post(
                     "https://api.anthropic.com/v1/messages",
                     headers={
@@ -268,11 +383,7 @@ class AISentimentEngine:
                         "anthropic-version": "2023-06-01",
                         "content-type": "application/json",
                     },
-                    json={
-                        "model": self.settings.claude_model,
-                        "max_tokens": 300,
-                        "messages": [{"role": "user", "content": prompt}],
-                    },
+                    json=request_body,
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -285,8 +396,11 @@ class AISentimentEngine:
                 symbol=symbol,
             )
 
-            content = data["content"][0]["text"].strip()
-            result = json.loads(content)
+            # Extract tool_use result
+            result = self._extract_tool_result(data, "report_sentiment")
+            if result is None:
+                content = data["content"][0]["text"].strip()
+                result = json.loads(content)
 
             raw_score = result.get("sentiment_score", 50)
             try:
@@ -332,9 +446,26 @@ class AISentimentEngine:
             logger.warning("Redis cache read failed for %s", key)
             return None
 
-    async def _set_cached(self, key: str, data: dict) -> None:
+    async def _set_cached(self, key: str, data: dict, ttl: int | None = None) -> None:
         """Store sentiment data in Redis cache."""
         try:
-            await self.redis.set(key, json.dumps(data), ex=self.CACHE_TTL)
+            cache_ttl = ttl if ttl is not None else self.CACHE_TTL
+            await self.redis.set(key, json.dumps(data), ex=cache_ttl)
         except Exception:
             logger.warning("Redis cache write failed for %s", key)
+
+    @staticmethod
+    def _extract_tool_result(response_data: dict, tool_name: str) -> dict | None:
+        """Extract structured result from Claude tool_use response.
+
+        Args:
+            response_data: Full Claude API response.
+            tool_name: Expected tool name.
+
+        Returns:
+            The tool input dict, or None if not found.
+        """
+        for block in response_data.get("content", []):
+            if block.get("type") == "tool_use" and block.get("name") == tool_name:
+                return block.get("input", {})
+        return None

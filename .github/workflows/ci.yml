@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   frontend:
     name: Frontend — Lint, Typecheck, Test, Build
@@ -70,3 +74,36 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           ANTHROPIC_API_KEY: test-key
           ENVIRONMENT: test
+
+  docker-build:
+    name: Docker — Build Verification
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t signalflow-backend ./backend
+
+      - name: Build frontend image
+        run: docker build -t signalflow-frontend ./frontend
+        env:
+          DOCKER_BUILDKIT: 1
+
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --detach

@@ -363,4 +363,8 @@ async def fetch_news_for_symbol_structured(
             seen.add(key)
             unique.append(article)
 
+    # Semantic deduplication (removes near-duplicate articles)
+    from app.services.ai_engine.dedup import deduplicate_articles
+    unique = deduplicate_articles(unique)
+
     return unique[:max_articles]

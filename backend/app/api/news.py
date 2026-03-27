@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +13,7 @@ from app.models.event_entity import EventEntity
 from app.models.causal_link import CausalLink
 from app.models.event_calendar import EventCalendar
 from app.models.signal_news_link import SignalNewsLink
+from app.rate_limit import limiter
 from app.schemas.news import (
     CausalChainResponse,
     CausalLinkResponse,
@@ -266,7 +267,9 @@ async def list_calendar_events(
 
 
 @router.post("/calendar", response_model=dict)
+@limiter.limit("30/minute")
 async def create_calendar_event(
+    request: Request,
     data: EventCalendarCreate,
     db: AsyncSession = Depends(get_db),
 ) -> dict:

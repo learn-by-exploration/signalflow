@@ -253,7 +253,9 @@ async def refresh(
 
 
 @router.post("/logout", response_model=dict)
+@limiter.limit("10/minute")
 async def logout(
+    request: Request,
     payload: RefreshRequest,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -283,7 +285,9 @@ async def get_profile(
 
 
 @router.post("/logout-all", response_model=dict)
+@limiter.limit("5/minute")
 async def logout_all(
+    request: Request,
     user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -303,7 +307,9 @@ async def logout_all(
 
 
 @router.put("/password", response_model=dict)
+@limiter.limit("3/minute")
 async def change_password(
+    request: Request,
     payload: ChangePasswordRequest,
     user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -327,7 +333,9 @@ async def change_password(
 
 
 @router.delete("/account", response_model=dict)
+@limiter.limit("1/minute")
 async def delete_account(
+    request: Request,
     payload: DeleteAccountRequest,
     user: AuthContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

@@ -46,6 +46,11 @@ class SignalListResponse(BaseModel):
 
     data: list[SignalResponse]
     meta: MetaResponse
+    disclaimer: str = (
+        "This is an AI-generated educational analysis tool, not investment advice. "
+        "The creator is not a SEBI-registered investment adviser. "
+        "Always do your own research before making trading decisions."
+    )
 
 
 class SignalSummary(BaseModel):

@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     api_port: int = 8000
     frontend_url: str = "http://localhost:3000"
     api_secret_key: str = ""  # Shared secret between frontend and backend
+    internal_api_key: str = ""  # Internal-only key for Celery/bot calls (separate from user-facing)
     allowed_hosts: str = ""  # Comma-separated allowed hosts for production
+    max_request_body_bytes: int = 1_048_576  # 1MB default max payload size
 
     # ── JWT Auth ──
     jwt_secret_key: str = ""  # HMAC signing key for JWT tokens
@@ -50,6 +52,15 @@ class Settings(BaseSettings):
     # ── Monitoring ──
     sentry_dsn: str = ""
 
+    # ── Payments (Razorpay) ──
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+    razorpay_webhook_secret: str = ""
+    razorpay_monthly_plan_id: str = ""  # Razorpay Plan ID for ₹499/mo
+    razorpay_annual_plan_id: str = ""   # Razorpay Plan ID for ₹4999/yr
+    pro_trial_days: int = 7             # 7-day free Pro trial
+    payment_grace_days: int = 3         # Grace period before downgrade on failed payment
+
     # ── Tracked Symbols ──
     tracked_stocks: list[str] = [
         "RELIANCE.NS",
@@ -68,6 +79,20 @@ class Settings(BaseSettings):
         "MARUTI.NS",
         "TATAMOTORS.NS",
     ]
+
+    # ── Sector Map (for portfolio risk controls) ──
+    sector_map: dict[str, str] = {
+        "HDFCBANK.NS": "banking", "ICICIBANK.NS": "banking", "SBIN.NS": "banking",
+        "KOTAKBANK.NS": "banking", "AXISBANK.NS": "banking",
+        "TCS.NS": "it", "INFY.NS": "it", "WIPRO.NS": "it", "HCLTECH.NS": "it",
+        "RELIANCE.NS": "energy", "ITC.NS": "fmcg",
+        "BHARTIARTL.NS": "telecom", "MARUTI.NS": "auto", "TATAMOTORS.NS": "auto",
+        "LT.NS": "infra",
+    }
+
+    # ── Risk Limits ──
+    max_concurrent_per_sector: int = 2
+    max_concurrent_per_market: int = 5
     tracked_crypto: list[str] = [
         "BTCUSDT",
         "ETHUSDT",

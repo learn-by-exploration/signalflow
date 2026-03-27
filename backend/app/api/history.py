@@ -179,3 +179,116 @@ async def get_symbol_track_record(
         win_rate=round(win_rate, 1),
         avg_return_pct=round(float(row.avg_return or 0), 2),
     )
+
+
+@router.get("/performance", response_model=dict)
+async def get_performance_by_market(
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Get signal win rates broken down by market type and signal type.
+
+    Returns performance metrics for each market (stock/crypto/forex) and
+    each signal type (STRONG_BUY/BUY/SELL/STRONG_SELL).
+    """
+    since = datetime.now(timezone.utc) - timedelta(days=90)
+
+    stmt = (
+        select(
+            Signal.market_type,
+            Signal.signal_type,
+            func.count(SignalHistory.id).label("total"),
+            func.count(SignalHistory.id).filter(
+                SignalHistory.outcome == "hit_target"
+            ).label("hit_target"),
+            func.count(SignalHistory.id).filter(
+                SignalHistory.outcome == "hit_stop"
+            ).label("hit_stop"),
+            func.avg(SignalHistory.return_pct).label("avg_return"),
+        )
+        .join(Signal, Signal.id == SignalHistory.signal_id)
+        .where(SignalHistory.outcome.in_(["hit_target", "hit_stop"]))
+        .where(SignalHistory.created_at >= since)
+        .group_by(Signal.market_type, Signal.signal_type)
+    )
+
+    result = await db.execute(stmt)
+    rows = result.all()
+
+    performance: dict = {}
+    for row in rows:
+        market = row.market_type
+        if market not in performance:
+            performance[market] = {"total": 0, "hit_target": 0, "hit_stop": 0, "by_signal_type": {}}
+        ht = row.hit_target or 0
+        hs = row.hit_stop or 0
+        total = ht + hs
+        performance[market]["total"] += total
+        performance[market]["hit_target"] += ht
+        performance[market]["hit_stop"] += hs
+        performance[market]["by_signal_type"][row.signal_type] = {
+            "total": total,
+            "hit_target": ht,
+            "hit_stop": hs,
+            "win_rate": round(ht / total * 100, 1) if total > 0 else 0.0,
+            "avg_return": round(float(row.avg_return or 0), 2),
+        }
+
+    # Calculate overall win rates per market
+    for market in performance:
+        m = performance[market]
+        resolved = m["hit_target"] + m["hit_stop"]
+        m["win_rate"] = round(m["hit_target"] / resolved * 100, 1) if resolved > 0 else 0.0
+
+    return {"data": performance}
+
+
+@router.get("/streak-check", response_model=dict)
+async def check_streak(
+    market_type: str | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Check for losing streak (3+ consecutive stop-losses).
+
+    Returns streak status with recommendation if active.
+    """
+    from app.services.signal_gen.streak_protection import check_losing_streak
+
+    result = await check_losing_streak(db, market_type=market_type)
+    return {"data": result}
+
+
+@router.get("/calibration", response_model=dict)
+async def get_calibration_curve(
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Get the confidence-to-win-rate calibration curve.
+
+    Maps confidence bins to actual historical win probabilities.
+    Requires 90+ days of resolved signal data for reliability.
+    """
+    from app.services.signal_gen.calibration import (
+        apply_isotonic_smoothing,
+        compute_calibration_curve,
+    )
+
+    # Fetch all resolved signals with confidence and outcome
+    query = (
+        select(SignalHistory, Signal.confidence)
+        .join(Signal, SignalHistory.signal_id == Signal.id)
+        .where(SignalHistory.outcome.in_(["hit_target", "hit_stop"]))
+    )
+    result = await db.execute(query)
+    rows = result.all()
+
+    resolved_signals = [
+        {"confidence": row.confidence, "outcome": row.SignalHistory.outcome}
+        for row in rows
+    ]
+
+    calibration = compute_calibration_curve(resolved_signals)
+
+    # Apply isotonic smoothing if we have enough data
+    if calibration["is_calibrated"]:
+        calibration["bins"] = apply_isotonic_smoothing(calibration["bins"])
+
+    return {"data": calibration}

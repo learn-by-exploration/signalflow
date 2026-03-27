@@ -16,6 +16,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "app.tasks.data_tasks.fetch_forex",
         "schedule": 60.0,
     },
+    # ── Multi-Timeframe Data (Confirmation) ──
+    "fetch-crypto-daily": {
+        "task": "app.tasks.data_tasks.fetch_crypto_daily",
+        "schedule": 3600.0,  # Every hour — daily candle doesn't change fast
+    },
+    "fetch-forex-4h": {
+        "task": "app.tasks.data_tasks.fetch_forex_4h",
+        "schedule": 900.0,  # Every 15 min — 4h candle
+    },
     # ── Analysis ──
     "run-technical-analysis": {
         "task": "app.tasks.analysis_tasks.run_analysis",
@@ -70,5 +79,29 @@ CELERY_BEAT_SCHEDULE = {
     "seed-calendar-events": {
         "task": "app.tasks.calendar_tasks.seed_calendar_events",
         "schedule": crontab(hour=6, minute=0),  # 6:00 AM IST daily
+    },
+    # ── Pipeline Health ──
+    "pipeline-health-check": {
+        "task": "app.tasks.alert_tasks.pipeline_health_check",
+        "schedule": 900.0,  # Every 15 minutes
+    },
+    # ── Subscription Management ──
+    "check-expired-subscriptions": {
+        "task": "app.tasks.subscription_tasks.check_expired_subscriptions",
+        "schedule": 3600.0,  # Every hour
+    },
+    # ── SEO Content Generation ──
+    "generate-seo-pages": {
+        "task": "app.tasks.seo_tasks.generate_seo_pages",
+        "schedule": crontab(hour=8, minute=30),  # 8:30 AM IST daily (after morning brief)
+    },
+    # ── Engagement ──
+    "free-tier-weekly-digest": {
+        "task": "app.tasks.engagement_tasks.send_free_tier_digest",
+        "schedule": crontab(hour=18, minute=30, day_of_week=0),  # Sunday 6:30 PM IST
+    },
+    "reengagement-nudge": {
+        "task": "app.tasks.engagement_tasks.send_reengagement_nudge",
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),  # Wednesday 10 AM IST
     },
 }

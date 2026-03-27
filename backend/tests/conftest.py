@@ -1,8 +1,12 @@
 """Shared test fixtures for SignalFlow backend tests."""
 
 import asyncio
+import os
 from collections.abc import AsyncGenerator, Generator
 from datetime import datetime, timezone
+
+# Disable rate limiting during tests
+os.environ.setdefault("TESTING", "1")
 from decimal import Decimal
 from uuid import uuid4, UUID as PyUUID
 
@@ -266,7 +270,7 @@ async def test_client(seeded_db):
                 raise
 
     async def override_require_auth() -> AuthContext:
-        return AuthContext(auth_type="api_key")
+        return AuthContext(auth_type="api_key", user_id="00000000-0000-0000-0000-000000000099", tier="pro")
 
     async def override_get_current_user() -> AuthContext:
         return AuthContext(
@@ -296,7 +300,7 @@ async def client() -> AsyncGenerator:
     from app.main import app
 
     async def override_require_auth() -> AuthContext:
-        return AuthContext(auth_type="api_key")
+        return AuthContext(auth_type="api_key", user_id="00000000-0000-0000-0000-000000000099", tier="pro")
 
     async def override_get_current_user() -> AuthContext:
         return AuthContext(

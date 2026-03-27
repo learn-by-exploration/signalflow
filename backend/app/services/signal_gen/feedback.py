@@ -30,10 +30,14 @@ DEFAULT_WEIGHTS = {
 }
 
 # How strongly to shift toward learned weights vs defaults (0.0 = all default, 1.0 = all learned)
-LEARNING_RATE = 0.3
+LEARNING_RATE = 0.4
 
 # Minimum resolved signals needed to start adjusting weights
-MIN_SIGNALS_FOR_ADJUSTMENT = 20
+MIN_SIGNALS_FOR_ADJUSTMENT = 50
+
+# Weight bounds — no single indicator can dominate or be zeroed out
+MIN_WEIGHT = 0.05
+MAX_WEIGHT = 0.40
 
 
 async def compute_indicator_accuracy(
@@ -158,6 +162,20 @@ async def compute_adaptive_weights(
     # Normalize to sum to 1.0
     total = sum(adjusted.values())
     adjusted = {k: v / total for k, v in adjusted.items()}
+
+    # Enforce weight bounds
+    clamped = False
+    for key in adjusted:
+        if adjusted[key] < MIN_WEIGHT:
+            adjusted[key] = MIN_WEIGHT
+            clamped = True
+        elif adjusted[key] > MAX_WEIGHT:
+            adjusted[key] = MAX_WEIGHT
+            clamped = True
+    if clamped:
+        # Re-normalize after clamping
+        total = sum(adjusted.values())
+        adjusted = {k: v / total for k, v in adjusted.items()}
 
     logger.info(
         "Feedback loop: adjusted weights for %s — %s",

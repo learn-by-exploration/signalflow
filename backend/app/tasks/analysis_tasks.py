@@ -78,8 +78,16 @@ def _run_analysis_sync() -> dict:
     return {"status": "ok", "analyzed": analyzed, "errors": errors}
 
 
-@celery_app.task(name="app.tasks.analysis_tasks.run_analysis")
-def run_analysis() -> dict:
+@celery_app.task(
+    name="app.tasks.analysis_tasks.run_analysis",
+    bind=True,
+    autoretry_for=(ConnectionError,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_jitter=True,
+    max_retries=2,
+)
+def run_analysis(self) -> dict:
     """Run technical indicators on latest market data for all tracked symbols."""
     logger.info("Running technical analysis")
     return _run_analysis_sync()

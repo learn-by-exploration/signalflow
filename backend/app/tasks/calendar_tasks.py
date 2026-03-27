@@ -13,8 +13,16 @@ from app.tasks.celery_app import celery_app
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="app.tasks.calendar_tasks.seed_calendar_events")
-def seed_calendar_events() -> dict:
+@celery_app.task(
+    name="app.tasks.calendar_tasks.seed_calendar_events",
+    bind=True,
+    autoretry_for=(ConnectionError,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_jitter=True,
+    max_retries=1,
+)
+def seed_calendar_events(self) -> dict:
     """Seed upcoming earnings dates and central bank events into event_calendar.
 
     Idempotent — checks for existing events by title before inserting.

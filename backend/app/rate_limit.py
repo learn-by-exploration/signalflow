@@ -1,6 +1,7 @@
 """Rate limiter instance shared across the application."""
 
 import logging
+import os
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -13,4 +14,10 @@ def _key_func_with_logging(request):
     return get_remote_address(request)
 
 
-limiter = Limiter(key_func=_key_func_with_logging, default_limits=["60/minute"])
+# Disable rate limiting during tests (TESTING=1 env var)
+_enabled = os.environ.get("TESTING", "0") != "1"
+limiter = Limiter(
+    key_func=_key_func_with_logging,
+    default_limits=["60/minute"],
+    enabled=_enabled,
+)

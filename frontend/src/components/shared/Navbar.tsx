@@ -9,18 +9,12 @@ import { NotificationCenter } from './NotificationCenter';
 
 const PRIMARY_LINKS = [
   { href: '/', label: 'Dashboard' },
-  { href: '/news', label: 'News' },
   { href: '/track-record', label: 'Track Record' },
   { href: '/alerts', label: 'Alerts' },
 ];
 
 const MORE_LINKS = [
-  { href: '/watchlist', label: 'Watchlist' },
-  { href: '/calendar', label: 'Calendar' },
   { href: '/history', label: 'Signal History' },
-  { href: '/portfolio', label: 'Portfolio' },
-  { href: '/backtest', label: 'Backtest' },
-  { href: '/brief', label: 'Daily Brief' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/settings', label: 'Settings' },
 ];
@@ -32,8 +26,6 @@ const MOBILE_NAV_GROUPS = [
     icon: '📊',
     links: [
       { href: '/', label: 'Dashboard' },
-      { href: '/news', label: 'News' },
-      { href: '/calendar', label: 'Calendar' },
     ],
   },
   {
@@ -42,17 +34,13 @@ const MOBILE_NAV_GROUPS = [
     links: [
       { href: '/track-record', label: 'Track Record' },
       { href: '/history', label: 'Signal History' },
-      { href: '/backtest', label: 'Backtest' },
-      { href: '/brief', label: 'Daily Brief' },
     ],
   },
   {
     title: 'Account',
     icon: '👤',
     links: [
-      { href: '/portfolio', label: 'Portfolio' },
       { href: '/alerts', label: 'Alerts' },
-      { href: '/watchlist', label: 'Watchlist' },
       { href: '/settings', label: 'Settings' },
     ],
   },
@@ -60,7 +48,6 @@ const MOBILE_NAV_GROUPS = [
 
 const PUBLIC_LINKS = [
   { href: '/how-it-works', label: 'How It Works' },
-  { href: '/pricing', label: 'Pricing' },
 ];
 
 export function Navbar() {
@@ -106,14 +93,7 @@ export function Navbar() {
           {isAuth ? (
             <div className="hidden md:flex items-center gap-0.5">
               {/* Top-level links: most used pages */}
-              {[
-                { href: '/', label: 'Dashboard' },
-                { href: '/news', label: 'News' },
-                { href: '/track-record', label: 'Track Record' },
-                { href: '/alerts', label: 'Alerts' },
-                { href: '/history', label: 'History' },
-                { href: '/portfolio', label: 'Portfolio' },
-              ].map((link) => {
+              {PRIMARY_LINKS.map((link) => {
                 const isActive = pathname === link.href;
                 const showBadge = link.href === '/' && unseenCount > 0 && !isActive;
                 return (
@@ -150,32 +130,7 @@ export function Navbar() {
                     className="absolute right-0 mt-1 bg-bg-secondary border border-border-default rounded-lg shadow-lg py-1 min-w-[180px] z-50"
                     onMouseLeave={() => setMoreOpen(false)}
                   >
-                    <p className="px-4 py-1 text-xs text-text-muted uppercase tracking-wider">Tools</p>
-                    {[
-                      { href: '/backtest', label: 'Backtest' },
-                      { href: '/watchlist', label: 'Watchlist' },
-                      { href: '/calendar', label: 'Calendar' },
-                      { href: '/brief', label: 'Daily Brief' },
-                    ].map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={() => setMoreOpen(false)}
-                        className={`block px-4 py-2 text-sm transition-colors ${
-                          pathname === link.href
-                            ? 'text-accent-purple bg-accent-purple/5'
-                            : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.03]'
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                    <div className="border-t border-border-default my-1" />
-                    <p className="px-4 py-1 text-xs text-text-muted uppercase tracking-wider">Help</p>
-                    {[
-                      { href: '/how-it-works', label: 'How It Works' },
-                      { href: '/settings', label: 'Settings' },
-                    ].map((link) => (
+                    {MORE_LINKS.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}

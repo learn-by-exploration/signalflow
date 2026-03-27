@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import httpx
 import redis.asyncio as aioredis
 
 from app.config import get_settings
@@ -120,8 +121,16 @@ async def _run_sentiment_async() -> dict:
         await redis_client.aclose()
 
 
-@celery_app.task(name="app.tasks.ai_tasks.run_sentiment")
-def run_sentiment() -> dict:
+@celery_app.task(
+    name="app.tasks.ai_tasks.run_sentiment",
+    bind=True,
+    autoretry_for=(ConnectionError, httpx.HTTPStatusError),
+    retry_backoff=True,
+    retry_backoff_max=120,
+    retry_jitter=True,
+    max_retries=2,
+)
+def run_sentiment(self) -> dict:
     """Run Claude AI sentiment analysis on recent news for all tracked symbols."""
     logger.info("Running sentiment analysis")
     return asyncio.run(_run_sentiment_async())
@@ -131,38 +140,39 @@ async def _expire_stale_events_async() -> dict:
     """Mark event entities as expired based on their category-specific TTLs."""
     from datetime import timezone as tz
     from sqlalchemy import update
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-    from app.config import get_settings
-    from app.database import Base
     from app.models.event_entity import EventEntity
+    from app.tasks._engine import get_task_session_factory
 
-    settings = get_settings()
-    engine = create_async_engine(settings.database_url)
-    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    session_factory = get_task_session_factory()
 
     now = datetime.now(tz.utc)
     expired = 0
 
-    try:
-        async with session_factory() as session:
-            # Expire events past their expires_at timestamp
-            stmt = (
-                update(EventEntity)
-                .where(EventEntity.expires_at <= now)
-                .values(expires_at=now)
-            )
-            result = await session.execute(stmt)
-            expired = result.rowcount
-            await session.commit()
-    finally:
-        await engine.dispose()
+    async with session_factory() as session:
+        # Expire events past their expires_at timestamp
+        stmt = (
+            update(EventEntity)
+            .where(EventEntity.expires_at <= now)
+            .values(expires_at=now)
+        )
+        result = await session.execute(stmt)
+        expired = result.rowcount
+        await session.commit()
 
     return {"expired_events": expired}
 
 
-@celery_app.task(name="app.tasks.ai_tasks.expire_stale_events")
-def expire_stale_events() -> dict:
+@celery_app.task(
+    name="app.tasks.ai_tasks.expire_stale_events",
+    bind=True,
+    autoretry_for=(ConnectionError,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_jitter=True,
+    max_retries=1,
+)
+def expire_stale_events(self) -> dict:
     """Expire event entities that have passed their TTL."""
     logger.info("Expiring stale event entities")
     return asyncio.run(_expire_stale_events_async())

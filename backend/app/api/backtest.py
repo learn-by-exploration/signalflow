@@ -3,20 +3,25 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import AuthContext, require_tier
 from app.database import get_db
 from app.models.backtest import BacktestRun
+from app.rate_limit import limiter
 from app.schemas.p3 import BacktestCreate, BacktestData
 
 router = APIRouter(prefix="/backtest", tags=["backtest"])
 
 
 @router.post("/run", response_model=dict, status_code=201)
+@limiter.limit("3/hour")
 async def start_backtest(
+    request: Request,
     payload: BacktestCreate,
+    auth: AuthContext = Depends(require_tier("pro")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Kick off a backtest run for a symbol.

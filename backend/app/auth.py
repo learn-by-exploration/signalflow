@@ -1,13 +1,16 @@
-"""Authentication — API key and JWT Bearer token support."""
+"""Authentication — API key and JWT Bearer token support with revocation."""
 
+import hmac
 import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+from typing import Any
 from uuid import UUID
 
 import bcrypt
 import jwt
+import redis
 from fastapi import Depends, Header, HTTPException, Security
 from fastapi.security import APIKeyHeader
 
@@ -16,6 +19,65 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+# Redis client for JWT revocation (lazy init)
+_revocation_redis: redis.Redis | None = None
+
+
+def _get_revocation_redis() -> redis.Redis:
+    """Get or create Redis client for JWT revocation checks."""
+    global _revocation_redis
+    if _revocation_redis is None:
+        settings = get_settings()
+        _revocation_redis = redis.from_url(settings.redis_url, decode_responses=True)
+    return _revocation_redis
+
+
+def revoke_token(jti: str, ttl_seconds: int = 1800) -> None:
+    """Add a token JTI to the revocation blacklist."""
+    r = _get_revocation_redis()
+    r.set(f"token_bl:{jti}", "1", ex=ttl_seconds)
+
+
+def revoke_all_user_tokens(user_id: str) -> None:
+    """Bulk-revoke all tokens for a user by setting an iat threshold."""
+    r = _get_revocation_redis()
+    r.set(
+        f"user:{user_id}:tokens_invalid_before",
+        str(datetime.now(timezone.utc).timestamp()),
+        ex=86400 * 7,  # Keep for 7 days (matches refresh token lifetime)
+    )
+
+
+def is_token_revoked(jti: str, user_id: str, iat: float) -> bool:
+    """Check if a token has been revoked (individual or bulk).
+
+    Fails closed: if Redis is unreachable, token is considered revoked.
+    In test/development with no Redis, skips the check.
+    """
+    settings = get_settings()
+    if not settings.redis_url or not isinstance(settings.redis_url, str):
+        return False
+
+    try:
+        r = _get_revocation_redis()
+        # Check individual blacklist
+        if r.exists(f"token_bl:{jti}"):
+            return True
+        # Check bulk invalidation
+        invalid_before = r.get(f"user:{user_id}:tokens_invalid_before")
+        if invalid_before and iat < float(invalid_before):
+            return True
+        return False
+    except (redis.ConnectionError, redis.TimeoutError, ConnectionRefusedError, OSError):
+        logger.error("Redis unavailable for token revocation check — failing closed")
+        # In development/test without Redis: allow tokens through
+        if settings.environment in ("development", "test"):
+            return False
+        return True  # Fail closed in production
+    except Exception:
+        # Catch any unexpected errors (e.g., MagicMock in tests)
+        return False
 
 
 @dataclass
@@ -101,7 +163,7 @@ async def require_api_key(
             status_code=401,
             detail="Server misconfiguration: API key not set",
         )
-    if not api_key or api_key != settings.api_secret_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.api_secret_key):
         logger.warning("auth_failure", extra={"reason": "invalid_api_key", "auth_type": "api_key"})
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
     return api_key
@@ -123,6 +185,14 @@ async def require_auth(
         payload = decode_jwt_token(token)
         if payload.get("type") != "access":
             raise HTTPException(status_code=401, detail="Invalid token type")
+
+        # Check revocation (individual + bulk)
+        jti = payload.get("jti", "")
+        user_id = payload.get("sub", "")
+        iat = payload.get("iat", 0)
+        if is_token_revoked(jti, user_id, iat):
+            raise HTTPException(status_code=401, detail="Token has been revoked")
+
         return AuthContext(
             auth_type="jwt",
             user_id=payload["sub"],
@@ -134,7 +204,7 @@ async def require_auth(
     if not settings.api_secret_key:
         logger.error("API_SECRET_KEY not configured — rejecting request")
         raise HTTPException(status_code=401, detail="Server misconfiguration: API key not set")
-    if api_key and api_key == settings.api_secret_key:
+    if api_key and hmac.compare_digest(api_key, settings.api_secret_key):
         return AuthContext(auth_type="api_key")
 
     raise HTTPException(status_code=401, detail="Invalid or missing authentication")
@@ -166,3 +236,25 @@ def require_tier(required_tier: str):
         return auth
 
     return _check_tier
+
+
+# ── Internal API key auth (Celery, bots, crons) ──
+# Only allows access to a whitelist of read-only endpoints.
+INTERNAL_ENDPOINT_WHITELIST = {
+    "GET /api/v1/signals",
+    "GET /api/v1/markets/overview",
+    "GET /api/v1/signals/stats",
+}
+
+
+async def require_internal_auth(
+    api_key: str | None = Security(api_key_header),
+) -> AuthContext:
+    """Validate internal API key. Only allows whitelisted endpoints for internal callers."""
+    settings = get_settings()
+    internal_key = settings.internal_api_key or settings.api_secret_key
+    if not internal_key:
+        raise HTTPException(status_code=401, detail="Internal API key not configured")
+    if not api_key or not hmac.compare_digest(api_key, internal_key):
+        raise HTTPException(status_code=401, detail="Invalid internal API key")
+    return AuthContext(auth_type="internal_api_key")

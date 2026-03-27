@@ -20,6 +20,7 @@ MIN_PERIODS = {
     "volume": 20,
     "sma": 200,
     "atr": 15,
+    "adx": 28,
 }
 
 
@@ -368,6 +369,95 @@ class TechnicalAnalyzer:
             "suggested_stop_distance": round(atr_value * 1.0, 4),
         }
 
+    def compute_adx(self, period: int = 14) -> dict[str, Any]:
+        """Compute Average Directional Index with +DI/-DI.
+
+        ADX measures trend strength (not direction). +DI/-DI indicate direction.
+        This is a META-indicator used to adjust other indicator weights.
+
+        Args:
+            period: ADX lookback period.
+
+        Returns:
+            Dict with value (ADX), plus_di, minus_di, signal, and strength.
+        """
+        if len(self.df) < period * 2:
+            return {
+                "value": None, "plus_di": None, "minus_di": None,
+                "signal": "insufficient_data", "strength": 0,
+            }
+
+        high = self.df["high"].astype(float)
+        low = self.df["low"].astype(float)
+        close = self.df["close"].astype(float)
+
+        # True Range
+        tr1 = high - low
+        tr2 = (high - close.shift(1)).abs()
+        tr3 = (low - close.shift(1)).abs()
+        true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+        # Directional Movement
+        up_move = high - high.shift(1)
+        down_move = low.shift(1) - low
+
+        plus_dm = pd.Series(
+            np.where((up_move > down_move) & (up_move > 0), up_move, 0.0),
+            index=self.df.index,
+        )
+        minus_dm = pd.Series(
+            np.where((down_move > up_move) & (down_move > 0), down_move, 0.0),
+            index=self.df.index,
+        )
+
+        # Smoothed TR and DM (Wilder's smoothing)
+        atr_smooth = true_range.rolling(window=period).mean()
+        plus_dm_smooth = plus_dm.rolling(window=period).mean()
+        minus_dm_smooth = minus_dm.rolling(window=period).mean()
+
+        # +DI and -DI
+        plus_di = 100 * (plus_dm_smooth / atr_smooth)
+        minus_di = 100 * (minus_dm_smooth / atr_smooth)
+
+        # DX and ADX
+        di_sum = plus_di + minus_di
+        di_diff = (plus_di - minus_di).abs()
+        dx = 100 * (di_diff / di_sum.replace(0, np.nan))
+
+        adx = dx.rolling(window=period).mean()
+
+        adx_val = float(adx.iloc[-1])
+        plus_di_val = float(plus_di.iloc[-1])
+        minus_di_val = float(minus_di.iloc[-1])
+
+        if np.isnan(adx_val):
+            return {
+                "value": None, "plus_di": None, "minus_di": None,
+                "signal": "insufficient_data", "strength": 0,
+            }
+
+        # Classify regime
+        if adx_val < 20:
+            signal = "ranging"
+            strength = int(max(0, 50 - adx_val * 2.5))
+        elif adx_val < 25:
+            signal = "transitioning"
+            strength = 50
+        elif adx_val < 50:
+            signal = "trending"
+            strength = int(min(80, 50 + (adx_val - 25)))
+        else:
+            signal = "strong_trend"
+            strength = int(min(100, 70 + (adx_val - 50)))
+
+        return {
+            "value": round(adx_val, 2),
+            "plus_di": round(plus_di_val, 2),
+            "minus_di": round(minus_di_val, 2),
+            "signal": signal,
+            "strength": strength,
+        }
+
     def full_analysis(self) -> dict[str, Any]:
         """Run all indicators and return a combined analysis dict.
 
@@ -385,5 +475,6 @@ class TechnicalAnalyzer:
             "volume": self.compute_volume_ratio(),
             "sma_cross": self.compute_sma_cross(),
             "atr": self.compute_atr(),
+            "adx": self.compute_adx(),
             "recent_closes": recent_closes,
         }

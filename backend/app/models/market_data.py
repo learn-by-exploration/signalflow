@@ -23,6 +23,7 @@ class MarketData(Base):
     low: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
     close: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
     volume: Mapped[Decimal | None] = mapped_column(Numeric(20, 4), nullable=True)
+    timeframe: Mapped[str] = mapped_column(String(10), nullable=False, server_default="1d")
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -30,6 +31,11 @@ class MarketData(Base):
 
     __table_args__ = (
         Index("idx_market_data_symbol_time", "symbol", timestamp.desc()),
+        Index(
+            "idx_market_data_unique",
+            "symbol", "timestamp", "timeframe", "market_type",
+            unique=True,
+        ),
         CheckConstraint('"open" > 0', name="ck_market_data_open"),
         CheckConstraint('"high" > 0', name="ck_market_data_high"),
         CheckConstraint('"low" > 0', name="ck_market_data_low"),

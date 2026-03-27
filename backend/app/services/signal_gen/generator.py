@@ -23,6 +23,11 @@ from app.services.analysis.indicators import TechnicalAnalyzer
 from app.services.signal_gen.scorer import compute_final_confidence
 from app.services.signal_gen.targets import calculate_targets
 from app.services.signal_gen.feedback import compute_adaptive_weights
+from app.services.signal_gen.mtf_confirmation import (
+    CONFIRMATION_TIMEFRAMES,
+    apply_mtf_confirmation,
+    compute_confirmation_score,
+)
 from app.services.data_ingestion.validators import is_spot_only_candle
 
 logger = logging.getLogger(__name__)
@@ -154,6 +159,18 @@ class SignalGenerator:
             technical_data, sentiment_data, adaptive_weights=adaptive_weights
         )
 
+        # 4b. Multi-timeframe confirmation
+        tf_config = CONFIRMATION_TIMEFRAMES.get(market_type)
+        if tf_config and tf_config["confirmation"] != tf_config["primary"]:
+            df_confirm = await self._fetch_market_data(
+                symbol, timeframe=tf_config["confirmation"]
+            )
+            if df_confirm is not None and len(df_confirm) >= 20:
+                confirm_score = compute_confirmation_score(df_confirm)
+                confidence, signal_type = apply_mtf_confirmation(
+                    confidence, signal_type, confirm_score
+                )
+
         # Skip HOLD signals — only generate actionable signals
         if signal_type == "HOLD":
             logger.debug("HOLD signal for %s (confidence=%d), skipping", symbol, confidence)
@@ -212,8 +229,12 @@ class SignalGenerator:
 
         return signal
 
-    async def _fetch_market_data(self, symbol: str) -> pd.DataFrame | None:
+    async def _fetch_market_data(self, symbol: str, timeframe: str = "1d") -> pd.DataFrame | None:
         """Fetch the latest OHLCV data from the database for a symbol.
+
+        Args:
+            symbol: Market symbol to fetch data for.
+            timeframe: Data timeframe — '1d', '4h', '1h', '1w'. Defaults to '1d'.
 
         Returns a pandas DataFrame sorted by timestamp ascending, or None.
         """
@@ -230,6 +251,7 @@ class SignalGenerator:
                 MarketData.timestamp,
             )
             .where(MarketData.symbol == query_symbol)
+            .where(MarketData.timeframe == timeframe)
             .order_by(MarketData.timestamp.desc())
             .limit(250)  # ~1 year of daily data
         )

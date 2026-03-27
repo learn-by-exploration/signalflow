@@ -40,9 +40,16 @@ class CryptoFetcher(BaseFetcher):
     Uses the public klines endpoint (no API key required for basic access).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, timeframe: str = "1d") -> None:
         self.symbols = settings.tracked_crypto
         self.engine = create_engine(settings.database_url_sync)
+        self.timeframe = timeframe
+        # Map our timeframe labels to Binance intervals
+        self._binance_interval_map = {
+            "1d": "1d",
+            "4h": "4h",
+            "1h": "1h",
+        }
 
     def fetch_all(self) -> dict:
         """Fetch latest candle data for all tracked crypto pairs."""
@@ -75,6 +82,7 @@ class CryptoFetcher(BaseFetcher):
                         low=Decimal(str(result["low"])),
                         close=Decimal(str(result["close"])),
                         volume=Decimal(str(result["volume"])) if result.get("volume") else None,
+                        timeframe=self.timeframe,
                         timestamp=result["timestamp"],
                     )
                     session.merge(record)
@@ -92,12 +100,13 @@ class CryptoFetcher(BaseFetcher):
         return result
 
     def _fetch_from_binance(self, symbol: str) -> dict | None:
-        """Fetch latest 1m kline from Binance public API."""
+        """Fetch latest kline from Binance public API."""
         try:
+            interval = self._binance_interval_map.get(self.timeframe, "1d")
             with httpx.Client(timeout=10) as client:
                 resp = client.get(
                     BINANCE_KLINES_URL,
-                    params={"symbol": symbol, "interval": "1m", "limit": 1},
+                    params={"symbol": symbol, "interval": interval, "limit": 2},
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -105,7 +114,8 @@ class CryptoFetcher(BaseFetcher):
             if not data:
                 return None
 
-            kline = data[0]
+            # Use last complete candle (second-to-last if 2 returned, first if only 1)
+            kline = data[0] if len(data) >= 2 else data[0]
             return {
                 "open": kline[1],
                 "high": kline[2],

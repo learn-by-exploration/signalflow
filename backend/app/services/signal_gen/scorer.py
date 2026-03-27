@@ -21,10 +21,10 @@ TECHNICAL_WEIGHTS = {
     "sma_cross": 0.25,
 }
 
-# Chain-aware blend: 50% technical + 35% event chain + 15% sentiment residual
-TECHNICAL_BLEND = 0.50
-CHAIN_BLEND = 0.35
-SENTIMENT_BLEND = 0.15
+# Chain-aware blend: 65% technical + 25% event chain + 10% sentiment residual
+TECHNICAL_BLEND = 0.65
+CHAIN_BLEND = 0.25
+SENTIMENT_BLEND = 0.10
 
 # Signal thresholds from CLAUDE.md
 SIGNAL_THRESHOLDS = [
@@ -37,6 +37,29 @@ SIGNAL_THRESHOLDS = [
 
 # When AI is unavailable, cap confidence at 60%
 NO_AI_CONFIDENCE_CAP = 60
+
+# ADX regime-based weight adjustments (meta-indicator)
+RANGING_WEIGHTS = {"rsi": 0.35, "bollinger": 0.35, "macd": 0.05, "sma_cross": 0.05, "volume": 0.20}
+TRENDING_WEIGHTS = {"rsi": 0.10, "bollinger": 0.10, "macd": 0.30, "sma_cross": 0.30, "volume": 0.20}
+
+
+def _get_adx_adjusted_weights(technical_data: dict[str, Any]) -> dict[str, float] | None:
+    """Return regime-adjusted weights based on ADX, or None for defaults.
+
+    ADX < 20: ranging → favor mean-reversion (RSI, Bollinger)
+    ADX 20-25: transitioning → use defaults
+    ADX > 25: trending → favor trend-following (MACD, SMA cross)
+    """
+    adx = technical_data.get("adx", {})
+    adx_val = adx.get("value")
+    if adx_val is None:
+        return None
+
+    if adx_val < 20:
+        return RANGING_WEIGHTS
+    elif adx_val > 25:
+        return TRENDING_WEIGHTS
+    return None  # Transitioning → use defaults
 
 
 def _indicator_to_score(indicator: dict[str, Any]) -> float:
@@ -105,7 +128,12 @@ def compute_final_confidence(
     Returns:
         Tuple of (confidence 0-100, signal_type string).
     """
-    tech_score = compute_technical_score(technical_data, weights=adaptive_weights)
+    # Apply ADX regime-based weight adjustment if no adaptive weights provided
+    effective_weights = adaptive_weights
+    if effective_weights is None:
+        effective_weights = _get_adx_adjusted_weights(technical_data)
+
+    tech_score = compute_technical_score(technical_data, weights=effective_weights)
 
     has_sentiment = (
         sentiment_data is not None
@@ -129,8 +157,8 @@ def compute_final_confidence(
                 + sent_score * SENTIMENT_BLEND
             )
         else:
-            # No chains extracted — fallback to 60/40 tech/sentiment
-            final = tech_score * 0.60 + sent_score * 0.40
+            # No chains extracted — fallback to 85/15 tech/sentiment
+            final = tech_score * 0.85 + sent_score * 0.15
     else:
         # No AI → use technical only, capped per CLAUDE.md
         final = tech_score

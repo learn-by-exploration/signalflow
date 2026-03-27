@@ -119,8 +119,16 @@ async def _notify_triggered_alerts(triggered: list[dict]) -> int:
     return sent
 
 
-@celery_app.task(name="app.tasks.price_alert_tasks.check_price_alerts")
-def check_price_alerts() -> dict:
+@celery_app.task(
+    name="app.tasks.price_alert_tasks.check_price_alerts",
+    bind=True,
+    autoretry_for=(ConnectionError,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_jitter=True,
+    max_retries=2,
+)
+def check_price_alerts(self) -> dict:
     """Check all price alerts and send notifications for triggered ones."""
     logger.info("Checking price alerts")
     triggered = _check_alerts_sync()

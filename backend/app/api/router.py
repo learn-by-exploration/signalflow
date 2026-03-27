@@ -16,6 +16,9 @@ from app.api.feedback import router as feedback_router
 from app.api.news import router as news_router
 from app.api.auth_routes import router as auth_router
 from app.api.signal_feedback import router as signal_feedback_router
+from app.api.payments import router as payments_router
+from app.api.seo import router as seo_router
+from app.api.admin import router as admin_router
 
 # Protected routes — require API key or JWT
 api_router = APIRouter(prefix="/api/v1", dependencies=[Depends(require_auth)])
@@ -31,6 +34,8 @@ api_router.include_router(backtest_router)
 api_router.include_router(feedback_router)
 api_router.include_router(news_router)
 api_router.include_router(signal_feedback_router)
+api_router.include_router(payments_router)
+api_router.include_router(admin_router)
 
 # Public routes — no API key required (shared signal view)
 # Sharing router has both public (GET /shared) and protected (POST /share) routes
@@ -40,3 +45,4 @@ api_router.include_router(sharing_router)
 # Auth routes — public (no auth required)
 public_router = APIRouter(prefix="/api/v1")
 public_router.include_router(auth_router)
+public_router.include_router(seo_router)

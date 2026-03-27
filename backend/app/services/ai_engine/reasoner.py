@@ -1,8 +1,10 @@
 """Signal reasoning generator using Claude AI.
 
 Produces human-readable explanations for generated trading signals.
+Uses Claude tool_use for structured output when generating reasoning.
 """
 
+import json
 import logging
 from typing import Any
 
@@ -13,6 +15,22 @@ from app.services.ai_engine.cost_tracker import CostTracker
 from app.services.ai_engine.prompts import REASONING_PROMPT
 
 logger = logging.getLogger(__name__)
+
+# Claude tool_use schema for reasoning output
+REASONING_TOOL = {
+    "name": "report_reasoning",
+    "description": "Report the signal reasoning explanation.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "explanation": {
+                "type": "string",
+                "description": "2-3 sentence explanation of the signal, framed as analysis not advice.",
+            },
+        },
+        "required": ["explanation"],
+    },
+}
 
 
 class AIReasoner:
@@ -59,6 +77,14 @@ class AIReasoner:
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
+                request_body: dict[str, Any] = {
+                    "model": self.settings.claude_model,
+                    "max_tokens": 200,
+                    "temperature": 0,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "tools": [REASONING_TOOL],
+                    "tool_choice": {"type": "tool", "name": "report_reasoning"},
+                }
                 resp = await client.post(
                     "https://api.anthropic.com/v1/messages",
                     headers={
@@ -66,11 +92,7 @@ class AIReasoner:
                         "anthropic-version": "2023-06-01",
                         "content-type": "application/json",
                     },
-                    json={
-                        "model": self.settings.claude_model,
-                        "max_tokens": 200,
-                        "messages": [{"role": "user", "content": prompt}],
-                    },
+                    json=request_body,
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -83,6 +105,12 @@ class AIReasoner:
                 symbol=symbol,
             )
 
+            # Extract tool_use result for structured output
+            for block in data.get("content", []):
+                if block.get("type") == "tool_use" and block.get("name") == "report_reasoning":
+                    return block.get("input", {}).get("explanation", "")
+
+            # Fallback: plain text response
             return data["content"][0]["text"].strip()
 
         except Exception:

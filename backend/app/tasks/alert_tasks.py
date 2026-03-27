@@ -133,15 +133,31 @@ async def _evening_wrap_async() -> dict:
     return {"status": "ok", "sent": sent, "subscribers": len(subscribers)}
 
 
-@celery_app.task(name="app.tasks.alert_tasks.morning_brief")
-def morning_brief() -> dict:
+@celery_app.task(
+    name="app.tasks.alert_tasks.morning_brief",
+    bind=True,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    max_retries=3,
+)
+def morning_brief(self) -> dict:
     """Send morning market brief via Telegram at 8:00 AM IST."""
     logger.info("Generating morning brief")
     return asyncio.run(_morning_brief_async())
 
 
-@celery_app.task(name="app.tasks.alert_tasks.evening_wrap")
-def evening_wrap() -> dict:
+@celery_app.task(
+    name="app.tasks.alert_tasks.evening_wrap",
+    bind=True,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    max_retries=3,
+)
+def evening_wrap(self) -> dict:
     """Send evening market wrap via Telegram at 4:00 PM IST."""
     logger.info("Generating evening wrap")
     return asyncio.run(_evening_wrap_async())
@@ -210,8 +226,58 @@ async def _weekly_digest_async() -> dict:
     return {"status": "ok", "sent": sent, "subscribers": len(subscribers)}
 
 
-@celery_app.task(name="app.tasks.alert_tasks.weekly_digest")
-def weekly_digest() -> dict:
+@celery_app.task(
+    name="app.tasks.alert_tasks.weekly_digest",
+    bind=True,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    max_retries=3,
+)
+def weekly_digest(self) -> dict:
     """Send weekly performance digest every Sunday at 6:00 PM IST."""
     logger.info("Generating weekly digest")
     return asyncio.run(_weekly_digest_async())
+
+
+@celery_app.task(name="app.tasks.alert_tasks.pipeline_health_check")
+def pipeline_health_check() -> dict:
+    """Alert admin if signal pipeline has stopped producing.
+
+    Checks the most recent signal timestamp and sends a Telegram alert
+    to the admin if no signal has been generated in 30+ minutes.
+    """
+    settings = get_settings()
+    engine = create_engine(settings.database_url_sync, pool_pre_ping=True)
+    try:
+        with Session(engine) as session:
+            row = session.execute(
+                text("SELECT MAX(created_at) FROM signals")
+            ).fetchone()
+
+            if row and row[0]:
+                from datetime import datetime, timezone, timedelta
+
+                last_signal_time = row[0]
+                if last_signal_time.tzinfo is None:
+                    last_signal_time = last_signal_time.replace(tzinfo=timezone.utc)
+                age_minutes = (datetime.now(timezone.utc) - last_signal_time).total_seconds() / 60
+
+                if age_minutes > 30:
+                    admin_chat_id = settings.telegram_default_chat_id
+                    if admin_chat_id:
+                        msg = (
+                            f"⚠️ Pipeline Stale Alert\n\n"
+                            f"No new signal generated in {int(age_minutes)} minutes.\n"
+                            f"Last signal: {last_signal_time.strftime('%Y-%m-%d %H:%M UTC')}\n\n"
+                            f"Check Celery worker and data ingestion tasks."
+                        )
+                        asyncio.run(send_telegram_message(int(admin_chat_id), msg))
+                    return {"status": "stale", "minutes_since_last": int(age_minutes)}
+
+                return {"status": "healthy", "minutes_since_last": int(age_minutes)}
+
+            return {"status": "no_signals", "minutes_since_last": -1}
+    finally:
+        engine.dispose()

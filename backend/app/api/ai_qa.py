@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
+from app.auth import AuthContext, require_tier
 from app.models.market_data import MarketData
 from app.models.signal import Signal
 from app.rate_limit import limiter
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 async def ask_about_symbol(
     request: Request,
     payload: AskQuestion,
+    auth: AuthContext = Depends(require_tier("pro")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Ask an AI-powered question about a specific symbol.

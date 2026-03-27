@@ -1,5 +1,6 @@
 """FastAPI application entrypoint."""
 
+import hmac
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -58,9 +59,35 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         import sentry_sdk
         sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0.1)
 
+    # Start PubSub broadcaster for multi-worker WebSocket support
+    _pubsub_broadcaster = None
+    if settings.redis_url:
+        try:
+            from app.api.websocket import manager as ws_manager
+            from app.services.pubsub import PubSubBroadcaster
+            _pubsub_broadcaster = PubSubBroadcaster(settings.redis_url, ws_manager)
+            await _pubsub_broadcaster.start()
+            app.state.pubsub_broadcaster = _pubsub_broadcaster
+        except Exception:
+            logger.warning("pubsub_broadcaster_start_failed")
+
     yield
 
+    # Graceful shutdown: stop PubSub, drain connections
     logger.info("signalflow_shutting_down")
+
+    if _pubsub_broadcaster:
+        try:
+            await _pubsub_broadcaster.stop()
+        except Exception:
+            logger.warning("pubsub_broadcaster_stop_failed")
+
+    try:
+        from app.database import engine as async_engine
+        await async_engine.dispose()
+        logger.info("database_connections_closed")
+    except Exception:
+        logger.warning("failed_to_close_database_connections")
 
 
 app = FastAPI(
@@ -112,19 +139,38 @@ async def correlation_id_middleware(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     # Content Security Policy
+    backend_host = settings.api_host if settings.environment == "production" else "localhost"
     csp_directives = [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        "script-src 'self'",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https:",
-        f"connect-src 'self' {settings.frontend_url}",
+        f"connect-src 'self' {settings.frontend_url} wss://{backend_host}",
         "font-src 'self' https://fonts.gstatic.com",
         "frame-ancestors 'none'",
+        "object-src 'none'",
     ]
     response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
     if settings.environment == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # No-index for shared signal views
+    if request.url.path.startswith("/api/v1/shared/"):
+        response.headers["X-Robots-Tag"] = "noindex"
     return response
+
+
+# ── Request body size limiter ──
+@app.middleware("http")
+async def limit_request_body(request: Request, call_next):
+    """Reject requests with bodies larger than max_request_body_bytes (1MB default)."""
+    max_bytes = settings.max_request_body_bytes
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > max_bytes:
+        return JSONResponse(
+            status_code=413,
+            content={"detail": f"Request body too large. Maximum size: {max_bytes} bytes"},
+        )
+    return await call_next(request)
 
 
 # ── Routers ──
@@ -162,6 +208,28 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "Internal server error"},
     )
+
+
+@app.get("/metrics")
+async def metrics_endpoint(request: Request) -> JSONResponse:
+    """Prometheus-compatible metrics endpoint.
+
+    Protected: only accessible from localhost or with internal API key.
+    """
+    # Allow localhost and internal API key only
+    client_ip = request.client.host if request.client else "unknown"
+    api_key = request.headers.get("X-API-Key", "")
+    internal_key = settings.internal_api_key
+
+    is_local = client_ip in ("127.0.0.1", "::1", "localhost")
+    is_internal = internal_key and hmac.compare_digest(api_key, internal_key)
+
+    if not is_local and not is_internal:
+        return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+
+    from app.services.metrics import get_metrics_text
+    from starlette.responses import Response
+    return Response(content=get_metrics_text(), media_type="text/plain; charset=utf-8")
 
 
 @app.get("/health")
@@ -224,6 +292,10 @@ async def health_check() -> dict:
     except Exception:
         status["redis_status"] = "error"
         status["status"] = "degraded"
+
+    # PubSub status
+    pubsub = getattr(app.state, "pubsub_broadcaster", None)
+    status["pubsub_status"] = "connected" if pubsub and pubsub.is_connected else "disconnected"
 
     # AI budget check
     try:

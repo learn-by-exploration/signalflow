@@ -86,8 +86,7 @@ describe('Navbar (authenticated)', () => {
   it('renders "More" dropdown with additional links on click', () => {
     render(<Navbar />);
     fireEvent.click(screen.getByText('More ▾'));
-    expect(screen.getByText('Backtest')).toBeInTheDocument();
-    expect(screen.getByText('Daily Brief')).toBeInTheDocument();
+    expect(screen.getByText('Signal History')).toBeInTheDocument();
     expect(screen.getByText('How It Works')).toBeInTheDocument();
   });
 
@@ -99,8 +98,8 @@ describe('Navbar (authenticated)', () => {
   it('shows mobile menu when hamburger is clicked', () => {
     render(<Navbar />);
     fireEvent.click(screen.getByLabelText('Toggle menu'));
-    const portfolioLinks = screen.getAllByText('Portfolio');
-    expect(portfolioLinks.length).toBeGreaterThanOrEqual(1);
+    const alertLinks = screen.getAllByText('Alerts');
+    expect(alertLinks.length).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -112,7 +111,6 @@ describe('Navbar (unauthenticated)', () => {
   it('shows only public links for visitors', () => {
     render(<Navbar />);
     expect(screen.getByText('How It Works')).toBeInTheDocument();
-    expect(screen.getByText('Pricing')).toBeInTheDocument();
     expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
     expect(screen.queryByText('Track Record')).not.toBeInTheDocument();
     expect(screen.queryByText('More')).not.toBeInTheDocument();

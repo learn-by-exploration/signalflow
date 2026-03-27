@@ -1,29 +1,173 @@
 """Backtesting Celery task.
 
-Replays historical market data through the signal generation algorithm
-and records performance metrics.
+Replays historical market data through the PRODUCTION signal generation
+algorithm (TechnicalAnalyzer + scorer) with rolling walk-forward windows,
+slippage, and benchmark comparison.
 """
 
 import logging
+import math
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
+import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.services.analysis.indicators import TechnicalAnalyzer
+from app.services.signal_gen.scorer import compute_final_confidence
+from app.services.signal_gen.targets import calculate_targets
 from app.tasks.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
+# Walk-forward defaults
+TRAIN_DAYS = 60
+TEST_DAYS = 30
+MIN_WINDOWS = 2  # Minimum walk-forward windows
+DEFAULT_SLIPPAGE_BPS = 10  # 0.1% per trade
+
+
+def _simulate_trades(
+    df: pd.DataFrame,
+    symbol: str,
+    market_type: str,
+    slippage_bps: int,
+) -> list[dict]:
+    """Run production pipeline on a DataFrame window and simulate trades.
+
+    Uses TechnicalAnalyzer.full_analysis() + compute_final_confidence() for parity.
+    Sentiment is fixed at 50 (no AI in backtest).
+    """
+    if len(df) < 50:
+        return []
+
+    analyzer = TechnicalAnalyzer(df)
+    technical_data = analyzer.full_analysis()
+    # Fixed neutral sentiment in backtest
+    sentiment_data = {"score": 50, "key_factors": ["backtest_neutral"]}
+
+    confidence, signal_type = compute_final_confidence(technical_data, sentiment_data)
+
+    if signal_type == "HOLD":
+        return []
+
+    current_price = float(df["close"].iloc[-1])
+    atr_data = technical_data.get("atr", {})
+
+    targets = calculate_targets(
+        current_price=Decimal(str(current_price)),
+        atr_data=atr_data,
+        signal_type=signal_type,
+        market_type=market_type,
+    )
+
+    target_price = float(targets["target_price"])
+    stop_loss = float(targets["stop_loss"])
+
+    # Apply slippage to entry
+    slippage_mult = slippage_bps / 10000
+    if signal_type in ("BUY", "STRONG_BUY"):
+        entry_price = current_price * (1 + slippage_mult)
+    else:
+        entry_price = current_price * (1 - slippage_mult)
+
+    return [{
+        "signal_type": signal_type,
+        "confidence": confidence,
+        "entry": entry_price,
+        "target": target_price,
+        "stop": stop_loss,
+        "timestamp": df["timestamp"].iloc[-1],
+    }]
+
+
+def _resolve_trades(
+    trades: list[dict],
+    df_future: pd.DataFrame,
+) -> list[dict]:
+    """Resolve trade outcomes against future price data."""
+    resolved = []
+    for trade in trades:
+        is_buy = trade["signal_type"] in ("BUY", "STRONG_BUY")
+        entry = trade["entry"]
+        target = trade["target"]
+        stop = trade["stop"]
+
+        result = "expired"
+        exit_price = float(df_future["close"].iloc[-1]) if len(df_future) > 0 else entry
+        return_pct = 0.0
+
+        for _, row in df_future.iterrows():
+            price = float(row["close"])
+            high = float(row["high"])
+            low = float(row["low"])
+
+            if is_buy:
+                if high >= target:
+                    result = "win"
+                    exit_price = target
+                    break
+                elif low <= stop:
+                    result = "loss"
+                    exit_price = stop
+                    break
+            else:
+                if low <= target:
+                    result = "win"
+                    exit_price = target
+                    break
+                elif high >= stop:
+                    result = "loss"
+                    exit_price = stop
+                    break
+
+        if is_buy:
+            return_pct = (exit_price - entry) / entry * 100
+        else:
+            return_pct = (entry - exit_price) / entry * 100
+
+        resolved.append({
+            **trade,
+            "exit": exit_price,
+            "result": result,
+            "return_pct": return_pct,
+        })
+
+    return resolved
+
+
+def _compute_sharpe(returns: list[float], risk_free_rate: float = 0.0) -> float:
+    """Compute annualized Sharpe ratio from a list of per-trade returns."""
+    if len(returns) < 2:
+        return 0.0
+    mean_ret = sum(returns) / len(returns)
+    variance = sum((r - mean_ret) ** 2 for r in returns) / (len(returns) - 1)
+    std = math.sqrt(variance)
+    if std == 0:
+        return 0.0
+    # Annualize assuming ~252 trading days, ~1 trade per day rough approximation
+    return (mean_ret - risk_free_rate) / std * math.sqrt(min(len(returns), 252))
+
+
+def _compute_profit_factor(trades: list[dict]) -> float:
+    """Compute profit factor (gross wins / gross losses)."""
+    gross_wins = sum(t["return_pct"] for t in trades if t["return_pct"] > 0)
+    gross_losses = abs(sum(t["return_pct"] for t in trades if t["return_pct"] < 0))
+    if gross_losses == 0:
+        return float("inf") if gross_wins > 0 else 0.0
+    return gross_wins / gross_losses
+
 
 def _run_backtest_sync(backtest_id: str, days: int) -> dict:
-    """Execute a backtest against historical market data.
+    """Execute a walk-forward backtest using PRODUCTION indicators + scoring.
 
-    Strategy: uses RSI + SMA crossover signals on daily candles.
-    - Buy when RSI < 35 and price > SMA20
-    - Sell when RSI > 65 and price < SMA20
-    - Target = entry + 2×ATR, Stop = entry - 1×ATR
+    Strategy: Uses TechnicalAnalyzer.full_analysis() + compute_final_confidence()
+    with fixed sentiment_score=50 (no AI in backtest).
+
+    Walk-forward: 60-day train, 30-day test, rolling forward 30 days.
+    Slippage: 10 bps (0.1%) per trade.
 
     Returns dict of computed metrics.
     """
@@ -63,111 +207,59 @@ def _run_backtest_sync(backtest_id: str, days: int) -> dict:
                 {"sym": symbol, "start": start_date, "end": end_date},
             ).fetchall()
 
-            if len(candles) < 30:
+            if len(candles) < TRAIN_DAYS + TEST_DAYS:
                 session.execute(
                     text(
                         "UPDATE backtest_runs SET status = 'failed', "
                         "error_message = :msg WHERE id = :bid"
                     ),
-                    {"msg": f"Insufficient data: {len(candles)} candles (need 30+)", "bid": backtest_id},
+                    {
+                        "msg": f"Insufficient data: {len(candles)} candles "
+                               f"(need {TRAIN_DAYS + TEST_DAYS}+)",
+                        "bid": backtest_id,
+                    },
                 )
                 session.commit()
                 return {"error": "Insufficient data"}
 
-            # Compute indicators and simulate trades
-            closes = [float(c[3]) for c in candles]
-            highs = [float(c[1]) for c in candles]
-            lows = [float(c[2]) for c in candles]
+            # Build DataFrame
+            df = pd.DataFrame(
+                candles,
+                columns=["open", "high", "low", "close", "volume", "timestamp"],
+            )
+            for col in ["open", "high", "low", "close", "volume"]:
+                df[col] = df[col].astype(float)
 
-            trades = []
-            position = None  # None or {"entry": float, "target": float, "stop": float}
+            # Rolling walk-forward windows
+            all_trades: list[dict] = []
+            window_start = 0
 
-            for i in range(20, len(closes)):
-                price = closes[i]
+            while window_start + TRAIN_DAYS + TEST_DAYS <= len(df):
+                train_end = window_start + TRAIN_DAYS
+                test_end = min(train_end + TEST_DAYS, len(df))
 
-                # SMA20
-                sma20 = sum(closes[i - 20:i]) / 20
+                train_df = df.iloc[window_start:train_end].reset_index(drop=True)
+                test_df = df.iloc[train_end:test_end].reset_index(drop=True)
 
-                # RSI14
-                if i >= 14:
-                    gains = []
-                    losses_list = []
-                    for j in range(i - 13, i + 1):
-                        change = closes[j] - closes[j - 1]
-                        if change > 0:
-                            gains.append(change)
-                            losses_list.append(0)
-                        else:
-                            gains.append(0)
-                            losses_list.append(abs(change))
-                    avg_gain = sum(gains) / 14
-                    avg_loss = sum(losses_list) / 14
-                    if avg_loss == 0:
-                        rsi = 100.0
-                    else:
-                        rs = avg_gain / avg_loss
-                        rsi = 100 - (100 / (1 + rs))
-                else:
-                    rsi = 50.0
+                # Generate signal on training window
+                signals = _simulate_trades(
+                    train_df, symbol, market_type, DEFAULT_SLIPPAGE_BPS
+                )
 
-                # ATR14
-                if i >= 14:
-                    tr_values = []
-                    for j in range(i - 13, i + 1):
-                        tr = max(
-                            highs[j] - lows[j],
-                            abs(highs[j] - closes[j - 1]),
-                            abs(lows[j] - closes[j - 1]),
-                        )
-                        tr_values.append(tr)
-                    atr = sum(tr_values) / 14
-                else:
-                    atr = highs[i] - lows[i]
+                # Resolve against test window
+                if signals:
+                    resolved = _resolve_trades(signals, test_df)
+                    all_trades.extend(resolved)
 
-                # Check existing position
-                if position is not None:
-                    if price >= position["target"]:
-                        trades.append({
-                            "entry": position["entry"],
-                            "exit": position["target"],
-                            "result": "win",
-                            "return_pct": (position["target"] - position["entry"]) / position["entry"] * 100,
-                        })
-                        position = None
-                    elif price <= position["stop"]:
-                        trades.append({
-                            "entry": position["entry"],
-                            "exit": position["stop"],
-                            "result": "loss",
-                            "return_pct": (position["stop"] - position["entry"]) / position["entry"] * 100,
-                        })
-                        position = None
-
-                # Entry signal: RSI < 35 and price > SMA20
-                if position is None and rsi < 35 and price > sma20 and atr > 0:
-                    position = {
-                        "entry": price,
-                        "target": price + (atr * 2),
-                        "stop": price - atr,
-                    }
-
-            # Close any remaining position at last price
-            if position is not None:
-                last_price = closes[-1]
-                ret = (last_price - position["entry"]) / position["entry"] * 100
-                trades.append({
-                    "entry": position["entry"],
-                    "exit": last_price,
-                    "result": "win" if ret > 0 else "loss",
-                    "return_pct": ret,
-                })
+                # Roll forward by TEST_DAYS
+                window_start += TEST_DAYS
 
             # Compute metrics
-            total_signals = len(trades)
-            wins = sum(1 for t in trades if t["result"] == "win")
-            losses = sum(1 for t in trades if t["result"] == "loss")
+            total_signals = len(all_trades)
+            wins = sum(1 for t in all_trades if t["result"] == "win")
+            losses = sum(1 for t in all_trades if t["result"] == "loss")
             win_rate = (wins / total_signals * 100) if total_signals > 0 else 0
-            returns = [t["return_pct"] for t in trades]
+            returns = [t["return_pct"] for t in all_trades]
             avg_return = sum(returns) / len(returns) if returns else 0
             total_return = sum(returns)
 
@@ -182,6 +274,15 @@ def _run_backtest_sync(backtest_id: str, days: int) -> dict:
                 dd = peak - cumulative
                 if dd > max_drawdown:
                     max_drawdown = dd
+
+            sharpe = _compute_sharpe(returns)
+            profit_factor = _compute_profit_factor(all_trades)
+
+            # Buy-and-hold benchmark
+            first_close = float(df["close"].iloc[0])
+            last_close = float(df["close"].iloc[-1])
+            bnh_return = ((last_close - first_close) / first_close * 100) if first_close > 0 else 0
+            excess_return = total_return - bnh_return
 
             # Update backtest row
             session.execute(
@@ -219,6 +320,11 @@ def _run_backtest_sync(backtest_id: str, days: int) -> dict:
                 "avg_return_pct": round(avg_return, 4),
                 "total_return_pct": round(total_return, 4),
                 "max_drawdown_pct": round(max_drawdown, 4),
+                "sharpe_ratio": round(sharpe, 4),
+                "profit_factor": round(profit_factor, 4),
+                "buy_hold_return_pct": round(bnh_return, 4),
+                "excess_return_pct": round(excess_return, 4),
+                "walk_forward_windows": max(1, (len(df) - TRAIN_DAYS) // TEST_DAYS),
             }
 
     except Exception as e:
@@ -240,8 +346,16 @@ def _run_backtest_sync(backtest_id: str, days: int) -> dict:
         engine.dispose()
 
 
-@celery_app.task(name="app.tasks.backtest_tasks.run_backtest")
-def run_backtest(backtest_id: str, days: int = 90) -> dict:
+@celery_app.task(
+    name="app.tasks.backtest_tasks.run_backtest",
+    bind=True,
+    autoretry_for=(ConnectionError,),
+    retry_backoff=True,
+    retry_backoff_max=120,
+    retry_jitter=True,
+    max_retries=1,
+)
+def run_backtest(self, backtest_id: str, days: int = 90) -> dict:
     """Execute a backtest for a symbol over the given lookback period."""
     logger.info("Starting backtest %s (%d days)", backtest_id, days)
     return _run_backtest_sync(backtest_id, days)

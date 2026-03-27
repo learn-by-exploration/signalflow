@@ -31,9 +31,16 @@ class ForexFetcher(BaseFetcher):
     Respects rate limits: Twelve Data (8 calls/min free), Alpha Vantage (5 calls/min).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, timeframe: str = "1d") -> None:
         self.symbols = settings.tracked_forex
         self.engine = create_engine(settings.database_url_sync)
+        self.timeframe = timeframe
+        # Map our timeframe labels to Twelve Data intervals
+        self._twelve_data_interval_map = {
+            "1d": "1day",
+            "4h": "4h",
+            "1h": "1h",
+        }
 
     def fetch_all(self) -> dict:
         """Fetch latest data for all tracked forex pairs."""
@@ -66,6 +73,7 @@ class ForexFetcher(BaseFetcher):
                         low=Decimal(str(result["low"])),
                         close=Decimal(str(result["close"])),
                         volume=None,
+                        timeframe=self.timeframe,
                         timestamp=result["timestamp"],
                     )
                     session.merge(record)
@@ -90,13 +98,14 @@ class ForexFetcher(BaseFetcher):
         """Fetch latest candle from Twelve Data API."""
         try:
             # Twelve Data uses slash format: EUR/USD
+            interval = self._twelve_data_interval_map.get(self.timeframe, "1day")
             with httpx.Client(timeout=15) as client:
                 resp = client.get(
                     TWELVE_DATA_URL,
                     params={
                         "symbol": symbol,
-                        "interval": "1min",
-                        "outputsize": 1,
+                        "interval": interval,
+                        "outputsize": 2,
                         "apikey": settings.alpha_vantage_api_key,  # Shared key or separate
                     },
                 )

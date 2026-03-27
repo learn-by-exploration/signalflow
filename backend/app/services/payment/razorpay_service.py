@@ -1,0 +1,230 @@
+"""Razorpay payment integration service.
+
+Handles subscription creation, webhook processing, and tier management.
+"""
+
+import hashlib
+import hmac
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import get_settings
+from app.models.subscription import Subscription
+
+logger = logging.getLogger(__name__)
+
+# Plan prices in paise (₹1 = 100 paise)
+PLAN_PRICES = {
+    "monthly": 49900,   # ₹499/mo (GST inclusive)
+    "annual": 499900,   # ₹4,999/yr (2 months free)
+    "trial": 0,         # Free trial
+}
+
+
+def verify_webhook_signature(
+    body: bytes,
+    signature: str,
+    webhook_secret: str,
+) -> bool:
+    """Verify Razorpay webhook signature (HMAC-SHA256).
+
+    Args:
+        body: Raw request body bytes.
+        signature: X-Razorpay-Signature header value.
+        webhook_secret: Razorpay webhook secret from config.
+
+    Returns:
+        True if signature is valid.
+    """
+    expected = hmac.new(
+        webhook_secret.encode("utf-8"),
+        body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
+
+
+async def create_subscription(
+    db: AsyncSession,
+    user_id: str,
+    plan: str,
+) -> Subscription:
+    """Create a subscription record for a user.
+
+    Args:
+        db: Async database session.
+        user_id: UUID of the user.
+        plan: "monthly", "annual", or "trial".
+
+    Returns:
+        Created Subscription object.
+    """
+    settings = get_settings()
+    now = datetime.now(timezone.utc)
+
+    if plan == "trial":
+        period_end = now + timedelta(days=settings.pro_trial_days)
+        trial_end = period_end
+    elif plan == "monthly":
+        period_end = now + timedelta(days=30)
+        trial_end = None
+    elif plan == "annual":
+        period_end = now + timedelta(days=365)
+        trial_end = None
+    else:
+        raise ValueError(f"Unknown plan: {plan}")
+
+    sub = Subscription(
+        user_id=user_id,
+        plan=plan,
+        status="active",
+        amount_paise=PLAN_PRICES.get(plan, 0),
+        current_period_start=now,
+        current_period_end=period_end,
+        trial_end=trial_end,
+    )
+    db.add(sub)
+    await db.flush()
+
+    logger.info("Created %s subscription for user %s", plan, user_id)
+    return sub
+
+
+async def get_active_subscription(
+    db: AsyncSession,
+    user_id: str,
+) -> Subscription | None:
+    """Get the user's active subscription, if any.
+
+    Args:
+        db: Async database session.
+        user_id: UUID of the user.
+
+    Returns:
+        Active Subscription or None.
+    """
+    stmt = (
+        select(Subscription)
+        .where(Subscription.user_id == user_id)
+        .where(Subscription.status.in_(["active", "past_due"]))
+        .order_by(Subscription.created_at.desc())
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def handle_payment_success(
+    db: AsyncSession,
+    razorpay_subscription_id: str,
+    period_end: datetime,
+) -> None:
+    """Handle successful payment — extend subscription period.
+
+    Args:
+        db: Async database session.
+        razorpay_subscription_id: Razorpay subscription ID.
+        period_end: New period end date.
+    """
+    stmt = (
+        update(Subscription)
+        .where(Subscription.razorpay_subscription_id == razorpay_subscription_id)
+        .values(
+            status="active",
+            current_period_end=period_end,
+            updated_at=datetime.now(timezone.utc),
+        )
+    )
+    await db.execute(stmt)
+    logger.info("Payment success for subscription %s", razorpay_subscription_id)
+
+
+async def handle_payment_failed(
+    db: AsyncSession,
+    razorpay_subscription_id: str,
+) -> None:
+    """Handle failed payment — set grace period.
+
+    Args:
+        db: Async database session.
+        razorpay_subscription_id: Razorpay subscription ID.
+    """
+    settings = get_settings()
+    grace_end = datetime.now(timezone.utc) + timedelta(days=settings.payment_grace_days)
+
+    stmt = (
+        update(Subscription)
+        .where(Subscription.razorpay_subscription_id == razorpay_subscription_id)
+        .values(
+            status="past_due",
+            current_period_end=grace_end,
+            updated_at=datetime.now(timezone.utc),
+        )
+    )
+    await db.execute(stmt)
+    logger.warning("Payment failed for subscription %s, grace until %s", razorpay_subscription_id, grace_end)
+
+
+async def handle_subscription_cancelled(
+    db: AsyncSession,
+    razorpay_subscription_id: str,
+) -> None:
+    """Handle subscription cancellation.
+
+    Args:
+        db: Async database session.
+        razorpay_subscription_id: Razorpay subscription ID.
+    """
+    stmt = (
+        update(Subscription)
+        .where(Subscription.razorpay_subscription_id == razorpay_subscription_id)
+        .values(
+            status="cancelled",
+            cancelled_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+    )
+    await db.execute(stmt)
+    logger.info("Subscription cancelled: %s", razorpay_subscription_id)
+
+
+async def downgrade_expired_subscriptions(db: AsyncSession) -> int:
+    """Downgrade users whose subscriptions have expired past grace period.
+
+    Called periodically by a Celery task.
+
+    Returns:
+        Number of users downgraded.
+    """
+    now = datetime.now(timezone.utc)
+    # Find subscriptions that are past_due and past grace period
+    from app.models.user import User
+
+    stmt = (
+        select(Subscription)
+        .where(Subscription.status.in_(["active", "past_due"]))
+        .where(Subscription.current_period_end < now)
+    )
+    result = await db.execute(stmt)
+    expired = result.scalars().all()
+
+    count = 0
+    for sub in expired:
+        sub.status = "expired"
+        sub.updated_at = now
+        # Downgrade user tier
+        await db.execute(
+            update(User)
+            .where(User.id == sub.user_id)
+            .values(tier="free")
+        )
+        count += 1
+
+    if count > 0:
+        logger.info("Downgraded %d expired subscriptions", count)
+
+    return count
