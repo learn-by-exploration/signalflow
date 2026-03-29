@@ -3,84 +3,77 @@
 Tests cover: nav cleanup, performance endpoint, streak protection, seed data.
 """
 
-import os
 import inspect
+import os
 
 import pytest
-import numpy as np
-import pandas as pd
 
 
 # ═══════════════════════════════════════════════════════════
 # Task 4.1: Nav Cleanup Tests
 # ═══════════════════════════════════════════════════════════
 class TestNavCleanup:
-    """Verify unnecessary pages removed from navigation."""
+    """Verify navigation is properly organized into primary + research groups."""
 
-    def test_navbar_no_pricing_link(self):
-        """Navbar should not link to /pricing."""
+    def test_navbar_uses_constants(self):
+        """Navbar should import nav link constants instead of hardcoding routes."""
         navbar_path = os.path.join(
             os.path.dirname(__file__), "..", "..",
             "frontend", "src", "components", "shared", "Navbar.tsx",
         )
         with open(navbar_path) as f:
             content = f.read()
-        assert "'/pricing'" not in content, "Pricing link should be removed from Navbar"
+        assert "NAV_PRIMARY_LINKS" in content, "Navbar should use NAV_PRIMARY_LINKS from constants"
+        assert "NAV_RESEARCH_LINKS" in content, "Navbar should use NAV_RESEARCH_LINKS for dropdown"
 
-    def test_navbar_no_calendar_link(self):
-        """Navbar should not link to /calendar."""
+    def test_navbar_has_research_dropdown(self):
+        """Navbar should have a Research dropdown for secondary pages."""
         navbar_path = os.path.join(
             os.path.dirname(__file__), "..", "..",
             "frontend", "src", "components", "shared", "Navbar.tsx",
         )
         with open(navbar_path) as f:
             content = f.read()
-        assert "'/calendar'" not in content
+        # Research routes are listed for active-state detection
+        assert "'/news'" in content
+        assert "'/calendar'" in content
 
-    def test_navbar_no_news_link(self):
-        """Navbar should not link to /news."""
-        navbar_path = os.path.join(
+    def test_primary_links_in_constants(self):
+        """Primary nav links should be defined in constants.ts, not hardcoded."""
+        constants_path = os.path.join(
             os.path.dirname(__file__), "..", "..",
-            "frontend", "src", "components", "shared", "Navbar.tsx",
+            "frontend", "src", "lib", "constants.ts",
         )
-        with open(navbar_path) as f:
+        with open(constants_path) as f:
             content = f.read()
-        assert "'/news'" not in content
-
-    def test_navbar_no_brief_link(self):
-        """Navbar should not link to /brief."""
-        navbar_path = os.path.join(
-            os.path.dirname(__file__), "..", "..",
-            "frontend", "src", "components", "shared", "Navbar.tsx",
-        )
-        with open(navbar_path) as f:
-            content = f.read()
-        assert "'/brief'" not in content
-
-    def test_navbar_hidden_pages_removed(self):
-        """Backtest, portfolio, watchlist should be removed from navigation."""
-        navbar_path = os.path.join(
-            os.path.dirname(__file__), "..", "..",
-            "frontend", "src", "components", "shared", "Navbar.tsx",
-        )
-        with open(navbar_path) as f:
-            content = f.read()
-        assert "'/backtest'" not in content
-        assert "'/portfolio'" not in content
-        assert "'/watchlist'" not in content
-
-    def test_navbar_keeps_essential_links(self):
-        """Navbar must still have Dashboard, Track Record, Alerts, How It Works."""
-        navbar_path = os.path.join(
-            os.path.dirname(__file__), "..", "..",
-            "frontend", "src", "components", "shared", "Navbar.tsx",
-        )
-        with open(navbar_path) as f:
-            content = f.read()
+        assert "NAV_PRIMARY_LINKS" in content
         assert "'Dashboard'" in content
         assert "'Track Record'" in content
-        assert "'Alerts'" in content
+
+    def test_research_links_in_constants(self):
+        """Research nav links should be defined in constants.ts."""
+        constants_path = os.path.join(
+            os.path.dirname(__file__), "..", "..",
+            "frontend", "src", "lib", "constants.ts",
+        )
+        with open(constants_path) as f:
+            content = f.read()
+        assert "NAV_RESEARCH_LINKS" in content
+        assert "'News'" in content
+        assert "'Calendar'" in content
+        assert "'Backtest'" in content
+
+    def test_info_links_in_constants(self):
+        """Info links (How It Works, Pricing) in constants.ts."""
+        constants_path = os.path.join(
+            os.path.dirname(__file__), "..", "..",
+            "frontend", "src", "lib", "constants.ts",
+        )
+        with open(constants_path) as f:
+            content = f.read()
+        assert "NAV_INFO_LINKS" in content
         assert "'How It Works'" in content
+        assert "'Pricing'" in content
 
     def test_page_files_still_exist(self):
         """Hidden pages should still have their code (not deleted from disk)."""
@@ -125,7 +118,7 @@ class TestSignalPerformance:
         """Each market in performance should have win_rate and by_signal_type."""
         resp = await test_client.get("/api/v1/signals/performance")
         data = resp.json()["data"]
-        for market_type, metrics in data.items():
+        for _market_type, metrics in data.items():
             assert "total" in metrics
             assert "hit_target" in metrics
             assert "hit_stop" in metrics
@@ -142,9 +135,9 @@ class TestLosingStreakProtection:
     def test_streak_protection_module_exists(self):
         """streak_protection module should be importable."""
         from app.services.signal_gen.streak_protection import (
+            STREAK_THRESHOLD,
             check_losing_streak,
             format_streak_alert,
-            STREAK_THRESHOLD,
         )
         assert STREAK_THRESHOLD == 3
         assert callable(check_losing_streak)
@@ -200,8 +193,8 @@ class TestSeedDemoSignals:
 
     def test_demo_signals_module_exists(self):
         """seed_demo_signals module should be importable."""
-        import sys
         import os
+        import sys
         scripts_dir = os.path.join(os.path.dirname(__file__), "..", "scripts")
         sys.path.insert(0, scripts_dir)
         try:
@@ -213,8 +206,8 @@ class TestSeedDemoSignals:
 
     def test_demo_signals_have_required_fields(self):
         """Each demo signal must have required fields."""
-        import sys
         import os
+        import sys
         scripts_dir = os.path.join(os.path.dirname(__file__), "..", "scripts")
         sys.path.insert(0, scripts_dir)
         try:
@@ -233,8 +226,8 @@ class TestSeedDemoSignals:
 
     def test_demo_signals_market_diversity(self):
         """Demo signals should cover all 3 markets."""
-        import sys
         import os
+        import sys
         scripts_dir = os.path.join(os.path.dirname(__file__), "..", "scripts")
         sys.path.insert(0, scripts_dir)
         try:
@@ -249,8 +242,8 @@ class TestSeedDemoSignals:
 
     def test_demo_signal_types_diversity(self):
         """Demo signals should include BUY and SELL types."""
-        import sys
         import os
+        import sys
         scripts_dir = os.path.join(os.path.dirname(__file__), "..", "scripts")
         sys.path.insert(0, scripts_dir)
         try:

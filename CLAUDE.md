@@ -104,7 +104,7 @@ This project was built using **Claude Code** (Anthropic's AI coding agent) as th
 
 1. **Architecture-first**: This CLAUDE.md serves as the master spec. All implementation follows the architecture defined here.
 2. **Phase-based development**: Built in 5 phases (Foundation → Analysis → Dashboard → Integration → Polish), plus 10 iterative sprints.
-3. **Test-driven**: Every feature includes tests. 480+ tests pass before each commit.
+3. **Test-driven**: Every feature includes tests. 1,980+ tests pass before each commit.
 4. **Review cycles**: Multi-expert AI reviews (architect, UI experts, finance professionals, PMs) were used for UI iteration rounds.
 
 ### Development Commands
@@ -160,12 +160,15 @@ make frontend-install # Install npm dependencies
 
 ---
 
-## Project Structure (as of v1.4.0)
+## Project Structure (as of v1.3.0)
 
 ```
 signalflow/
 ├── CLAUDE.md                        # THIS FILE — master instructions
+├── CHANGELOG.md                     # Version changelog
+├── CONTRIBUTING.md                  # Contributor guidelines
 ├── README.md                        # Project readme with setup guide
+├── SECURITY.md                      # Security policy
 ├── Makefile                         # Development shortcuts (make up/test/lint)
 ├── docker-compose.yml               # Local dev: 6 services (db, redis, backend, celery, flower, frontend)
 ├── docker-compose.prod.yml          # Production overrides
@@ -176,43 +179,76 @@ signalflow/
 │
 ├── backend/
 │   ├── app/
-│   │   ├── main.py                  # FastAPI app, CORS, health endpoint, rate limiting
-│   │   ├── config.py                # Settings: 36 env vars + 31 tracked symbols
+│   │   ├── main.py                  # FastAPI app, CORS, health, metrics, rate limiting
+│   │   ├── auth.py                  # JWT authentication, AuthContext, token management
+│   │   ├── config.py                # Settings: 40+ env vars + 31 tracked symbols
 │   │   ├── database.py              # SQLAlchemy async (pool=20, overflow=10)
 │   │   ├── rate_limit.py            # Slowapi rate limiting config
 │   │   │
-│   │   ├── models/                  # 19 SQLAlchemy ORM models
+│   │   ├── models/                  # 18 SQLAlchemy ORM model files
 │   │   │   ├── market_data.py       # TimescaleDB hypertable (OHLCV)
-│   │   │   ├── signal.py            # Signal + SignalHistory
+│   │   │   ├── signal.py            # Signal model
+│   │   │   ├── signal_history.py    # Signal outcome tracking
+│   │   │   ├── signal_feedback.py   # User feedback (took/watching/skipped)
+│   │   │   ├── signal_share.py      # Signal sharing with public URLs
+│   │   │   ├── signal_news_link.py  # Signal ↔ news article links
 │   │   │   ├── alert_config.py      # Alert preferences + watchlist
-│   │   │   └── p3_models.py         # PriceAlert, Trade, SignalShare, BacktestRun
+│   │   │   ├── price_alert.py       # Price-triggered alerts
+│   │   │   ├── trade.py             # Portfolio trade log
+│   │   │   ├── backtest.py          # Backtest run results
+│   │   │   ├── user.py              # User accounts (JWT auth)
+│   │   │   ├── subscription.py      # Razorpay subscriptions + tiers
+│   │   │   ├── news_event.py        # News articles
+│   │   │   ├── event_entity.py      # Extracted entities from news
+│   │   │   ├── event_calendar.py    # Earnings/macro event calendar
+│   │   │   ├── causal_link.py       # Causal chains between events
+│   │   │   ├── confidence_calibration.py # Calibration tracking
+│   │   │   └── seo_page.py          # Generated SEO content
 │   │   │
 │   │   ├── schemas/                 # Pydantic v2 request/response schemas
 │   │   │   ├── signal.py            # Signal, History, Stats, TrackRecord, WeeklyTrend
 │   │   │   ├── market.py            # MarketSnapshot, MarketOverview
 │   │   │   ├── alert.py             # AlertConfig request/response
+│   │   │   ├── auth.py              # Register, Login, Token schemas
+│   │   │   ├── news.py              # NewsEvent, EventEntity schemas
 │   │   │   └── p3.py                # PriceAlert, Backtest, Portfolio schemas
 │   │   │
-│   │   ├── api/                     # ~25 REST endpoints + 1 WebSocket
+│   │   ├── api/                     # ~57 REST endpoints + 1 WebSocket
 │   │   │   ├── router.py            # Main router aggregator
 │   │   │   ├── signals.py           # GET /signals, GET /signals/{id}
 │   │   │   ├── markets.py           # GET /markets/overview
 │   │   │   ├── alerts.py            # CRUD /alerts/config, watchlist
-│   │   │   ├── history.py           # GET /signals/history, /stats, /track-record
+│   │   │   ├── history.py           # GET /signals/history, /stats, /track-record, /calibration
 │   │   │   ├── portfolio.py         # GET/POST /portfolio/trades, /summary
 │   │   │   ├── price_alerts.py      # CRUD /price-alerts
 │   │   │   ├── sharing.py           # POST /signals/{id}/share, GET /shared/{id}
 │   │   │   ├── ai_qa.py             # POST /ai/ask
 │   │   │   ├── backtest.py          # POST /backtest, GET /backtest/{id}
-│   │   │   └── websocket.py         # WS /ws/signals
+│   │   │   ├── auth_routes.py       # POST /auth/register, /login, /refresh, /logout, etc.
+│   │   │   ├── admin.py             # GET /admin/revenue, /shadow-mode
+│   │   │   ├── feedback.py          # GET /feedback/accuracy, /weights, /indicators
+│   │   │   ├── news.py              # GET /news, /events, /chains, /calendar
+│   │   │   ├── payments.py          # GET/POST /payments/subscription, /trial, /webhook
+│   │   │   ├── seo.py               # GET /seo/, /seo/{slug}
+│   │   │   ├── signal_feedback.py   # POST/GET /signals/{id}/feedback
+│   │   │   └── websocket.py         # WS /ws/signals + POST /ws/ticket
 │   │   │
 │   │   ├── services/                # Business logic
+│   │   │   ├── cache.py             # Redis caching utilities
+│   │   │   ├── metrics.py           # Prometheus metric collectors
+│   │   │   ├── pubsub.py            # Redis pub/sub for real-time events
+│   │   │   ├── revenue.py           # Revenue tracking & reporting
+│   │   │   ├── seo.py               # SEO page generation
+│   │   │   ├── tier_gating.py       # Feature gating by subscription tier
+│   │   │   ├── earnings_calendar.py # Earnings date tracking
+│   │   │   │
 │   │   │   ├── data_ingestion/      # 3 market fetchers + market hours
 │   │   │   │   ├── base.py          # Abstract base fetcher
 │   │   │   │   ├── indian_stocks.py # yfinance (15 NSE symbols)
 │   │   │   │   ├── crypto.py        # Binance WebSocket (10 pairs)
 │   │   │   │   ├── forex.py         # Alpha Vantage (6 pairs)
-│   │   │   │   └── market_hours.py  # NSE/Forex/Crypto schedule awareness
+│   │   │   │   ├── market_hours.py  # NSE/Forex/Crypto schedule awareness
+│   │   │   │   └── validators.py    # Data quality validation
 │   │   │   │
 │   │   │   ├── analysis/            # Technical indicators
 │   │   │   │   ├── indicators.py    # TechnicalAnalyzer: RSI, MACD, BB, Vol, SMA, ATR
@@ -224,43 +260,79 @@ signalflow/
 │   │   │   │   ├── briefing.py      # Morning/evening/weekly briefs
 │   │   │   │   ├── news_fetcher.py  # Google/Bing/RSS news aggregation
 │   │   │   │   ├── prompts.py       # All Claude prompts (centralized)
-│   │   │   │   └── cost_tracker.py  # $30/month budget enforcement
+│   │   │   │   ├── cost_tracker.py  # $30/month budget enforcement
+│   │   │   │   ├── dedup.py         # News deduplication
+│   │   │   │   ├── event_chain.py   # Causal event chain analysis
+│   │   │   │   ├── finbert_eval.py  # FinBERT evaluation utilities
+│   │   │   │   └── sanitizer.py     # Prompt injection prevention
 │   │   │   │
 │   │   │   ├── signal_gen/          # Signal generation pipeline
 │   │   │   │   ├── generator.py     # SignalGenerator: data → analysis → AI → signal
 │   │   │   │   ├── scorer.py        # Scoring: tech×0.6 + sentiment×0.4
-│   │   │   │   └── targets.py       # ATR-based target/stop-loss (1:2 R:R)
+│   │   │   │   ├── targets.py       # ATR-based target/stop-loss (1:2 R:R)
+│   │   │   │   ├── calibration.py   # Confidence calibration from historical accuracy
+│   │   │   │   ├── feedback.py      # Adaptive feedback loop
+│   │   │   │   ├── mtf_confirmation.py  # Multi-timeframe signal confirmation
+│   │   │   │   ├── risk_guard.py    # Per-sector/market position limits
+│   │   │   │   ├── shadow_mode.py   # Shadow mode for testing new strategies
+│   │   │   │   └── streak_protection.py # Consecutive loss protection
 │   │   │   │
-│   │   │   └── alerts/              # Alert dispatch
-│   │   │       ├── telegram_bot.py  # 10 commands (/start, /signals, /config, etc.)
-│   │   │       ├── formatter.py     # 11 message formatters
-│   │   │       └── dispatcher.py    # Alert routing + retry logic
+│   │   │   ├── alerts/              # Alert dispatch
+│   │   │   │   ├── telegram_bot.py  # Telegram commands (/start, /signals, /config, etc.)
+│   │   │   │   ├── formatter.py     # Message formatters
+│   │   │   │   └── dispatcher.py    # Alert routing + retry logic
+│   │   │   │
+│   │   │   └── payment/             # Payment integration
+│   │   │       └── razorpay_service.py  # Razorpay subscription management
 │   │   │
-│   │   └── tasks/                   # 12+ Celery scheduled tasks
+│   │   └── tasks/                   # 20 Celery scheduled tasks
+│   │       ├── _engine.py           # Shared task engine utilities
 │   │       ├── celery_app.py        # Celery app config
 │   │       ├── scheduler.py         # Beat schedule definition
-│   │       ├── data_tasks.py        # 3 market fetcher tasks
+│   │       ├── data_tasks.py        # Market fetcher tasks (stocks, crypto, forex + MTF)
 │   │       ├── analysis_tasks.py    # Technical analysis task
-│   │       ├── ai_tasks.py          # Sentiment analysis task
+│   │       ├── ai_tasks.py          # Sentiment analysis + event chain expiry
 │   │       ├── signal_tasks.py      # Signal generation + resolution
-│   │       ├── alert_tasks.py       # Morning brief, evening wrap, weekly digest
+│   │       ├── alert_tasks.py       # Morning brief, evening wrap, weekly digest, pipeline health
 │   │       ├── price_alert_tasks.py # Price alert checking
-│   │       └── backtest_tasks.py    # On-demand backtesting
+│   │       ├── backtest_tasks.py    # On-demand backtesting
+│   │       ├── calendar_tasks.py    # Earnings/macro event calendar seeding
+│   │       ├── engagement_tasks.py  # Free-tier digest, re-engagement nudges
+│   │       ├── seo_tasks.py         # SEO content generation
+│   │       └── subscription_tasks.py # Subscription expiry checks
 │   │
-│   ├── migrations/                  # 3 Alembic migrations
+│   ├── migrations/                  # 11 Alembic migrations
 │   │   └── versions/
 │   │       ├── b0396d5bb542_initial_schema.py
 │   │       ├── c4a8f2d1e3b5_add_watchlist_column.py
-│   │       └── d5b9e3f4a6c7_add_p3_tables.py
+│   │       ├── d5b9e3f4a6c7_add_p3_tables.py
+│   │       ├── e6c0a5d7b8f9_add_news_event_tables.py
+│   │       ├── f7d1b2c3e4a5_add_missing_news_columns.py
+│   │       ├── g8e2c4d5f6a7_add_users_and_refresh_tokens.py
+│   │       ├── h9f3d5e6g7b8_add_user_id_to_trades_and_alerts.py
+│   │       ├── i0a4b6c8d2e3_add_timeframe_to_market_data.py
+│   │       ├── j1b5c7d9e3f4_add_subscriptions_table.py
+│   │       ├── k2c6d8e0f4g5_add_seo_pages_table.py
+│   │       └── a1b2c3d4e5f6_add_security_constraints.py
 │   │
-│   ├── tests/                       # 40 test files, 480+ passing tests
+│   ├── scripts/                     # Utility scripts
+│   │   ├── seed.py                  # Database seeding
+│   │   ├── seed_demo_signals.py     # Demo signal data
+│   │   └── backup.sh               # Database backup
+│   │
+│   ├── tests/                       # 65 test files, 1,117+ backend tests
 │   │   ├── conftest.py              # Fixtures: test DB, test client, mocks
 │   │   ├── test_indicators*.py      # Technical indicator tests
 │   │   ├── test_signal_*.py         # Signal gen, scorer, resolution tests
 │   │   ├── test_ai_*.py             # AI engine, budget, cost tracker tests
-│   │   ├── test_api_*.py            # 10 endpoint test files
+│   │   ├── test_api_*.py            # API endpoint tests
+│   │   ├── test_auth_*.py           # JWT auth, password account tests
+│   │   ├── test_security_*.py       # Security sprint regression tests
+│   │   ├── test_breaker_*.py        # Adversarial/breaker tests
+│   │   ├── test_v14_*.py            # v1.4 feature tests
 │   │   ├── test_websocket.py        # WebSocket delivery tests
 │   │   ├── test_pipeline_*.py       # Integration pipeline tests
+│   │   ├── test_web_user_identity.py # Web-only user identity tests
 │   │   └── test_sprint*_*.py        # Sprint regression tests
 │   │
 │   ├── requirements.txt
@@ -269,9 +341,12 @@ signalflow/
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── app/                     # 8 pages (Next.js App Router)
+│   │   ├── middleware.ts            # Next.js middleware (auth, redirects)
+│   │   │
+│   │   ├── app/                     # 20+ pages (Next.js App Router)
 │   │   │   ├── layout.tsx           # Root layout (Outfit + JetBrains Mono fonts)
-│   │   │   ├── page.tsx             # Dashboard: MarketOverview → WinRate → SignalFeed
+│   │   │   ├── page.tsx             # Dashboard / Landing page
+│   │   │   ├── globals.css          # Tailwind + dark theme CSS vars
 │   │   │   ├── signal/[id]/page.tsx # Signal detail: chart, indicators, risk calc
 │   │   │   ├── history/page.tsx     # Signal history with outcome filters
 │   │   │   ├── portfolio/page.tsx   # Trade log, positions, P&L
@@ -279,50 +354,96 @@ signalflow/
 │   │   │   ├── backtest/page.tsx    # Historical backtesting
 │   │   │   ├── how-it-works/page.tsx# Educational guide
 │   │   │   ├── shared/[id]/page.tsx # Public shared signal view
-│   │   │   └── globals.css          # Tailwind + dark theme CSS vars
+│   │   │   ├── auth/signin/page.tsx # Sign-in page
+│   │   │   ├── auth/signup/page.tsx # Sign-up page
+│   │   │   ├── brief/page.tsx       # AI market briefs
+│   │   │   ├── calendar/page.tsx    # Economic/earnings calendar
+│   │   │   ├── contact/page.tsx     # Contact page
+│   │   │   ├── news/page.tsx        # News intelligence dashboard
+│   │   │   ├── pricing/page.tsx     # Subscription pricing
+│   │   │   ├── privacy/page.tsx     # Privacy policy
+│   │   │   ├── refund-policy/page.tsx # Refund policy
+│   │   │   ├── settings/page.tsx    # User settings
+│   │   │   ├── terms/page.tsx       # Terms of service
+│   │   │   ├── track-record/page.tsx# Signal track record
+│   │   │   ├── watchlist/page.tsx   # Symbol watchlist
+│   │   │   └── api/                 # Next.js API proxy routes
 │   │   │
-│   │   ├── components/              # 22 React components
-│   │   │   ├── signals/             # SignalFeed, SignalCard, SignalBadge,
-│   │   │   │                        # ConfidenceGauge, AIReasoningPanel,
-│   │   │   │                        # TargetProgressBar, RiskCalculator,
-│   │   │   │                        # WinRateCard, AccuracyChart, ShareButton, AskAI
+│   │   ├── components/              # 55 React components
+│   │   │   ├── signals/             # SignalFeed, SignalCard, SimpleSignalCard,
+│   │   │   │                        # SignalBadge, ConfidenceGauge, ConfidenceBreakdown,
+│   │   │   │                        # AIReasoningPanel, TargetProgressBar,
+│   │   │   │                        # RiskCalculator, PipCalculator,
+│   │   │   │                        # WinRateCard, AccuracyChart, ShareButton,
+│   │   │   │                        # AskAI, EventTimeline, TrailingStopSuggestion
 │   │   │   ├── markets/             # MarketOverview, MarketHeatmap, Sparkline
+│   │   │   ├── charts/              # AllocationPieChart, BenchmarkComparison,
+│   │   │   │                        # CandlestickChart, EquityCurve
 │   │   │   ├── alerts/              # AlertTimeline, AlertConfig
+│   │   │   ├── dashboard/           # DashboardContent
+│   │   │   ├── landing/             # LandingPage
 │   │   │   └── shared/              # Navbar, BottomNav, MobileMenuSheet, SiteFooter,
 │   │   │                            # WelcomeModal, ChatIdPrompt, LoadingSpinner,
 │   │   │                            # ErrorBoundary, KeyboardHelpModal, Toast,
-│   │   │                            # IndicatorPill
+│   │   │                            # IndicatorPill, IndicatorTooltip, Skeleton,
+│   │   │                            # AuthProvider, SessionSync, QueryProvider,
+│   │   │                            # ThemeProvider, TextSizeProvider,
+│   │   │                            # CollapsibleSection, CookieConsent,
+│   │   │                            # FocusTrap, GuidedTour, NotificationCenter,
+│   │   │                            # OfflineBanner, SebiDisclaimer, SettingsPanel,
+│   │   │                            # SymbolAutocomplete, UpgradePrompt
 │   │   │
-│   │   ├── hooks/                   # 4 custom hooks
+│   │   ├── hooks/                   # 5 custom hooks
 │   │   │   ├── useSignals.ts        # REST signal fetching
 │   │   │   ├── useMarketData.ts     # Market data fetching
 │   │   │   ├── useWebSocket.ts      # WebSocket + auto-reconnect
-│   │   │   └── useKeyboardShortcuts.ts # Global keyboard shortcuts
+│   │   │   ├── useKeyboardShortcuts.ts # Global keyboard shortcuts
+│   │   │   └── useQueries.ts        # React Query hooks
 │   │   │
-│   │   ├── store/                   # 3 Zustand stores
+│   │   ├── store/                   # 5 Zustand stores
 │   │   │   ├── signalStore.ts       # Signals, filters, unseen count
 │   │   │   ├── marketStore.ts       # Market snapshots, WS status
-│   │   │   └── userStore.ts         # Telegram chat ID (localStorage)
+│   │   │   ├── userStore.ts         # Auth tokens, user state (sessionStorage)
+│   │   │   ├── preferencesStore.ts  # User UI preferences
+│   │   │   └── tierStore.ts         # Subscription tier state
 │   │   │
 │   │   ├── lib/                     # Shared utilities
 │   │   │   ├── api.ts               # REST client for /api/v1
+│   │   │   ├── auth.ts              # Auth helpers (token refresh, interceptors)
 │   │   │   ├── websocket.ts         # WebSocket client class
-│   │   │   ├── types.ts             # 15+ TypeScript interfaces
-│   │   │   └── constants.ts         # Colors, thresholds, badge labels, nav links
+│   │   │   ├── types.ts             # 25+ TypeScript interfaces
+│   │   │   ├── constants.ts         # Colors, thresholds, badge labels, nav links
+│   │   │   ├── notifications.ts     # Browser notification helpers
+│   │   │   └── tiers.ts             # Tier feature gates
 │   │   │
-│   │   └── utils/
-│   │       ├── formatters.ts        # Price, %, date, time formatting
-│   │       └── market-hours.ts      # Market open/close detection
+│   │   ├── utils/
+│   │   │   ├── formatters.ts        # Price, %, date, time formatting
+│   │   │   └── market-hours.ts      # Market open/close detection
+│   │   │
+│   │   └── __tests__/               # 79 frontend test files, 741 tests
+│   │       ├── setup.ts             # Test setup (jsdom, mocks)
+│   │       ├── helpers.ts            # Test utilities
+│   │       └── *.test.{tsx,ts}      # Component, hook, store, utility tests
 │   │
 │   ├── package.json
 │   ├── tsconfig.json                # strict: true, @/* path alias
 │   ├── tailwind.config.ts           # Dark theme color tokens
+│   ├── vitest.config.ts             # Vitest configuration
 │   └── Dockerfile
 │
 └── docs/
-    ├── design/                      # Spec documents (v1–v4)
+    ├── README.md                    # Docs index
+    ├── compliance/                  # Regulatory & data breach templates
+    ├── decisions/                   # Architecture decision records
+    ├── design/                      # Spec documents (v1–v4), nav reorganization
+    ├── guides/                      # Developer guides
+    ├── operations/                  # Ops runbooks
+    ├── reference/                   # API & technical references
+    ├── research/                    # Research notes
     ├── review/                      # Code review findings
-    └── api.md                       # Full API reference
+    ├── reviews/                     # Multi-agent & expert reviews
+    ├── security/                    # Security reports & hardening plans
+    └── sprints/                     # Sprint plans (1-4 + v1.1, v1.2)
 ```
 
 ---
@@ -531,14 +652,79 @@ export default function SignalCard({ signal, expanded, onToggle }: any) {
 
 | Method | Endpoint | Description | Response |
 |--------|---------|------------|---------|
-| GET | `/health` | Health check + system status | `{ status, uptime, last_data_fetch, active_signals_count }` |
+| GET | `/health` | Health check + system status | `{ status, uptime, ... }` |
+| GET | `/metrics` | Prometheus metrics | text/plain |
+| **Signals** | | | |
 | GET | `/api/v1/signals` | List active signals | `{ data: Signal[], meta }` |
 | GET | `/api/v1/signals/{id}` | Signal detail | `{ data: Signal }` |
+| POST | `/api/v1/signals/{id}/feedback` | Submit signal feedback | `{ data: ... }` |
+| GET | `/api/v1/signals/{id}/feedback` | Get signal feedback | `{ data: ... }` |
+| POST | `/api/v1/signals/{id}/share` | Create shareable link | `{ data: { share_id } }` |
+| GET | `/api/v1/signals/shared/{id}` | View shared signal | `{ data: Signal }` |
+| **History & Analytics** | | | |
 | GET | `/api/v1/signals/history` | Past signals with outcomes | `{ data: SignalHistory[], meta }` |
+| GET | `/api/v1/signals/stats` | Aggregate signal statistics | `{ data: SignalStats }` |
+| GET | `/api/v1/signals/stats/trend` | Weekly trend data | `[WeeklyTrendItem]` |
+| GET | `/api/v1/signals/{symbol}/track-record` | Per-symbol track record | `SymbolTrackRecord` |
+| GET | `/api/v1/signals/performance` | Performance metrics | `{ data: ... }` |
+| GET | `/api/v1/signals/streak-check` | Consecutive loss check | `{ data: ... }` |
+| GET | `/api/v1/signals/calibration` | Confidence calibration | `{ data: ... }` |
+| **Markets** | | | |
 | GET | `/api/v1/markets/overview` | Live market snapshot | `{ data: { stocks, crypto, forex } }` |
+| **Alerts** | | | |
 | GET | `/api/v1/alerts/config` | Get alert preferences | `{ data: AlertConfig }` |
 | POST | `/api/v1/alerts/config` | Create alert config | `{ data: AlertConfig }` |
 | PUT | `/api/v1/alerts/config/{id}` | Update alert config | `{ data: AlertConfig }` |
+| GET | `/api/v1/alerts/watchlist` | Get watchlist | `{ data: [...] }` |
+| POST | `/api/v1/alerts/watchlist` | Add to watchlist | `{ data: ... }` |
+| **Price Alerts** | | | |
+| GET | `/api/v1/price-alerts` | List price alerts | `{ data: [...] }` |
+| POST | `/api/v1/price-alerts` | Create price alert | `{ data: ... }` |
+| DELETE | `/api/v1/price-alerts/{id}` | Delete price alert | `{ data: ... }` |
+| **Portfolio** | | | |
+| GET | `/api/v1/portfolio/trades` | List trades | `{ data: [...] }` |
+| POST | `/api/v1/portfolio/trades` | Log a trade | `{ data: ... }` |
+| GET | `/api/v1/portfolio/summary` | Portfolio summary/P&L | `{ data: ... }` |
+| **Auth** | | | |
+| POST | `/api/v1/auth/register` | Create account | `{ data: { tokens, user } }` |
+| POST | `/api/v1/auth/login` | Login | `{ data: { tokens, user } }` |
+| POST | `/api/v1/auth/refresh` | Refresh JWT | `{ data: { access_token } }` |
+| POST | `/api/v1/auth/logout` | Logout (revoke token) | `{ data: ... }` |
+| POST | `/api/v1/auth/logout-all` | Logout all sessions | `{ data: ... }` |
+| GET | `/api/v1/auth/profile` | Get user profile | `{ data: User }` |
+| PUT | `/api/v1/auth/password` | Change password | `{ data: ... }` |
+| DELETE | `/api/v1/auth/account` | Delete account | `{ data: ... }` |
+| **AI** | | | |
+| POST | `/api/v1/ai/ask` | Ask Claude about a symbol | `{ data: { answer } }` |
+| **News & Events** | | | |
+| GET | `/api/v1/news` | List news events | `NewsEventListResponse` |
+| GET | `/api/v1/news/signal/{id}` | News linked to signal | `NewsEventListResponse` |
+| GET | `/api/v1/news/events` | Entity events | `EventEntityListResponse` |
+| GET | `/api/v1/news/events/{id}` | Event detail | `{ data: ... }` |
+| GET | `/api/v1/news/chains/{symbol}` | Causal chains for symbol | `{ data: ... }` |
+| GET | `/api/v1/news/calendar` | Event calendar | `EventCalendarListResponse` |
+| POST | `/api/v1/news/calendar` | Create calendar event | `{ data: ... }` |
+| **Payments** | | | |
+| GET | `/api/v1/payments/subscription` | Get subscription status | `{ data: ... }` |
+| GET | `/api/v1/payments/plans` | List subscription plans | `{ data: ... }` |
+| POST | `/api/v1/payments/trial` | Start free trial | `{ data: ... }` |
+| POST | `/api/v1/payments/subscribe` | Create subscription | `{ data: ... }` |
+| POST | `/api/v1/payments/webhook` | Razorpay webhook | — |
+| **Backtest** | | | |
+| POST | `/api/v1/backtest/run` | Run backtest | `{ data: BacktestRun }` |
+| GET | `/api/v1/backtest/{id}` | Get backtest result | `{ data: BacktestRun }` |
+| **Feedback Loop** | | | |
+| GET | `/api/v1/feedback/accuracy` | Accuracy metrics | `{ data: ... }` |
+| GET | `/api/v1/feedback/weights` | Adaptive weights | `{ data: ... }` |
+| GET | `/api/v1/feedback/indicators` | Indicator performance | `{ data: ... }` |
+| **Admin** | | | |
+| GET | `/api/v1/admin/revenue` | Revenue dashboard | `{ data: ... }` |
+| GET | `/api/v1/admin/shadow-mode` | Shadow mode results | `{ data: ... }` |
+| **SEO** | | | |
+| GET | `/api/v1/seo/` | List SEO pages | `{ data: [...] }` |
+| GET | `/api/v1/seo/{slug}` | Get SEO page | `{ data: ... }` |
+| **WebSocket** | | | |
+| POST | `/ws/ticket` | Get WS auth ticket | `{ data: { ticket } }` |
 | WS | `/ws/signals` | Real-time signal stream | Signal objects as they fire |
 
 ### Query Parameters (Signals)
@@ -702,62 +888,114 @@ Respond with the explanation text only, no JSON."""
 CELERY_BEAT_SCHEDULE = {
     # ── Data Ingestion ──
     "fetch-indian-stocks": {
-        "task": "tasks.data_tasks.fetch_indian_stocks",
+        "task": "app.tasks.data_tasks.fetch_indian_stocks",
         "schedule": 60.0,                               # Every 1 min (during NSE hours only)
     },
     "fetch-crypto-prices": {
-        "task": "tasks.data_tasks.fetch_crypto",
+        "task": "app.tasks.data_tasks.fetch_crypto",
         "schedule": 30.0,                               # Every 30 sec (24/7)
     },
     "fetch-forex-rates": {
-        "task": "tasks.data_tasks.fetch_forex",
+        "task": "app.tasks.data_tasks.fetch_forex",
         "schedule": 60.0,                               # Every 1 min (24/5)
+    },
+
+    # ── Multi-Timeframe Data (for MTF confirmation) ──
+    "fetch-crypto-daily": {
+        "task": "app.tasks.data_tasks.fetch_crypto_daily",
+        "schedule": 3600.0,                             # Every hour — daily candle
+    },
+    "fetch-forex-4h": {
+        "task": "app.tasks.data_tasks.fetch_forex_4h",
+        "schedule": 900.0,                              # Every 15 min — 4h candle
     },
 
     # ── Analysis ──
     "run-technical-analysis": {
-        "task": "tasks.analysis_tasks.run_analysis",
+        "task": "app.tasks.analysis_tasks.run_analysis",
         "schedule": 300.0,                              # Every 5 min
     },
 
     # ── AI Engine ──
     "run-sentiment-analysis": {
-        "task": "tasks.ai_tasks.run_sentiment",
-        "schedule": 3600.0,                              # Every 1 hour
+        "task": "app.tasks.ai_tasks.run_sentiment",
+        "schedule": 3600.0,                             # Every 1 hour
     },
 
     # ── Signal Generation ──
     "generate-signals": {
-        "task": "tasks.signal_tasks.generate_signals",
+        "task": "app.tasks.signal_tasks.generate_signals",
         "schedule": 300.0,                              # Every 5 min
     },
 
     # ── Digests ──
     "morning-brief": {
-        "task": "tasks.alert_tasks.morning_brief",
+        "task": "app.tasks.alert_tasks.morning_brief",
         "schedule": crontab(hour=8, minute=0),          # 8:00 AM IST daily
     },
     "evening-wrap": {
-        "task": "tasks.alert_tasks.evening_wrap",
+        "task": "app.tasks.alert_tasks.evening_wrap",
         "schedule": crontab(hour=16, minute=0),         # 4:00 PM IST daily
+    },
+    "weekly-digest": {
+        "task": "app.tasks.alert_tasks.weekly_digest",
+        "schedule": crontab(hour=18, minute=0, day_of_week=0),  # Sunday 6 PM IST
     },
 
     # ── Signal Resolution ──
     "resolve-signals": {
-        "task": "tasks.signal_tasks.resolve_signals",
-        "schedule": 300.0,                              # Every 5 min
+        "task": "app.tasks.signal_tasks.resolve_expired",
+        "schedule": 900.0,                              # Every 15 min
     },
 
     # ── User Alerts ──
     "check-price-alerts": {
-        "task": "tasks.price_alert_tasks.check_price_alerts",
-        "schedule": 300.0,                              # Every 5 min
+        "task": "app.tasks.price_alert_tasks.check_price_alerts",
+        "schedule": 60.0,                               # Every 1 min
     },
 
-    # ── Digests (continued) ──
-    "weekly-digest": {
-        "task": "tasks.alert_tasks.weekly_digest",
-        "schedule": crontab(hour=12, minute=30, day_of_week=0),  # Sun 6:00 PM IST
+    # ── Maintenance ──
+    "health-check": {
+        "task": "app.tasks.data_tasks.health_check",
+        "schedule": 300.0,                              # Every 5 min
+    },
+    "pipeline-health-check": {
+        "task": "app.tasks.alert_tasks.pipeline_health_check",
+        "schedule": 900.0,                              # Every 15 min
+    },
+
+    # ── Event Chain Maintenance ──
+    "expire-stale-events": {
+        "task": "app.tasks.ai_tasks.expire_stale_events",
+        "schedule": 3600.0,                             # Every hour
+    },
+
+    # ── Calendar Seeding ──
+    "seed-calendar-events": {
+        "task": "app.tasks.calendar_tasks.seed_calendar_events",
+        "schedule": crontab(hour=6, minute=0),          # 6:00 AM IST daily
+    },
+
+    # ── Subscription Management ──
+    "check-expired-subscriptions": {
+        "task": "app.tasks.subscription_tasks.check_expired_subscriptions",
+        "schedule": 3600.0,                             # Every hour
+    },
+
+    # ── SEO Content Generation ──
+    "generate-seo-pages": {
+        "task": "app.tasks.seo_tasks.generate_seo_pages",
+        "schedule": crontab(hour=8, minute=30),         # 8:30 AM IST daily
+    },
+
+    # ── Engagement ──
+    "free-tier-weekly-digest": {
+        "task": "app.tasks.engagement_tasks.send_free_tier_digest",
+        "schedule": crontab(hour=18, minute=30, day_of_week=0),  # Sunday 6:30 PM IST
+    },
+    "reengagement-nudge": {
+        "task": "app.tasks.engagement_tasks.send_reengagement_nudge",
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),   # Wednesday 10 AM IST
     },
 }
 ```
@@ -803,11 +1041,27 @@ TELEGRAM_DEFAULT_CHAT_ID=...          # Primary user's chat ID
 # ── Monitoring ──
 SENTRY_DSN=...
 
+# ── JWT Auth ──
+JWT_SECRET_KEY=...                    # HMAC signing key
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# ── Payments (Razorpay) ──
+RAZORPAY_KEY_ID=...
+RAZORPAY_KEY_SECRET=...
+RAZORPAY_WEBHOOK_SECRET=...
+RAZORPAY_MONTHLY_PLAN_ID=...          # ₹499/mo plan
+RAZORPAY_ANNUAL_PLAN_ID=...           # ₹4999/yr plan
+
 # ── App Config ──
 ENVIRONMENT=development               # development | production
 LOG_LEVEL=INFO
 API_HOST=0.0.0.0
 API_PORT=8000
+FRONTEND_URL=http://localhost:3000
+API_SECRET_KEY=...                    # Shared secret between FE & BE
+INTERNAL_API_KEY=...                  # Celery/bot internal calls
 MONTHLY_AI_BUDGET_USD=30
 ```
 
@@ -922,30 +1176,35 @@ RSI: 62.7 | MACD: Strong Bullish | Vol: High
 ### Test Structure
 
 ```
-tests/
-├── conftest.py              # Shared fixtures
-│   ├── test_db              # In-memory SQLite or test PostgreSQL
-│   ├── test_client           # FastAPI TestClient
-│   ├── mock_claude_api       # Mocked Claude responses
-│   ├── sample_market_data    # Fixture OHLCV DataFrames
-│   └── sample_signals        # Pre-built signal objects
+backend/tests/                       # 65 test files, flat structure
+├── conftest.py                      # Shared fixtures
+│   ├── test_db                      # In-memory SQLite or test PostgreSQL
+│   ├── test_client                  # FastAPI TestClient (Telegram user)
+│   ├── web_user_client              # FastAPI TestClient (web-only user)
+│   ├── mock_claude_api              # Mocked Claude responses
+│   ├── sample_market_data           # Fixture OHLCV DataFrames
+│   └── sample_signals               # Pre-built signal objects
 │
-├── unit/
-│   ├── test_rsi.py
-│   ├── test_macd.py
-│   ├── test_bollinger.py
-│   ├── test_signal_scorer.py
-│   ├── test_target_calculator.py
-│   └── test_message_formatter.py
-│
-├── integration/
-│   ├── test_data_to_signal_pipeline.py   # Full pipeline test
-│   ├── test_api_endpoints.py
-│   ├── test_websocket_delivery.py
-│   └── test_telegram_dispatch.py
-│
-└── load/
-    └── locustfile.py          # Load testing: 50 symbols × 1 min
+├── test_indicators*.py              # Technical indicator tests
+├── test_signal_*.py                 # Signal gen, scorer, resolution, feedback
+├── test_ai_*.py                     # AI engine, budget, cost tracker
+├── test_api_*.py                    # 12 API endpoint test files
+├── test_auth_*.py                   # JWT auth, password accounts
+├── test_security_sprint*.py         # 5 security sprint regression tests
+├── test_breaker_*.py                # 5 adversarial/breaker test files
+├── test_v14_*.py                    # 6 v1.4 feature test files
+├── test_sprint*_*.py                # Sprint regression tests
+├── test_pipeline_*.py               # Integration pipeline tests
+├── test_websocket.py                # WebSocket delivery tests
+├── test_web_user_identity.py        # Web-only user identity tests
+└── test_structured_logging.py       # Structured logging tests
+
+frontend/src/__tests__/              # 79 test files
+├── setup.ts                         # Test setup (jsdom, mocks)
+├── helpers.ts                       # Test utilities
+├── *.test.tsx                       # Component tests (55 files)
+├── *.test.ts                        # Store, hook, utility tests (24 files)
+└── (covers all 55 components, 5 hooks, 5 stores, utilities)
 ```
 
 ### Test Rules
@@ -1047,24 +1306,31 @@ healthcheckTimeout = 30
 
 | I need to... | Edit this file |
 |-------------|---------------|
-| Add a new market/symbol | `backend/app/config.py` (TRACKED_SYMBOLS) |
+| Add a new market/symbol | `backend/app/config.py` (tracked_stocks/tracked_crypto/tracked_forex) |
 | Add a new technical indicator | `backend/app/services/analysis/indicators.py` |
 | Change signal scoring weights | `backend/app/services/signal_gen/scorer.py` |
 | Modify a Claude AI prompt | `backend/app/services/ai_engine/prompts.py` |
 | Add a new API endpoint | `backend/app/api/` + register in `router.py` |
 | Change Celery task timing | `backend/app/tasks/scheduler.py` |
 | Add a dashboard component | `frontend/src/components/` |
+| Add a new page | `frontend/src/app/<route>/page.tsx` |
 | Change WebSocket message format | `backend/app/api/websocket.py` + `frontend/src/lib/websocket.ts` |
 | Add a Telegram command | `backend/app/services/alerts/telegram_bot.py` |
 | Change Telegram message format | `backend/app/services/alerts/formatter.py` |
 | Add a database table | `backend/app/models/` + create Alembic migration |
+| Change auth/JWT logic | `backend/app/auth.py` |
+| Change payment/subscription logic | `backend/app/services/payment/razorpay_service.py` |
+| Change tier gating rules | `backend/app/services/tier_gating.py` + `frontend/src/lib/tiers.ts` |
+| Add a Zustand store | `frontend/src/store/` |
 | Update project instructions | This file (CLAUDE.md) |
 
 ---
 
 ## Project History & Current State
 
-### Version: v1.4.0 (27 March 2026)
+### Version: v1.3.0 (latest tag, 27 March 2026)
+
+> **Note:** HEAD is ahead of v1.3.0 with unreleased changes (navigation reorganization, v1.5 audit fixes). The CHANGELOG has entries up to v1.1.1. Missing entries: v1.2.0 (docs reorganization + expert review), v1.3.0 (v1.4 implementation + settings review + breaker tests). These need to be backfilled.
 
 ### Development Phases
 
@@ -1081,30 +1347,40 @@ healthcheckTimeout = 30
 | Sprint 1–10 | `8cbc471`–`2cdf2dd` | 10 iterative sprints fixing UX, adding detail pages, mobile fixes |
 | V1 UI | `dbec9da` | First UI simplification (20→8 data points per card) |
 | V2 UI | `c3fe1ab` | Second UI simplification (8→6 data points, 3-section expand) |
-| v1.4.0 | `6151b07` | Security hardening, JWT auth, Razorpay payments, causal event chains, SEO, engagement, Prometheus metrics, structured logging, tier gating |
+| v1.1.0 | `e5e0c23` | v1.1 improvements — Sprints A through E |
+| v1.1.1 | `27fe622` | Start.sh reliability, Redis config fix |
+| v1.2.0 | `839fdfe` | Docs reorganization, 20-expert v1.2 review |
+| v1.3.0 | `6151b07` | Security hardening, JWT auth, Razorpay payments, causal event chains, SEO, engagement, Prometheus metrics, structured logging, tier gating |
+| Unreleased | `44f5dd7` | Navigation reorganization, v1.5 audit fixes |
 
 ### Key Metrics
 
 | Metric | Count |
 |--------|-------|
-| Backend Python files | ~60 (12,000+ lines) |
-| Frontend TypeScript files | 76 |
-| API endpoints | ~30 REST + 1 WebSocket |
-| Database tables | 19 |
-| SQLAlchemy models | 19 |
+| Backend Python files | 99 (14,400+ lines) |
+| Frontend TypeScript files | 98 (12,500+ lines) |
+| API endpoints | 57 REST + 1 WebSocket |
+| Database model files | 18 |
 | Tracked symbols | 31 (15 stocks, 10 crypto, 6 forex) |
-| Test files | 55+ |
-| Passing tests | 1,970+ (backend 1,230 + frontend 741) |
-| React components | 22 |
-| Zustand stores | 3 |
-| Celery scheduled tasks | 15+ |
-| Alembic migrations | 3 |
-| Git tags | v0.0.1, v1.0.0, v1.4.0 |
+| Backend test files | 65 |
+| Frontend test files | 79 |
+| Backend tests collected | 1,241 (+ 16 skipped) |
+| Frontend tests passing | 741 |
+| React components | 55 |
+| Frontend pages | 20 |
+| Zustand stores | 5 |
+| Custom hooks | 5 |
+| Celery scheduled tasks | 20 |
+| Alembic migrations | 11 |
+| Git tags | v0.0.1, v0.0.2, v0.0.3, v1.0.0, v1.1.0, v1.1.1, v1.2.0, v1.3.0 |
 
 ### Known Issues
 
 - `origin/feature/phase4-integration-deploy` remote branch still exists (was GitHub default branch; needs manual GitHub settings change to delete)
+- ~~12 backend test collection errors~~ — FIXED (missing local pip packages: celery, asyncpg, structlog, slowapi)
+- CHANGELOG.md is missing entries for v1.2.0 and v1.3.0
+- No v1.4.0 tag exists despite previous CLAUDE.md references — version was v1.3.0
 
 ---
 
-*Last updated: 27 March 2026 | SignalFlow AI v1.4.0*
+*Last updated: 29 March 2026 | SignalFlow AI v1.3.0 + unreleased*

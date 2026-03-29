@@ -9,9 +9,69 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Navigation reorganization: 5 primary links, Research dropdown, mobile bottom nav, site footer
+- v1.5 audit fixes: 14 items (models, env, hardcoded URLs, event loop, SEO routes, tests)
+
 ### Planned
 - Documentation reorganization (see docs/design/v1.2-review-and-docs-plan.md)
 - Tier A quick wins: favicon, breadcrumbs, sparklines on cards, empty states
+
+---
+
+## [1.3.0] — 2026-03-27 (`v1.3.0`)
+
+### Added
+- **JWT Authentication**: Full auth system — register, login, refresh, logout, logout-all, profile, password change, account deletion
+- **Razorpay Payments**: Subscription management (₹499/mo, ₹4999/yr), free trial, webhook handling, plan listing
+- **Tier Gating**: Feature-based access control by subscription tier (free, pro, premium)
+- **Causal Event Chains**: AI-powered causal link analysis between news events (causes, amplifies, dampens, contradicts)
+- **SEO Content Generation**: Automated SEO page creation via Celery task
+- **Engagement Tasks**: Free-tier weekly digest, re-engagement nudge (Wednesday 10 AM IST)
+- **Prometheus Metrics**: `/metrics` endpoint for monitoring
+- **Structured Logging**: Correlation IDs, JSON-format structured logs
+- **Admin Endpoints**: Revenue dashboard, shadow mode results
+- **Feedback Loop API**: Accuracy metrics, adaptive weights, indicator performance endpoints
+- **Signal Feedback**: "Did you take this trade?" buttons (took/watching/skipped)
+- **Shadow Mode**: Test new strategies without affecting live signals
+- **Streak Protection**: Consecutive loss detection and alerts
+- **Risk Guard**: Per-sector and per-market position limits
+- **Multi-Timeframe Confirmation**: MTF signal validation across timeframes
+- **Confidence Calibration**: Historical accuracy-based calibration tracking
+- **News Intelligence**: Full news API — articles, entities, chains, calendar, signal-linked news
+- **Settings & Breaker Tests**: Adversarial tests for scoring, pipeline, formatting, API, security
+- 8 new Alembic migrations (news events, users, subscriptions, SEO, security constraints, timeframe)
+- 6 new schema files (auth, news)
+- 7 new API route files (auth, admin, feedback, news, payments, seo, signal_feedback)
+- 7 new service files (cache, metrics, pubsub, revenue, seo, tier_gating, earnings_calendar)
+- Payment service (Razorpay)
+- 4 new Celery task files (calendar, engagement, seo, subscription)
+
+### Changed
+- Backend Python files grew from ~60 to 99 (14,400+ lines)
+- Models refactored from 4 files (monolithic p3_models.py) to 18 individual model files
+- API endpoints grew from ~25 to 57 REST + 1 WebSocket
+- Test files grew from 40 to 65 (backend) + 79 (frontend) = 144 total
+- Frontend components grew from 22 to 55
+- Zustand stores grew from 3 to 5 (added preferencesStore, tierStore)
+- Custom hooks grew from 4 to 5 (added useQueries)
+- Frontend lib files grew from 4 to 7 (added auth, notifications, tiers)
+- Frontend pages grew from 8 to 20+
+- Celery scheduled tasks grew from 12 to 20
+
+---
+
+## [1.2.0] — 2026-03-26 (`v1.2.0`)
+
+### Added
+- Comprehensive documentation reorganization into 11 directories
+- 20-expert multi-agent v1.2 review
+- Architecture decision records, compliance templates, operation runbooks
+- Security reports and hardening documentation
+- Sprint plans and developer guides
+
+### Changed
+- Docs restructured from flat files to organized directories (compliance, decisions, design, guides, operations, reference, research, review, reviews, security, sprints)
 
 ---
 
