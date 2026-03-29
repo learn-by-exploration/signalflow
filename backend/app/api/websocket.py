@@ -1,7 +1,6 @@
 """WebSocket endpoint for real-time signal streaming."""
 
 import asyncio
-import hmac
 import json
 import logging
 import time
@@ -9,7 +8,15 @@ import uuid
 from collections import defaultdict
 from collections.abc import Set
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+import redis
+from fastapi import (
+    APIRouter,
+    Depends,
+    Query,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
 
 from app.auth import AuthContext, decode_jwt_token, require_auth
 from app.config import get_settings
@@ -125,13 +132,31 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# ── Ticket store (in-memory, single-use, 30s TTL) ──
+# ── Ticket store ──
+# Uses Redis for multi-worker support, with in-memory fallback.
 _ws_tickets: dict[str, dict] = {}
 _ws_ticket_expiry: dict[str, float] = {}
 
+_ticket_redis: redis.Redis | None = None
+_ticket_redis_initialized = False
+
+
+def _get_ticket_redis() -> redis.Redis | None:
+    """Get Redis client for ticket storage. Returns None if unavailable."""
+    global _ticket_redis, _ticket_redis_initialized
+    if not _ticket_redis_initialized:
+        _ticket_redis_initialized = True
+        try:
+            settings = get_settings()
+            if settings.redis_url:
+                _ticket_redis = redis.from_url(settings.redis_url, decode_responses=True)
+        except Exception:
+            logger.debug("Redis unavailable for WS tickets, using in-memory store")
+    return _ticket_redis
+
 
 def _cleanup_expired_tickets() -> None:
-    """Remove expired tickets."""
+    """Remove expired in-memory tickets."""
     now = time.monotonic()
     expired = [tid for tid, exp in _ws_ticket_expiry.items() if now > exp]
     for tid in expired:
@@ -148,20 +173,45 @@ async def create_ws_ticket(
     """Issue a single-use WebSocket ticket (TTL=30s).
 
     Client calls this before connecting to /ws/signals?ticket=<id>.
+    Stored in Redis for multi-worker support, with in-memory fallback.
     """
-    _cleanup_expired_tickets()
     ticket_id = str(uuid.uuid4())
-    _ws_tickets[ticket_id] = {
+    ticket_data = {
         "user_id": auth.user_id,
         "tier": auth.tier,
-        "chat_id": auth.telegram_chat_id,
+        "chat_id": str(auth.telegram_chat_id) if auth.telegram_chat_id else "",
     }
-    _ws_ticket_expiry[ticket_id] = time.monotonic() + 30  # 30-second TTL
+
+    r = _get_ticket_redis()
+    if r:
+        try:
+            import json as json_mod
+            r.setex(f"ws_ticket:{ticket_id}", 30, json_mod.dumps(ticket_data))
+            return {"data": {"ticket": ticket_id, "ttl": 30}}
+        except Exception:
+            logger.debug("Redis ticket store failed, falling back to in-memory")
+
+    # In-memory fallback
+    _cleanup_expired_tickets()
+    _ws_tickets[ticket_id] = ticket_data
+    _ws_ticket_expiry[ticket_id] = time.monotonic() + 30
     return {"data": {"ticket": ticket_id, "ttl": 30}}
 
 
 def _consume_ticket(ticket_id: str) -> dict | None:
     """Validate and consume a single-use ticket. Returns user info or None."""
+    r = _get_ticket_redis()
+    if r:
+        try:
+            import json as json_mod
+            data = r.get(f"ws_ticket:{ticket_id}")
+            if data:
+                r.delete(f"ws_ticket:{ticket_id}")
+                return json_mod.loads(data)
+        except Exception:
+            logger.debug("Redis ticket consume failed, trying in-memory")
+
+    # In-memory fallback
     _cleanup_expired_tickets()
     info = _ws_tickets.pop(ticket_id, None)
     _ws_ticket_expiry.pop(ticket_id, None)
@@ -178,10 +228,8 @@ async def websocket_signals(
 
     Requires authentication via:
     1. ?ticket=<ticket_id> — single-use ticket from POST /ws/ticket (preferred)
-    2. ?token=<jwt> — JWT access token (legacy)
-    3. ?api_key=<key> — internal API key for services
+    2. ?token=<jwt> — JWT access token (legacy, will be deprecated)
     """
-    settings = get_settings()
 
     # Auth method 1: Single-use ticket (preferred)
     if ticket:
@@ -189,22 +237,18 @@ async def websocket_signals(
         if not ticket_info:
             await websocket.close(code=4001, reason="Invalid or expired ticket")
             return
-    # Auth method 2: JWT token (legacy)
+    # Auth method 2: JWT token (legacy — prefer ticket-based auth)
     elif token:
         try:
             payload = decode_jwt_token(token)
             if payload.get("type") != "access":
                 await websocket.close(code=4001, reason="Invalid token type")
                 return
+            logger.info("WS auth via JWT query param (deprecated — use ticket-based auth)")
         except Exception:
             await websocket.close(code=4001, reason="Invalid or expired token")
             return
-    # Auth method 3: Internal API key
-    elif settings.api_secret_key:
-        api_key = websocket.query_params.get("api_key")
-        if not api_key or not hmac.compare_digest(api_key, settings.api_secret_key):
-            await websocket.close(code=4001, reason="Authentication required")
-            return
+    # No valid auth provided
     else:
         await websocket.close(code=4001, reason="Authentication required")
         return

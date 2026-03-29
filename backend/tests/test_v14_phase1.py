@@ -5,14 +5,8 @@ singleton engine, pipeline alerting, tier enforcement, JWT revocation,
 SEBI compliance, constant-time comparison, pool recycle, and supervisord.
 """
 
-import hmac
 import inspect
-import json
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -25,7 +19,7 @@ class TestSentimentWeightReduction:
 
     def test_chain_aware_weights_reduced(self):
         """Chain-aware blend: 65/25/10 (was 50/35/15)."""
-        from app.services.signal_gen.scorer import TECHNICAL_BLEND, CHAIN_BLEND, SENTIMENT_BLEND
+        from app.services.signal_gen.scorer import CHAIN_BLEND, SENTIMENT_BLEND, TECHNICAL_BLEND
 
         assert TECHNICAL_BLEND == 0.65, f"TECHNICAL_BLEND should be 0.65, got {TECHNICAL_BLEND}"
         assert CHAIN_BLEND == 0.25, f"CHAIN_BLEND should be 0.25, got {CHAIN_BLEND}"
@@ -126,7 +120,12 @@ class TestCeleryRetryLogic:
 
     def test_data_tasks_have_retries(self):
         """All data ingestion tasks must have autoretry_for."""
-        from app.tasks.data_tasks import fetch_indian_stocks, fetch_crypto, fetch_forex, health_check
+        from app.tasks.data_tasks import (
+            fetch_crypto,
+            fetch_forex,
+            fetch_indian_stocks,
+            health_check,
+        )
 
         for task in [fetch_indian_stocks, fetch_crypto, fetch_forex, health_check]:
             assert task.autoretry_for is not None, f"{task.name} missing autoretry_for"
@@ -142,7 +141,7 @@ class TestCeleryRetryLogic:
 
     def test_ai_tasks_have_retries(self):
         """AI tasks must have retry configuration."""
-        from app.tasks.ai_tasks import run_sentiment, expire_stale_events
+        from app.tasks.ai_tasks import expire_stale_events, run_sentiment
 
         assert run_sentiment.autoretry_for is not None
         assert run_sentiment.max_retries >= 1
@@ -150,7 +149,7 @@ class TestCeleryRetryLogic:
 
     def test_alert_tasks_have_retries(self):
         """Alert tasks must have retry configuration."""
-        from app.tasks.alert_tasks import morning_brief, evening_wrap, weekly_digest
+        from app.tasks.alert_tasks import evening_wrap, morning_brief, weekly_digest
 
         for task in [morning_brief, evening_wrap, weekly_digest]:
             assert task.autoretry_for is not None, f"{task.name} missing autoretry_for"
@@ -358,7 +357,7 @@ class TestJWTRevocation:
 
     def test_revoke_token_function_exists(self):
         """revoke_token function should be importable."""
-        from app.auth import revoke_token, revoke_all_user_tokens, is_token_revoked
+        from app.auth import is_token_revoked, revoke_all_user_tokens, revoke_token
 
         assert callable(revoke_token)
         assert callable(revoke_all_user_tokens)
@@ -409,13 +408,14 @@ class TestConstantTimeComparison:
         source = inspect.getsource(require_api_key)
         assert "hmac.compare_digest" in source
 
-    def test_websocket_uses_constant_time(self):
-        """WebSocket API key comparison must use hmac.compare_digest."""
+    def test_websocket_uses_ticket_auth(self):
+        """WebSocket module must use ticket-based auth (API key auth was removed)."""
         import app.api.websocket as mod
 
         source = inspect.getsource(mod)
-        assert "hmac.compare_digest" in source, \
-            "WebSocket module must use hmac.compare_digest for API key comparison"
+        # API key auth was removed in H2 security fix; ticket auth is used instead
+        assert "ticket" in source.lower(), \
+            "WebSocket module must use ticket-based authentication"
 
 
 # ═══════════════════════════════════════════════════════════

@@ -10,7 +10,11 @@ TMP_PATH="/tmp/${BACKUP_FILE}"
 echo "[$(date)] Starting backup..."
 
 # Dump and compress
-pg_dump "$DATABASE_URL" | gzip > "${TMP_PATH}"
+# Use DATABASE_URL_SYNC (standard postgres:// scheme) since pg_dump doesn't support asyncpg
+DB_URL="${DATABASE_URL_SYNC:-${DATABASE_URL}}"
+# Strip asyncpg scheme if present (pg_dump needs standard postgres://)
+DB_URL="${DB_URL/postgresql+asyncpg/postgresql}"
+pg_dump "$DB_URL" | gzip > "${TMP_PATH}"
 FILESIZE=$(stat -f%z "${TMP_PATH}" 2>/dev/null || stat -c%s "${TMP_PATH}")
 echo "[$(date)] Dump complete: ${FILESIZE} bytes"
 

@@ -224,9 +224,9 @@ class TestCSPHeaders:
 
     @pytest.mark.asyncio
     async def test_csp_connect_src_includes_wss(self):
-        """CSP connect-src should include WSS for WebSocket connections."""
+        """CSP connect-src should include wss for WebSocket connections."""
         source = inspect.getsource(__import__("app.main", fromlist=["app"]))
-        assert "wss://" in source, "CSP connect-src must include wss:// for WebSocket"
+        assert "wss:" in source, "CSP connect-src must include wss: for WebSocket"
 
 
 # ═══════════════════════════════════════════════════════════

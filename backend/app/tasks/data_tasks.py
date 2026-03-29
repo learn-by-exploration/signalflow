@@ -4,17 +4,27 @@ import logging
 from datetime import datetime, timezone
 
 import httpx
+import requests.exceptions
 
+from app.services.circuit_breaker import CircuitBreaker
+from app.services.data_ingestion.market_hours import is_forex_open, is_nse_open
 from app.tasks.celery_app import celery_app
-from app.services.data_ingestion.market_hours import is_nse_open, is_forex_open
 
 logger = logging.getLogger(__name__)
+
+# Circuit breakers for external APIs — shared across task invocations
+_breaker_yfinance = CircuitBreaker("yfinance", failure_threshold=5, recovery_timeout=300)
+_breaker_binance = CircuitBreaker("binance", failure_threshold=5, recovery_timeout=300)
+_breaker_forex = CircuitBreaker("forex", failure_threshold=5, recovery_timeout=300)
 
 
 @celery_app.task(
     name="app.tasks.data_tasks.fetch_indian_stocks",
     bind=True,
-    autoretry_for=(ConnectionError, TimeoutError, httpx.HTTPStatusError),
+    autoretry_for=(
+        ConnectionError, TimeoutError,
+        httpx.HTTPStatusError, requests.exceptions.RequestException,
+    ),
     retry_backoff=True,
     retry_backoff_max=60,
     retry_jitter=True,
@@ -26,18 +36,33 @@ def fetch_indian_stocks(self) -> dict:
         logger.info("NSE market closed, skipping stock fetch")
         return {"status": "skipped", "reason": "market_closed"}
 
+    if _breaker_yfinance.is_open():
+        logger.warning("yfinance circuit breaker OPEN, skipping stock fetch")
+        return {"status": "skipped", "reason": "circuit_open"}
+
     from app.services.data_ingestion.indian_stocks import IndianStockFetcher
 
-    fetcher = IndianStockFetcher()
-    result = fetcher.fetch_all()
-    logger.info("Fetched Indian stocks", extra={"count": result["count"]})
-    return result
+    try:
+        fetcher = IndianStockFetcher()
+        result = fetcher.fetch_all()
+        if result.get("error"):
+            _breaker_yfinance.record_failure()
+        else:
+            _breaker_yfinance.record_success()
+        logger.info("Fetched Indian stocks", extra={"count": result["count"]})
+        return result
+    except Exception:
+        _breaker_yfinance.record_failure()
+        raise
 
 
 @celery_app.task(
     name="app.tasks.data_tasks.fetch_crypto",
     bind=True,
-    autoretry_for=(ConnectionError, TimeoutError, httpx.HTTPStatusError),
+    autoretry_for=(
+        ConnectionError, TimeoutError,
+        httpx.HTTPStatusError, requests.exceptions.RequestException,
+    ),
     retry_backoff=True,
     retry_backoff_max=30,
     retry_jitter=True,
@@ -45,18 +70,30 @@ def fetch_indian_stocks(self) -> dict:
 )
 def fetch_crypto(self) -> dict:
     """Fetch real-time crypto prices (24/7)."""
+    if _breaker_binance.is_open():
+        logger.warning("Binance circuit breaker OPEN, skipping crypto fetch")
+        return {"status": "skipped", "reason": "circuit_open"}
+
     from app.services.data_ingestion.crypto import CryptoFetcher
 
-    fetcher = CryptoFetcher()
-    result = fetcher.fetch_all()
-    logger.info("Fetched crypto prices", extra={"count": result["count"]})
-    return result
+    try:
+        fetcher = CryptoFetcher()
+        result = fetcher.fetch_all()
+        _breaker_binance.record_success()
+        logger.info("Fetched crypto prices", extra={"count": result["count"]})
+        return result
+    except Exception:
+        _breaker_binance.record_failure()
+        raise
 
 
 @celery_app.task(
     name="app.tasks.data_tasks.fetch_forex",
     bind=True,
-    autoretry_for=(ConnectionError, TimeoutError, httpx.HTTPStatusError),
+    autoretry_for=(
+        ConnectionError, TimeoutError,
+        httpx.HTTPStatusError, requests.exceptions.RequestException,
+    ),
     retry_backoff=True,
     retry_backoff_max=60,
     retry_jitter=True,
@@ -68,12 +105,21 @@ def fetch_forex(self) -> dict:
         logger.info("Forex market closed, skipping forex fetch")
         return {"status": "skipped", "reason": "market_closed"}
 
+    if _breaker_forex.is_open():
+        logger.warning("Forex circuit breaker OPEN, skipping forex fetch")
+        return {"status": "skipped", "reason": "circuit_open"}
+
     from app.services.data_ingestion.forex import ForexFetcher
 
-    fetcher = ForexFetcher()
-    result = fetcher.fetch_all()
-    logger.info("Fetched forex rates", extra={"count": result["count"]})
-    return result
+    try:
+        fetcher = ForexFetcher()
+        result = fetcher.fetch_all()
+        _breaker_forex.record_success()
+        logger.info("Fetched forex rates", extra={"count": result["count"]})
+        return result
+    except Exception:
+        _breaker_forex.record_failure()
+        raise
 
 
 @celery_app.task(

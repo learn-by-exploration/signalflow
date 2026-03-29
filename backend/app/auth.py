@@ -3,9 +3,8 @@
 import hmac
 import logging
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any
 from uuid import UUID
 
 import bcrypt
@@ -33,8 +32,16 @@ def _get_revocation_redis() -> redis.Redis:
     return _revocation_redis
 
 
-def revoke_token(jti: str, ttl_seconds: int = 1800) -> None:
-    """Add a token JTI to the revocation blacklist."""
+def revoke_token(jti: str, ttl_seconds: int | None = None) -> None:
+    """Add a token JTI to the revocation blacklist.
+
+    Args:
+        jti: The JWT ID to revoke.
+        ttl_seconds: How long to keep the blacklist entry. Defaults to
+                     the access token lifetime from config.
+    """
+    if ttl_seconds is None:
+        ttl_seconds = get_settings().jwt_access_token_expire_minutes * 60
     r = _get_revocation_redis()
     r.set(f"token_bl:{jti}", "1", ex=ttl_seconds)
 
@@ -76,8 +83,11 @@ def is_token_revoked(jti: str, user_id: str, iat: float) -> bool:
             return False
         return True  # Fail closed in production
     except Exception:
-        # Catch any unexpected errors (e.g., MagicMock in tests)
-        return False
+        # Unexpected error — fail closed in production (treat token as revoked)
+        logger.error("Unexpected error in token revocation check — failing closed")
+        if settings.environment in ("development", "test"):
+            return False
+        return True  # Fail closed in production
 
 
 @dataclass

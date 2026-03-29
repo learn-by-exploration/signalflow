@@ -6,10 +6,8 @@ Tests the WebSocket endpoint and ConnectionManager for real-time signal delivery
 import json
 
 import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
 
-from app.api.websocket import ConnectionManager, manager
+from app.api.websocket import ConnectionManager
 
 
 class TestConnectionManager:
@@ -35,59 +33,67 @@ class TestWebSocketEndpoint:
     @pytest.mark.asyncio
     async def test_websocket_connect_and_receive(self) -> None:
         """Test that a client can connect and send/receive messages."""
-        from unittest.mock import MagicMock, patch
+
+        import time
 
         from starlette.testclient import TestClient
 
+        from app.api.websocket import _ws_ticket_expiry, _ws_tickets
         from app.main import app
 
-        mock_settings = MagicMock()
-        mock_settings.api_secret_key = "test-ws-key"
-        with patch("app.api.websocket.get_settings", return_value=mock_settings):
-            client = TestClient(app)
-            with client.websocket_connect("/ws/signals?api_key=test-ws-key") as ws:
-                # Send a subscribe message
-                ws.send_text(json.dumps({
-                    "type": "subscribe",
-                    "markets": ["crypto"]
-                }))
-                # Send a pong (heartbeat)
-                ws.send_text(json.dumps({"type": "pong"}))
+        # Create a valid ticket
+        ticket_id = "test-ticket-001"
+        _ws_tickets[ticket_id] = {"user_id": "user-123", "tier": "free", "chat_id": None}
+        _ws_ticket_expiry[ticket_id] = time.monotonic() + 30
+
+        client = TestClient(app)
+        with client.websocket_connect(f"/ws/signals?ticket={ticket_id}") as ws:
+            # Send a subscribe message
+            ws.send_text(json.dumps({
+                "type": "subscribe",
+                "markets": ["crypto"]
+            }))
+            # Send a pong (heartbeat)
+            ws.send_text(json.dumps({"type": "pong"}))
 
     @pytest.mark.asyncio
     async def test_websocket_subscribe_filters_markets(self) -> None:
         """After subscribing to crypto only, stock signals should not be received."""
-        from unittest.mock import MagicMock, patch
+        import time
 
         from starlette.testclient import TestClient
 
+        from app.api.websocket import _ws_ticket_expiry, _ws_tickets
         from app.main import app
 
-        mock_settings = MagicMock()
-        mock_settings.api_secret_key = "test-ws-key"
-        with patch("app.api.websocket.get_settings", return_value=mock_settings):
-            client = TestClient(app)
-            with client.websocket_connect("/ws/signals?api_key=test-ws-key") as ws:
-                # Subscribe to crypto only
-                ws.send_text(json.dumps({
-                    "type": "subscribe",
-                    "markets": ["crypto"]
-                }))
+        ticket_id = "test-ticket-002"
+        _ws_tickets[ticket_id] = {"user_id": "user-456", "tier": "free", "chat_id": None}
+        _ws_ticket_expiry[ticket_id] = time.monotonic() + 30
+
+        client = TestClient(app)
+        with client.websocket_connect(f"/ws/signals?ticket={ticket_id}") as ws:
+            # Subscribe to crypto only
+            ws.send_text(json.dumps({
+                "type": "subscribe",
+                "markets": ["crypto"]
+            }))
 
     @pytest.mark.asyncio
     async def test_websocket_invalid_json_ignored(self) -> None:
         """Sending invalid JSON should not crash the connection."""
-        from unittest.mock import MagicMock, patch
+        import time
 
         from starlette.testclient import TestClient
 
+        from app.api.websocket import _ws_ticket_expiry, _ws_tickets
         from app.main import app
 
-        mock_settings = MagicMock()
-        mock_settings.api_secret_key = "test-ws-key"
-        with patch("app.api.websocket.get_settings", return_value=mock_settings):
-            client = TestClient(app)
-            with client.websocket_connect("/ws/signals?api_key=test-ws-key") as ws:
-                ws.send_text("not valid json")
-                # Connection should still be alive — send another message
-                ws.send_text(json.dumps({"type": "pong"}))
+        ticket_id = "test-ticket-003"
+        _ws_tickets[ticket_id] = {"user_id": "user-789", "tier": "free", "chat_id": None}
+        _ws_ticket_expiry[ticket_id] = time.monotonic() + 30
+
+        client = TestClient(app)
+        with client.websocket_connect(f"/ws/signals?ticket={ticket_id}") as ws:
+            ws.send_text("not valid json")
+            # Connection should still be alive — send another message
+            ws.send_text(json.dumps({"type": "pong"}))

@@ -2,6 +2,7 @@
 
 Checks each subscriber's alert config (markets, min confidence, signal types,
 quiet hours) before dispatching. Enforces a daily alert budget per subscriber.
+Uses Redis for daily count persistence across Celery task restarts.
 """
 
 import logging
@@ -9,6 +10,9 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import redis
+
+from app.config import get_settings
 from app.services.alerts.formatter import format_signal_alert
 
 logger = logging.getLogger(__name__)
@@ -18,6 +22,15 @@ IST = ZoneInfo("Asia/Kolkata")
 # Maximum signal alerts per subscriber per day (broadcasts like briefs are exempt)
 DAILY_ALERT_BUDGET = 10
 
+# Redis key prefix for daily alert counts (expire at midnight IST)
+_DAILY_COUNT_PREFIX = "alert_daily:"
+
+
+def _get_daily_count_key(chat_id: int) -> str:
+    """Get the Redis key for today's alert count for a chat_id."""
+    today = datetime.now(IST).strftime("%Y%m%d")
+    return f"{_DAILY_COUNT_PREFIX}{today}:{chat_id}"
+
 
 class AlertDispatcher:
     """Route signal alerts to eligible Telegram subscribers.
@@ -25,12 +38,19 @@ class AlertDispatcher:
     Args:
         bot_send_fn: Async function(chat_id, text) to send a Telegram message.
         daily_counts: Optional dict mapping chat_id → alerts sent today.
-                      Passed in by the calling Celery task to persist across calls.
+                      Kept for backward compatibility. Redis is preferred.
     """
 
     def __init__(self, bot_send_fn: Any, daily_counts: dict[int, int] | None = None) -> None:
         self.send = bot_send_fn
         self._daily_counts: dict[int, int] = daily_counts if daily_counts is not None else {}
+        self._redis: redis.Redis | None = None
+        try:
+            settings = get_settings()
+            if settings.redis_url:
+                self._redis = redis.from_url(settings.redis_url, decode_responses=True)
+        except Exception:
+            logger.debug("Redis unavailable for alert dispatcher, using in-memory counts")
 
     async def dispatch_signal(
         self, signal: dict, subscribers: list[dict]
@@ -60,23 +80,28 @@ class AlertDispatcher:
                 continue
 
             chat_id = sub["telegram_chat_id"]
-            if self._daily_counts.get(chat_id, 0) >= DAILY_ALERT_BUDGET:
+            # Check daily budget via Redis (with in-memory fallback)
+            current_count = self._get_daily_count(chat_id)
+            if current_count >= DAILY_ALERT_BUDGET:
                 logger.debug(
                     "Daily alert budget exhausted for chat_id=%s (%d/%d)",
-                    chat_id, self._daily_counts.get(chat_id, 0), DAILY_ALERT_BUDGET,
+                    chat_id, current_count, DAILY_ALERT_BUDGET,
                 )
                 continue
 
             try:
                 await self.send(chat_id, message)
-                self._daily_counts[chat_id] = self._daily_counts.get(chat_id, 0) + 1
+                self._increment_daily_count(chat_id)
                 sent += 1
             except Exception:
                 logger.exception(
                     "Failed to send signal to chat_id=%s", chat_id
                 )
 
-        logger.info("Dispatched signal %s to %d/%d subscribers", signal.get("symbol"), sent, len(subscribers))
+        logger.info(
+            "Dispatched signal %s to %d/%d subscribers",
+            signal.get("symbol"), sent, len(subscribers),
+        )
         return sent
 
     async def dispatch_broadcast(self, text: str, subscribers: list[dict]) -> int:
@@ -116,11 +141,10 @@ class AlertDispatcher:
             return False
 
         # Signal type filter
-        allowed_types = config.get("signal_types", ["STRONG_BUY", "BUY", "SELL", "STRONG_SELL"])
-        if signal.get("signal_type") not in allowed_types:
-            return False
-
-        return True
+        allowed_types = config.get(
+            "signal_types", ["STRONG_BUY", "BUY", "SELL", "STRONG_SELL"]
+        )
+        return signal.get("signal_type") in allowed_types
 
     @staticmethod
     def _in_quiet_hours(config: dict) -> bool:
@@ -142,3 +166,27 @@ class AlertDispatcher:
         else:
             # Wraps midnight: e.g. 23:00 – 07:00
             return current_mins >= start_mins or current_mins <= end_mins
+
+    def _get_daily_count(self, chat_id: int) -> int:
+        """Get today's alert count for a chat_id. Uses Redis with in-memory fallback."""
+        if self._redis:
+            try:
+                key = _get_daily_count_key(chat_id)
+                val = self._redis.get(key)
+                return int(val) if val else 0
+            except (redis.ConnectionError, redis.TimeoutError, OSError):
+                pass
+        return self._daily_counts.get(chat_id, 0)
+
+    def _increment_daily_count(self, chat_id: int) -> None:
+        """Increment today's alert count. Uses Redis with in-memory fallback."""
+        if self._redis:
+            try:
+                key = _get_daily_count_key(chat_id)
+                self._redis.incr(key)
+                # Expire at end of day (max 24h TTL)
+                self._redis.expire(key, 86400)
+                return
+            except (redis.ConnectionError, redis.TimeoutError, OSError):
+                pass
+        self._daily_counts[chat_id] = self._daily_counts.get(chat_id, 0) + 1

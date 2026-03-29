@@ -2,7 +2,26 @@
  * Application constants — colors, thresholds, market config.
  */
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+/**
+ * Derive WebSocket URL dynamically from window.location.
+ * Connects to the backend directly on port 8000 using the same hostname
+ * the user is already accessing the frontend from.
+ * Falls back to env var or localhost for SSR/test contexts.
+ */
+export function getWsUrl(): string {
+  if (process.env.NEXT_PUBLIC_WS_URL) {
+    return process.env.NEXT_PUBLIC_WS_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.hostname}:8000`;
+  }
+  return 'ws://localhost:8000';
+}
+
+/** @deprecated Use getWsUrl() instead */
 export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 
 export const SIGNAL_COLORS = {

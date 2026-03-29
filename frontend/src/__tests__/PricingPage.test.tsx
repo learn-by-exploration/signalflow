@@ -49,10 +49,21 @@ describe('PricingPage', () => {
     expect(screen.getByText('Upgrade to Pro')).toBeDefined();
   });
 
-  it('switches to Pro tier when upgrade button is clicked', () => {
+  it('calls API when upgrade button is clicked (no client-side tier switch)', async () => {
+    // B1 fix: clicking Upgrade to Pro now calls the payments API
+    // instead of directly setting the tier in the store.
+    // The tier only changes after webhook confirmation.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: { subscription_id: 'sub_1' } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
     render(<PricingPage />);
     fireEvent.click(screen.getByText('Upgrade to Pro'));
-    expect(useTierStore.getState().tier).toBe('pro');
+    // Tier should NOT change immediately — it stays 'free' until webhook
+    expect(useTierStore.getState().tier).toBe('free');
+    fetchSpy.mockRestore();
   });
 
   it('shows Recommended badge on Pro plan', () => {

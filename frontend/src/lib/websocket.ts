@@ -2,7 +2,7 @@
  * WebSocket client for real-time signal and market updates.
  */
 
-import { WS_URL } from './constants';
+import { getWsUrl } from './constants';
 import type { WSMessage } from './types';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
@@ -27,7 +27,7 @@ export class SignalWebSocket {
     this.onStatusChange?.('connecting');
 
     // Get auth token for WebSocket connection
-    let wsUrl = `${WS_URL}/ws/signals`;
+    let wsUrl = `${getWsUrl()}/ws/signals`;
     if (typeof window !== 'undefined') {
       const token = sessionStorage.getItem('signalflow_access_token');
       if (token) {

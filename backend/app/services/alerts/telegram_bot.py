@@ -9,7 +9,6 @@ Registration and preferences are persisted to PostgreSQL via direct DB access.
 
 import logging
 from decimal import Decimal, InvalidOperation
-from typing import Any
 
 import httpx
 from sqlalchemy import select, text
@@ -283,12 +282,9 @@ class SignalFlowBot:
 
         settings = get_settings()
         try:
-            backend_host = (
-                settings.api_host
-                if settings.environment == "production"
-                else "localhost"
-            )
-            api_url = f"http://{backend_host}:{settings.api_port}/api/v1/ai/ask"
+            # Always use localhost — telegram bot runs in the same container as the backend
+            # (via supervisord), so localhost:PORT is always correct.
+            api_url = f"http://localhost:{settings.api_port}/api/v1/ai/ask"
             async with httpx.AsyncClient(timeout=35.0) as client:
                 resp = await client.post(
                     api_url,
@@ -488,7 +484,10 @@ class SignalFlowBot:
         chat_id = update.effective_chat.id
 
         config = await self._get_or_create_config(chat_id)
-        markets = config.markets if isinstance(config.markets, list) else ["stock", "crypto", "forex"]
+        markets = (
+            config.markets if isinstance(config.markets, list)
+            else ["stock", "crypto", "forex"]
+        )
         min_conf = config.min_confidence
 
         stock_label = "📈 Stocks ✅" if "stock" in markets else "📈 Stocks ❌"
@@ -544,7 +543,7 @@ class SignalFlowBot:
 
         lines = ["📜 Recent Signal Outcomes", ""]
         for r in rows:
-            outcome, ret_pct, resolved_at, symbol = r[0], r[1], r[2], r[3]
+            outcome, ret_pct, _resolved_at, symbol = r[0], r[1], r[2], r[3]
             outcome_emoji = {
                 "hit_target": "🎯",
                 "hit_stop": "🛑",
@@ -613,7 +612,10 @@ class SignalFlowBot:
                 await query.edit_message_text("Please send /start first to register.")
                 return
 
-            markets = config.markets if isinstance(config.markets, list) else ["stock", "crypto", "forex"]
+            markets = (
+                config.markets if isinstance(config.markets, list)
+                else ["stock", "crypto", "forex"]
+            )
 
             if data and data.startswith("toggle_"):
                 market = data.replace("toggle_", "")
@@ -642,8 +644,23 @@ class SignalFlowBot:
 
 async def send_telegram_message(chat_id: int, text: str) -> None:
     """Send a message to a Telegram chat. Used by the dispatcher."""
-    from telegram import Bot
 
     settings = get_settings()
-    bot = Bot(token=settings.telegram_bot_token)
+    bot = _get_bot_instance(settings.telegram_bot_token)
     await bot.send_message(chat_id=chat_id, text=text)
+
+
+# Module-level bot singleton for connection reuse
+_bot_instance: object | None = None
+_bot_token: str | None = None
+
+
+def _get_bot_instance(token: str) -> object:
+    """Get or create a module-level Bot instance for connection reuse."""
+    from telegram import Bot
+
+    global _bot_instance, _bot_token
+    if _bot_instance is None or _bot_token != token:
+        _bot_instance = Bot(token=token)
+        _bot_token = token
+    return _bot_instance

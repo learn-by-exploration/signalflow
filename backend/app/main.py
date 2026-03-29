@@ -3,8 +3,8 @@
 import hmac
 import logging
 import uuid
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 import structlog
@@ -62,6 +62,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             missing_secrets.append("API_SECRET_KEY")
         if missing_secrets:
             raise RuntimeError(f"Required secrets not set: {', '.join(missing_secrets)}")
+        # Enforce minimum JWT secret key length for HS256 security
+        if settings.jwt_secret_key and len(settings.jwt_secret_key) < 32:
+            raise RuntimeError(
+                "JWT_SECRET_KEY must be at least 32 characters for HS256 security "
+                f"(current: {len(settings.jwt_secret_key)} chars)"
+            )
 
     # Sentry init (if DSN provided)
     if settings.sentry_dsn:
@@ -107,14 +113,23 @@ app = FastAPI(
 )
 
 # ── CORS ──
-_cors_origins = (
-    [settings.frontend_url]
-    if settings.environment == "development"
-    else [settings.frontend_url] if settings.frontend_url else []
-)
+_cors_origins: list[str] = []
+if settings.frontend_url:
+    _cors_origins.append(settings.frontend_url)
+# In development, also allow access from any local network hostname
+if settings.environment == "development":
+    _cors_origins.extend([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ])
+    # Allow *.local mDNS hostnames and LAN IPs
+    _cors_origins_regex = r"^https?://(localhost|127\.0\.0\.1|[\w\-]+\.local|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$"
+else:
+    _cors_origins_regex = None
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    allow_origin_regex=_cors_origins_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Chat-ID", "X-Request-ID"],
@@ -148,16 +163,28 @@ async def correlation_id_middleware(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     # Content Security Policy
-    backend_host = settings.api_host if settings.environment == "production" else "localhost"
+    # In cloud: frontend proxies all API calls, so 'self' covers everything.
+    # Restrict WebSocket connections to specific origins derived from frontend_url.
+    csp_connect = "'self'"
+    if settings.frontend_url:
+        from urllib.parse import urlparse
+        parsed = urlparse(settings.frontend_url)
+        if parsed.netloc:
+            csp_connect += f" ws://{parsed.netloc} wss://{parsed.netloc}"
+        csp_connect += f" {settings.frontend_url}"
+    else:
+        # Development fallback: allow any WebSocket origin
+        csp_connect += " ws: wss:"
     csp_directives = [
         "default-src 'self'",
         "script-src 'self'",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https:",
-        f"connect-src 'self' {settings.frontend_url} wss://{backend_host}",
+        f"connect-src {csp_connect}",
         "font-src 'self' https://fonts.gstatic.com",
         "frame-ancestors 'none'",
         "object-src 'none'",
+        "base-uri 'self'",
     ]
     response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
     if settings.environment == "production":
@@ -207,7 +234,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_with_logging)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Catch unhandled exceptions — log details but return sanitized message."""
-    logger.error(
+    logger.exception(
         "unhandled_exception",
         error=str(exc),
         path=request.url.path,
@@ -230,14 +257,21 @@ async def metrics_endpoint(request: Request) -> JSONResponse:
     api_key = request.headers.get("X-API-Key", "")
     internal_key = settings.internal_api_key
 
-    is_local = client_ip in ("127.0.0.1", "::1", "localhost")
+    # In Docker/cloud, requests may come from container network IPs (172.x.x.x, 10.x.x.x)
+    is_local = (
+        client_ip in ("127.0.0.1", "::1", "localhost")
+        or client_ip.startswith("172.")
+        or client_ip.startswith("10.")
+        or client_ip.startswith("192.168.")
+    )
     is_internal = internal_key and hmac.compare_digest(api_key, internal_key)
 
     if not is_local and not is_internal:
         return JSONResponse(status_code=403, content={"detail": "Forbidden"})
 
-    from app.services.metrics import get_metrics_text
     from starlette.responses import Response
+
+    from app.services.metrics import get_metrics_text
     return Response(content=get_metrics_text(), media_type="text/plain; charset=utf-8")
 
 
@@ -253,8 +287,10 @@ async def health_check() -> dict:
 
     # Database check
     try:
-        from app.database import engine as async_engine, async_session
         from sqlalchemy import text as sql_text
+
+        from app.database import async_session
+        from app.database import engine as async_engine
         async with async_engine.connect() as conn:
             await conn.execute(sql_text("SELECT 1"))
         status["db_status"] = "ok"
@@ -262,8 +298,9 @@ async def health_check() -> dict:
         # Active signals count + last data fetch
         try:
             from sqlalchemy import func, select
-            from app.models.signal import Signal
+
             from app.models.market_data import MarketData
+            from app.models.signal import Signal
             async with async_session() as db:
                 sig_count = await db.execute(
                     select(func.count()).select_from(Signal).where(Signal.is_active.is_(True))

@@ -5,12 +5,12 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import httpx
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models.market_data import MarketData
 from app.services.data_ingestion.base import BaseFetcher
+from app.services.data_ingestion.db import get_sync_engine
 from app.services.data_ingestion.validators import validate_candle
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class CryptoFetcher(BaseFetcher):
 
     def __init__(self, timeframe: str = "1d") -> None:
         self.symbols = settings.tracked_crypto
-        self.engine = create_engine(settings.database_url_sync)
+        self.engine = get_sync_engine()
         self.timeframe = timeframe
         # Map our timeframe labels to Binance intervals
         self._binance_interval_map = {

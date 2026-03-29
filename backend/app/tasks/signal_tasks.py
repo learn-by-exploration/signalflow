@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import redis.asyncio as aioredis
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 
 from app.config import get_settings
@@ -161,6 +161,8 @@ async def _resolve_signals_async() -> dict:
     retry_backoff_max=60,
     retry_jitter=True,
     max_retries=2,
+    soft_time_limit=300,   # 5 min soft limit (raises SoftTimeLimitExceeded)
+    time_limit=600,         # 10 min hard kill
 )
 def generate_signals(self) -> dict:
     """Generate trading signals from technical + AI analysis."""
@@ -176,6 +178,8 @@ def generate_signals(self) -> dict:
     retry_backoff_max=60,
     retry_jitter=True,
     max_retries=2,
+    soft_time_limit=120,   # 2 min soft limit
+    time_limit=180,         # 3 min hard kill
 )
 def resolve_expired(self) -> dict:
     """Check active signals against current prices — resolve hits, stops, and expiries."""

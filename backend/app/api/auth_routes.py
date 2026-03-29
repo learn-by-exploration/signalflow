@@ -112,8 +112,11 @@ async def login(
     settings = get_settings()
 
     # ── Account lockout check via Redis ──
-    lockout_key = f"{LOCKOUT_KEY_PREFIX}{payload.email}"
-    failed_key = f"{FAILED_LOGIN_KEY_PREFIX}{payload.email}"
+    # Key by IP + email to prevent email-based DoS (attacker can't lock out
+    # a victim by spamming their email from a different IP)
+    client_ip = request.client.host if request.client else "unknown"
+    lockout_key = f"{LOCKOUT_KEY_PREFIX}{client_ip}:{payload.email}"
+    failed_key = f"{FAILED_LOGIN_KEY_PREFIX}{client_ip}:{payload.email}"
     try:
         redis_client = aioredis.from_url(settings.redis_url)
         is_locked = await redis_client.get(lockout_key)
@@ -389,5 +392,5 @@ async def delete_account(
     # Delete the user
     await db.delete(db_user)
 
-    logger.info("Account deleted for user %s (%s)", user_id, db_user.email)
+    logger.info("Account deleted for user %s", user_id)
     return {"data": "account_deleted"}

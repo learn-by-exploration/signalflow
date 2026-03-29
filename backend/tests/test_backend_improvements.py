@@ -1,7 +1,7 @@
 """Tests for rate limiting, health endpoint, and WebSocket pings."""
 
 import json
-import pytest
+
 from starlette.testclient import TestClient
 
 from app.main import app
@@ -50,26 +50,36 @@ class TestWebSocketPing:
     """Test that WebSocket connections work with the ping system."""
 
     def test_websocket_connect_and_subscribe(self) -> None:
-        from unittest.mock import patch, MagicMock
-        mock_settings = MagicMock()
-        mock_settings.api_secret_key = "test-ws-key"
-        with patch("app.api.websocket.get_settings", return_value=mock_settings):
-            client = TestClient(app)
-            with client.websocket_connect("/ws/signals?api_key=test-ws-key") as ws:
-                ws.send_text(json.dumps({
-                    "type": "subscribe",
-                    "markets": ["stock", "crypto"],
-                }))
-                # Send a pong response (as if responding to a server ping)
-                ws.send_text(json.dumps({"type": "pong"}))
+        import time
+
+        from app.api.websocket import _ws_ticket_expiry, _ws_tickets
+
+        # Create a valid ticket
+        ticket_id = "test-ticket-backend-001"
+        _ws_tickets[ticket_id] = {"user_id": "user-123", "tier": "free", "chat_id": None}
+        _ws_ticket_expiry[ticket_id] = time.monotonic() + 30
+
+        client = TestClient(app)
+        with client.websocket_connect(f"/ws/signals?ticket={ticket_id}") as ws:
+            ws.send_text(json.dumps({
+                "type": "subscribe",
+                "markets": ["stock", "crypto"],
+            }))
+            # Send a pong response (as if responding to a server ping)
+            ws.send_text(json.dumps({"type": "pong"}))
 
     def test_websocket_handles_malformed_json(self) -> None:
-        from unittest.mock import patch, MagicMock
-        mock_settings = MagicMock()
-        mock_settings.api_secret_key = "test-ws-key"
-        with patch("app.api.websocket.get_settings", return_value=mock_settings):
-            client = TestClient(app)
-            with client.websocket_connect("/ws/signals?api_key=test-ws-key") as ws:
-                ws.send_text("{malformed")
-                # Connection survives
-                ws.send_text(json.dumps({"type": "pong"}))
+        import time
+
+        from app.api.websocket import _ws_ticket_expiry, _ws_tickets
+
+        # Create a valid ticket
+        ticket_id = "test-ticket-backend-002"
+        _ws_tickets[ticket_id] = {"user_id": "user-456", "tier": "free", "chat_id": None}
+        _ws_ticket_expiry[ticket_id] = time.monotonic() + 30
+
+        client = TestClient(app)
+        with client.websocket_connect(f"/ws/signals?ticket={ticket_id}") as ws:
+            ws.send_text("{malformed")
+            # Connection survives
+            ws.send_text(json.dumps({"type": "pong"}))

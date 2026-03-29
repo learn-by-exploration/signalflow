@@ -11,6 +11,7 @@ import { QueryProvider } from '@/components/shared/QueryProvider';
 import { ToastProvider } from '@/components/shared/Toast';
 import { TextSizeProvider } from '@/components/shared/TextSizeProvider';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -27,6 +28,14 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'SignalFlow AI — Trading Signals',
   description: 'AI-powered trading signal platform for Indian Stocks, Crypto, and Forex',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://signalflow.ai'),
+  openGraph: {
+    title: 'SignalFlow AI — AI-Powered Trading Signals',
+    description: 'Clear, actionable buy/sell signals for Indian Stocks, Crypto, and Forex — backed by AI reasoning you can trust.',
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image' },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
@@ -37,6 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en">
         <body className={`${outfit.variable} ${jetbrainsMono.variable} flex flex-col min-h-screen bg-bg-primary text-text-primary font-body antialiased`}>
+        <ErrorBoundary name="App">
         <AuthProvider>
         <QueryProvider>
         <ToastProvider>
@@ -52,6 +62,7 @@ export default function RootLayout({
         </ToastProvider>
         </QueryProvider>
         </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

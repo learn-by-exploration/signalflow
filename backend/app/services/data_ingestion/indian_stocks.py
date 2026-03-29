@@ -1,20 +1,25 @@
 """Indian stock data fetcher using yfinance."""
 
 import logging
-from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeout
+from datetime import timezone
 from decimal import Decimal
 
 import yfinance as yf
-from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models.market_data import MarketData
 from app.services.data_ingestion.base import BaseFetcher
+from app.services.data_ingestion.db import get_sync_engine
 from app.services.data_ingestion.validators import validate_candle
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+# Timeout for yfinance downloads (seconds)
+YFINANCE_TIMEOUT = 30
 
 
 class IndianStockFetcher(BaseFetcher):
@@ -25,22 +30,29 @@ class IndianStockFetcher(BaseFetcher):
 
     def __init__(self) -> None:
         self.symbols = settings.tracked_stocks
-        self.engine = create_engine(settings.database_url_sync)
+        self.engine = get_sync_engine()
 
     def fetch_all(self) -> dict:
         """Fetch latest 1-day candle for all tracked Indian stocks in a single batch."""
         fetched_symbols = []
 
         try:
-            # Batch download — single API call for all symbols
-            data = yf.download(
-                tickers=self.symbols,
-                period="1d",
-                interval="1m",
-                group_by="ticker",
-                progress=False,
-                threads=True,
-            )
+            # Batch download with timeout — single API call for all symbols
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(
+                    yf.download,
+                    tickers=self.symbols,
+                    period="1d",
+                    interval="1m",
+                    group_by="ticker",
+                    progress=False,
+                    threads=True,
+                )
+                try:
+                    data = future.result(timeout=YFINANCE_TIMEOUT)
+                except FuturesTimeout:
+                    logger.error("yfinance download timed out after %ds", YFINANCE_TIMEOUT)
+                    return {"count": 0, "symbols": self.symbols, "error": "timeout"}
 
             if data.empty:
                 logger.warning("yfinance returned empty data for Indian stocks")

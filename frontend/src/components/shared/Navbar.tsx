@@ -89,6 +89,12 @@ export function Navbar() {
               <div className="relative" ref={researchRef}>
                 <button
                   onClick={() => setResearchOpen(!researchOpen)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setResearchOpen(false);
+                    if (e.key === 'ArrowDown' && !researchOpen) setResearchOpen(true);
+                  }}
+                  aria-expanded={researchOpen}
+                  aria-haspopup="true"
                   className={`px-2.5 py-1.5 text-sm rounded-lg transition-colors ${
                     isResearchActive
                       ? 'text-accent-purple'

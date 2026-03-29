@@ -12,8 +12,12 @@ from decimal import Decimal
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# ── Inline config (matches docker-compose) ──
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/signalflow"
+# ── Database URL from env or default for local dev ──
+import os
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/signalflow",
+)
 
 
 async def main() -> None:

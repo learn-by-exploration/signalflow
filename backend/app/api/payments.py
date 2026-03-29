@@ -15,13 +15,13 @@ from app.config import get_settings
 from app.database import get_db
 from app.rate_limit import limiter
 from app.services.payment.razorpay_service import (
+    PLAN_PRICES,
     create_subscription,
     get_active_subscription,
     handle_payment_failed,
     handle_payment_success,
     handle_subscription_cancelled,
     verify_webhook_signature,
-    PLAN_PRICES,
 )
 
 logger = logging.getLogger(__name__)
@@ -89,6 +89,7 @@ async def start_trial(
 
     # Check for any past trial
     from sqlalchemy import select
+
     from app.models.subscription import Subscription
     past_trial = await db.execute(
         select(Subscription)
@@ -103,6 +104,7 @@ async def start_trial(
 
     # Upgrade user tier
     from sqlalchemy import update
+
     from app.models.user import User
     await db.execute(
         update(User).where(User.id == auth.user_id).values(tier="pro")
@@ -138,14 +140,11 @@ async def create_paid_subscription(
         raise HTTPException(503, "Payment system not configured")
 
     sub = await create_subscription(db, auth.user_id, body.plan)
-
-    # Upgrade user tier immediately (verify via webhook later)
-    from sqlalchemy import update
-    from app.models.user import User
-    await db.execute(
-        update(User).where(User.id == auth.user_id).values(tier="pro")
-    )
     await db.commit()
+
+    # NOTE: User tier is NOT upgraded here. Tier upgrade happens only
+    # after Razorpay confirms payment via the webhook handler
+    # (handle_payment_success in razorpay_service.py).
 
     return {
         "data": {

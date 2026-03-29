@@ -1,6 +1,34 @@
 /** @type {import('next').NextConfig} */
+const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+
 const nextConfig = {
   output: 'standalone',
+
+  async rewrites() {
+    return [
+      // Proxy REST API calls to the backend
+      {
+        source: '/api/v1/:path*',
+        destination: `${backendUrl}/api/v1/:path*`,
+      },
+      // Proxy health endpoint
+      {
+        source: '/health',
+        destination: `${backendUrl}/health`,
+      },
+      // Proxy metrics endpoint
+      {
+        source: '/metrics',
+        destination: `${backendUrl}/metrics`,
+      },
+      // Proxy WebSocket endpoint
+      {
+        source: '/ws/:path*',
+        destination: `${backendUrl}/ws/:path*`,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {
@@ -13,7 +41,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'} ${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'}`,
+              "connect-src 'self' ws: wss:",
               "font-src 'self' https://fonts.gstatic.com",
               "frame-ancestors 'none'",
             ].join('; '),

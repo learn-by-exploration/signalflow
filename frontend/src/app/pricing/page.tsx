@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { TIER_CONFIG, FEATURE_LABELS, type UserTier } from '@/lib/tiers';
 import { useTierStore } from '@/store/tierStore';
+import { API_URL } from '@/lib/constants';
 
 export default function PricingPage() {
   const currentTier = useTierStore((s) => s.tier);
-  const setTier = useTierStore((s) => s.setTier);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const tiers: { key: UserTier; highlight: boolean }[] = [
     { key: 'free', highlight: false },
@@ -13,6 +16,40 @@ export default function PricingPage() {
   ];
 
   const allFeatures = Object.keys(FEATURE_LABELS);
+
+  const handleUpgrade = async (plan: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const resp = await fetch(`${API_URL}/api/v1/payments/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        // Payment system not configured — show "Coming Soon"
+        if (resp.status === 503) {
+          setError('Payment system coming soon. Stay tuned!');
+        } else {
+          setError(data.detail || 'Failed to start subscription');
+        }
+        return;
+      }
+      // If Razorpay is configured, redirect to checkout
+      // For now, show success message
+      if (data.data?.razorpay_key_id) {
+        setError(null);
+        // TODO: Integrate Razorpay checkout.js here
+        // For now, show that subscription was created
+        alert('Subscription created! Razorpay checkout integration coming soon.');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen pb-12">
@@ -24,6 +61,12 @@ export default function PricingPage() {
             AI Q&A, backtesting, and more.
           </p>
         </div>
+
+        {error && (
+          <div className="bg-signal-sell/10 border border-signal-sell/30 rounded-lg p-3 max-w-2xl mx-auto">
+            <p className="text-sm text-signal-sell text-center">{error}</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {tiers.map(({ key, highlight }) => {
@@ -74,29 +117,32 @@ export default function PricingPage() {
                 </ul>
 
                 <button
-                  onClick={() => setTier(key)}
-                  disabled={isCurrent}
+                  onClick={() => key === 'pro' && !isCurrent ? handleUpgrade('monthly') : undefined}
+                  disabled={isCurrent || isLoading || key === 'free'}
                   className={`w-full py-2.5 text-sm rounded-lg font-medium transition-colors ${
                     isCurrent
                       ? 'bg-bg-secondary text-text-muted cursor-default'
                       : highlight
-                      ? 'bg-accent-purple text-white hover:bg-accent-purple/90'
-                      : 'bg-bg-secondary text-text-primary border border-border-default hover:border-border-hover'
+                      ? 'bg-accent-purple text-white hover:bg-accent-purple/90 disabled:opacity-50'
+                      : 'bg-bg-secondary text-text-muted cursor-default'
                   }`}
                 >
-                  {isCurrent ? 'Current Plan' : key === 'pro' ? 'Upgrade to Pro' : 'Downgrade to Free'}
+                  {isCurrent
+                    ? 'Current Plan'
+                    : isLoading
+                    ? 'Processing...'
+                    : key === 'pro'
+                    ? 'Upgrade to Pro'
+                    : 'Free Plan'}
                 </button>
               </div>
             );
           })}
         </div>
 
-        <div className="text-center space-y-2">
+        <div className="text-center">
           <p className="text-xs text-text-muted">
-            Pro plan is currently in preview. Switching plans takes effect immediately.
-          </p>
-          <p className="text-xs text-text-muted">
-            Payment integration (Razorpay/Stripe) coming soon.
+            Razorpay checkout integration in progress. Upgrade will initiate payment flow.
           </p>
         </div>
 

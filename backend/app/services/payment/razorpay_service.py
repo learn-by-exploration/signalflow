@@ -69,19 +69,22 @@ async def create_subscription(
     if plan == "trial":
         period_end = now + timedelta(days=settings.pro_trial_days)
         trial_end = period_end
+        status = "active"  # Trials are active immediately
     elif plan == "monthly":
         period_end = now + timedelta(days=30)
         trial_end = None
+        status = "pending"  # Pending until Razorpay confirms payment
     elif plan == "annual":
         period_end = now + timedelta(days=365)
         trial_end = None
+        status = "pending"  # Pending until Razorpay confirms payment
     else:
         raise ValueError(f"Unknown plan: {plan}")
 
     sub = Subscription(
         user_id=user_id,
         plan=plan,
-        status="active",
+        status=status,
         amount_paise=PLAN_PRICES.get(plan, 0),
         current_period_start=now,
         current_period_end=period_end,
@@ -123,13 +126,20 @@ async def handle_payment_success(
     razorpay_subscription_id: str,
     period_end: datetime,
 ) -> None:
-    """Handle successful payment — extend subscription period.
+    """Handle successful payment — activate subscription and upgrade user tier.
+
+    This is the ONLY place where a user's tier gets upgraded to 'pro'
+    for paid plans. The subscribe endpoint creates a 'pending' subscription;
+    this webhook handler confirms payment and activates it.
 
     Args:
         db: Async database session.
         razorpay_subscription_id: Razorpay subscription ID.
         period_end: New period end date.
     """
+    from app.models.user import User
+
+    # 1. Activate the subscription
     stmt = (
         update(Subscription)
         .where(Subscription.razorpay_subscription_id == razorpay_subscription_id)
@@ -140,7 +150,26 @@ async def handle_payment_success(
         )
     )
     await db.execute(stmt)
-    logger.info("Payment success for subscription %s", razorpay_subscription_id)
+
+    # 2. Find the subscription to get user_id
+    from sqlalchemy import select
+    sub_stmt = (
+        select(Subscription)
+        .where(Subscription.razorpay_subscription_id == razorpay_subscription_id)
+    )
+    result = await db.execute(sub_stmt)
+    sub = result.scalar_one_or_none()
+
+    # 3. Upgrade user tier to 'pro'
+    if sub:
+        await db.execute(
+            update(User)
+            .where(User.id == sub.user_id)
+            .values(tier="pro")
+        )
+        logger.info("Payment success — upgraded user %s to pro (sub %s)", sub.user_id, razorpay_subscription_id)
+    else:
+        logger.warning("Payment success but subscription %s not found", razorpay_subscription_id)
 
 
 async def handle_payment_failed(
