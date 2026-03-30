@@ -20,7 +20,8 @@ class SignalFeedback(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     signal_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    telegram_chat_id: Mapped[int] = mapped_column(nullable=False)
+    telegram_chat_id: Mapped[int | None] = mapped_column(nullable=True)
+    user_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     action: Mapped[str] = mapped_column(
         String(20), nullable=False
     )  # took, skipped, watching

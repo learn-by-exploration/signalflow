@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import AuthContext, get_current_user
@@ -54,6 +54,7 @@ async def submit_feedback(
     fb = SignalFeedback(
         signal_id=signal_id,
         telegram_chat_id=user.telegram_chat_id,
+        user_id=user.user_id,
         action=payload.action,
         entry_price=payload.entry_price,
         notes=payload.notes,
@@ -71,11 +72,20 @@ async def get_feedback(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Get the user's feedback for a specific signal."""
+    # Build ownership conditions based on available identity fields
+    conditions = []
+    if user.user_id:
+        conditions.append(SignalFeedback.user_id == user.user_id)
+    if user.telegram_chat_id:
+        conditions.append(SignalFeedback.telegram_chat_id == user.telegram_chat_id)
+    if not conditions:
+        return {"data": None}
+
     result = await db.execute(
         select(SignalFeedback)
         .where(
             SignalFeedback.signal_id == signal_id,
-            SignalFeedback.telegram_chat_id == user.telegram_chat_id,
+            or_(*conditions),
         )
         .order_by(SignalFeedback.created_at.desc())
         .limit(1)
