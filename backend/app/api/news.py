@@ -51,7 +51,7 @@ async def list_news(
 
     if market:
         if market not in VALID_MARKETS:
-            raise HTTPException(status_code=400, detail=f"Invalid market: {market}")
+            raise HTTPException(status_code=400, detail="Invalid market. Must be one of: stock, crypto, forex")
         base_query = base_query.where(NewsEvent.market_type == market)
     if symbol:
         safe = symbol.upper().strip()

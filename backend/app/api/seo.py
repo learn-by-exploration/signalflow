@@ -29,7 +29,7 @@ async def list_analysis_pages(
     Public endpoint for sitemap generation. No auth required.
     """
     if market and market not in VALID_MARKETS:
-        raise HTTPException(status_code=400, detail=f"Invalid market: {market}")
+        raise HTTPException(status_code=400, detail="Invalid market. Must be one of: stock, crypto, forex")
     pages = await list_seo_pages(db, market_type=market, limit=limit)
     return {"data": pages, "meta": {"count": len(pages)}}
 

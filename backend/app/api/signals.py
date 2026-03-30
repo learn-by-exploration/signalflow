@@ -33,9 +33,9 @@ async def list_signals(
 ) -> SignalListResponse:
     """List active trading signals with optional filters."""
     if market and market not in VALID_MARKETS:
-        raise HTTPException(status_code=400, detail=f"Invalid market: {market}. Must be one of {sorted(VALID_MARKETS)}")
+        raise HTTPException(status_code=400, detail=f"Invalid market. Must be one of {sorted(VALID_MARKETS)}")
     if signal_type and signal_type not in VALID_SIGNAL_TYPES:
-        raise HTTPException(status_code=400, detail=f"Invalid signal_type: {signal_type}. Must be one of {sorted(VALID_SIGNAL_TYPES)}")
+        raise HTTPException(status_code=400, detail=f"Invalid signal_type. Must be one of {sorted(VALID_SIGNAL_TYPES)}")
 
     base_query = select(Signal).where(Signal.is_active.is_(True))
 

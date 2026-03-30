@@ -37,7 +37,7 @@ async def list_signal_history(
 ) -> SignalHistoryResponse:
     """List past signal outcomes with embedded signal details."""
     if outcome and outcome not in VALID_OUTCOMES:
-        raise HTTPException(status_code=400, detail=f"Invalid outcome: {outcome}. Must be one of {sorted(VALID_OUTCOMES)}")
+        raise HTTPException(status_code=400, detail=f"Invalid outcome. Must be one of {sorted(VALID_OUTCOMES)}")
 
     base_query = select(SignalHistory)
     if outcome:
