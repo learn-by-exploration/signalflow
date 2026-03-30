@@ -75,12 +75,9 @@ async def test_list_signals_pagination(test_client):
 
 @pytest.mark.asyncio
 async def test_list_signals_empty_for_unknown_market(test_client):
-    """Returns empty list for unknown market type."""
+    """Unknown market type is rejected with 400."""
     resp = await test_client.get("/api/v1/signals", params={"market": "commodities"})
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["meta"]["total"] == 0
-    assert body["data"] == []
+    assert resp.status_code == 400
 
 
 @pytest.mark.asyncio

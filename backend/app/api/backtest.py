@@ -1,5 +1,6 @@
 """Backtesting endpoints — kick off a run, check status/results."""
 
+import re
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
@@ -14,6 +15,8 @@ from app.rate_limit import limiter
 from app.schemas.p3 import BacktestCreate, BacktestData
 
 router = APIRouter(prefix="/backtest", tags=["backtest"])
+
+_SYMBOL_RE = re.compile(r"^[A-Z0-9./=_-]{1,20}$")
 
 
 @router.post("/run", response_model=dict, status_code=201)
@@ -39,11 +42,16 @@ async def start_backtest(
     if payload.days < 1:
         raise HTTPException(status_code=400, detail="Backtest duration must be at least 1 day")
 
+    # Validate symbol format
+    safe_symbol = payload.symbol.upper().strip()
+    if not _SYMBOL_RE.match(safe_symbol):
+        raise HTTPException(status_code=400, detail="Invalid symbol format")
+
     from app.tasks.backtest_tasks import run_backtest
 
     now = datetime.now(timezone.utc)
     backtest = BacktestRun(
-        symbol=payload.symbol.upper().strip(),
+        symbol=safe_symbol,
         market_type=payload.market_type,
         start_date=now - timedelta(days=payload.days),
         end_date=now,

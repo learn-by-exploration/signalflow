@@ -1,8 +1,9 @@
 """Signal history and stats endpoints."""
 
+import re
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -22,6 +23,10 @@ from app.schemas.signal import (
 
 router = APIRouter(prefix="/signals", tags=["signals"])
 
+VALID_OUTCOMES = {"hit_target", "hit_stop", "expired", "pending"}
+VALID_MARKETS = {"stock", "crypto", "forex"}
+_SYMBOL_RE = re.compile(r"^[A-Z0-9./=_-]{1,20}$")
+
 
 @router.get("/history", response_model=SignalHistoryResponse)
 async def list_signal_history(
@@ -31,6 +36,9 @@ async def list_signal_history(
     db: AsyncSession = Depends(get_db),
 ) -> SignalHistoryResponse:
     """List past signal outcomes with embedded signal details."""
+    if outcome and outcome not in VALID_OUTCOMES:
+        raise HTTPException(status_code=400, detail=f"Invalid outcome: {outcome}. Must be one of {sorted(VALID_OUTCOMES)}")
+
     base_query = select(SignalHistory)
     if outcome:
         base_query = base_query.where(SignalHistory.outcome == outcome)
@@ -147,6 +155,10 @@ async def get_symbol_track_record(
     db: AsyncSession = Depends(get_db),
 ) -> SymbolTrackRecord:
     """Get per-symbol signal performance over the last 30 days."""
+    safe = symbol.upper().strip()
+    if not _SYMBOL_RE.match(safe):
+        raise HTTPException(status_code=400, detail="Invalid symbol format")
+
     since = datetime.now(timezone.utc) - timedelta(days=30)
 
     stmt = (
@@ -158,7 +170,7 @@ async def get_symbol_track_record(
             func.avg(SignalHistory.return_pct).label("avg_return"),
         )
         .join(Signal, Signal.id == SignalHistory.signal_id)
-        .where(Signal.symbol == symbol)
+        .where(Signal.symbol == safe)
         .where(SignalHistory.created_at >= since)
     )
     result = await db.execute(stmt)

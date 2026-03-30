@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,6 +48,9 @@ async def submit_feedback(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Record whether the user took, skipped, or is watching a signal."""
+    if payload.action not in ("took", "skipped", "watching"):
+        raise HTTPException(status_code=400, detail="Invalid action. Must be 'took', 'skipped', or 'watching'")
+
     fb = SignalFeedback(
         signal_id=signal_id,
         telegram_chat_id=user.telegram_chat_id,

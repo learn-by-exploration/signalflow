@@ -274,9 +274,9 @@ class TestSignalsQueryBreaker:
 
     @pytest.mark.asyncio
     async def test_signals_invalid_market_type(self, test_client):
-        """market=bonds — invalid market type."""
+        """market=bonds — invalid market type, rejected with 400."""
         resp = await test_client.get("/api/v1/signals?market=bonds")
-        assert resp.status_code in (200, 422)
+        assert resp.status_code == 400
 
     @pytest.mark.asyncio
     async def test_signals_nonexistent_uuid(self, test_client):
@@ -286,9 +286,9 @@ class TestSignalsQueryBreaker:
 
     @pytest.mark.asyncio
     async def test_history_invalid_outcome_filter(self, test_client):
-        """Filter by outcome that doesn't exist."""
+        """Filter by outcome that doesn't exist, rejected with 400."""
         resp = await test_client.get("/api/v1/signals/history?outcome=destroyed")
-        assert resp.status_code in (200, 422)
+        assert resp.status_code == 400
 
 
 # =========================================================================

@@ -1,5 +1,6 @@
 """News and Events API endpoints — V1 news feed, V2 events, V3 causal chains."""
 
+import re
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
@@ -28,6 +29,9 @@ from app.schemas.news import (
 
 router = APIRouter(prefix="/news", tags=["news"])
 
+VALID_MARKETS = {"stock", "crypto", "forex"}
+_SYMBOL_RE = re.compile(r"^[A-Z0-9./=_-]{1,20}$")
+
 
 # ── V1: News Headlines ──
 
@@ -46,9 +50,14 @@ async def list_news(
     base_query = select(NewsEvent).where(NewsEvent.created_at >= cutoff)
 
     if market:
+        if market not in VALID_MARKETS:
+            raise HTTPException(status_code=400, detail=f"Invalid market: {market}")
         base_query = base_query.where(NewsEvent.market_type == market)
     if symbol:
-        base_query = base_query.where(NewsEvent.symbol.ilike(f"%{symbol}%"))
+        safe = symbol.upper().strip()
+        if not _SYMBOL_RE.match(safe):
+            raise HTTPException(status_code=400, detail="Invalid symbol format")
+        base_query = base_query.where(NewsEvent.symbol.ilike(f"%{safe}%"))
 
     count_result = await db.execute(
         select(func.count()).select_from(base_query.subquery())
@@ -171,6 +180,10 @@ async def get_chains_for_symbol(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Get active causal chains affecting a symbol, with full chain traversal."""
+    safe = symbol.upper().strip()
+    if not _SYMBOL_RE.match(safe):
+        raise HTTPException(status_code=400, detail="Invalid symbol format")
+
     cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
 
     # Find events affecting this symbol

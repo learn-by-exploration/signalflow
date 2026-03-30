@@ -1,5 +1,6 @@
 """Price alert endpoints — create, list, delete."""
 
+import re
 from uuid import UUID as PyUUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -13,6 +14,8 @@ from app.rate_limit import limiter
 from app.schemas.p3 import PriceAlertCreate, PriceAlertData
 
 router = APIRouter(prefix="/alerts/price", tags=["price-alerts"])
+
+_SYMBOL_RE = re.compile(r"^[A-Z0-9./=_-]{1,20}$")
 
 # Price alert limits per tier
 ALERT_LIMITS = {"free": 3, "pro": 50, "admin": 500}
@@ -59,6 +62,11 @@ async def create_price_alert(
     """Create a new price alert for the authenticated user."""
     if payload.condition not in ("above", "below"):
         raise HTTPException(status_code=400, detail="condition must be 'above' or 'below'")
+
+    # Validate symbol format
+    safe_symbol = payload.symbol.upper().strip()
+    if not _SYMBOL_RE.match(safe_symbol):
+        raise HTTPException(status_code=400, detail="Invalid symbol format")
 
     # Enforce tier-based alert limit
     limit = ALERT_LIMITS.get(user.tier, ALERT_LIMITS["free"])

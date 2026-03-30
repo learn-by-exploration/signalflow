@@ -1,5 +1,6 @@
 """Alert configuration endpoints."""
 
+import re
 from uuid import UUID as PyUUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -14,6 +15,9 @@ from app.rate_limit import limiter
 from app.schemas.alert import AlertConfigCreate, AlertConfigData, AlertConfigUpdate, WatchlistUpdate
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
+
+_USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{1,100}$")
+_SYMBOL_RE = re.compile(r"^[A-Z0-9./=_-]{1,20}$")
 
 
 def _user_config_filter(user: AuthContext):
@@ -53,6 +57,10 @@ async def create_alert_config(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Create a new alert configuration for the authenticated user."""
+    # Sanitize username
+    if payload.username and not _USERNAME_RE.match(payload.username):
+        raise HTTPException(status_code=400, detail="Invalid username format")
+
     # Check for existing config
     existing = await db.execute(
         select(AlertConfig).where(_user_config_filter(user))
@@ -85,6 +93,12 @@ async def update_alert_config(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Update an existing alert configuration (must belong to user)."""
+    # Sanitize username if provided
+    update_data_check = payload.model_dump(exclude_unset=True)
+    if "username" in update_data_check and update_data_check["username"]:
+        if not _USERNAME_RE.match(update_data_check["username"]):
+            raise HTTPException(status_code=400, detail="Invalid username format")
+
     result = await db.execute(
         select(AlertConfig).where(AlertConfig.id == config_id).with_for_update()
     )
@@ -158,6 +172,10 @@ async def update_watchlist(
 
     watchlist = list(config.watchlist) if isinstance(config.watchlist, list) else []
     symbol_upper = payload.symbol.upper().strip()
+
+    # Validate symbol format
+    if not _SYMBOL_RE.match(symbol_upper):
+        raise HTTPException(status_code=400, detail="Invalid symbol format")
 
     # Validate symbol against tracked list
     if payload.action == "add":

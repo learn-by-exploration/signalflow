@@ -27,24 +27,22 @@ class TestSQLInjection:
         ]
         for payload in payloads:
             resp = await test_client.get(f"/api/v1/signals?symbol={payload}")
-            # Should not crash — return 200 with empty results
-            assert resp.status_code == 200
-            data = resp.json()
-            assert "data" in data
+            # Should reject malicious input with 400
+            assert resp.status_code == 400, f"Expected 400 for payload: {payload}"
 
     @pytest.mark.asyncio
     async def test_signals_market_filter_injection(self, test_client):
-        """Market filter with SQL injection."""
+        """Market filter with SQL injection, rejected with 400."""
         resp = await test_client.get("/api/v1/signals?market=' OR 1=1 --")
-        assert resp.status_code == 200
+        assert resp.status_code == 400
 
     @pytest.mark.asyncio
     async def test_history_sql_injection(self, test_client):
-        """History endpoint with injection in outcome filter."""
+        """History endpoint with injection in outcome filter, rejected."""
         resp = await test_client.get(
             "/api/v1/signals/history?outcome=' UNION SELECT 1,2,3--"
         )
-        assert resp.status_code in (200, 422)
+        assert resp.status_code == 400
 
     @pytest.mark.asyncio
     async def test_portfolio_symbol_injection(self, test_client):
@@ -337,9 +335,9 @@ class TestUnicodeHandling:
 
     @pytest.mark.asyncio
     async def test_unicode_in_symbol_filter(self, test_client):
-        """Unicode characters in symbol filter."""
+        """Unicode characters in symbol filter, rejected (non-ASCII)."""
         resp = await test_client.get("/api/v1/signals?symbol=тест")
-        assert resp.status_code == 200
+        assert resp.status_code == 400
 
     @pytest.mark.asyncio
     async def test_emoji_in_notes(self, test_client):

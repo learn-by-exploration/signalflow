@@ -1,10 +1,11 @@
 """Portfolio/trade endpoints — log trades, view positions, P&L."""
 
+import re
 from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select, case, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,8 @@ from app.rate_limit import limiter
 from app.schemas.p3 import CurrencyBreakdown, PortfolioSummary, TradeCreate, TradeData
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
+
+_SYMBOL_RE = re.compile(r"^[A-Z0-9./=_-]{1,20}$")
 
 
 def _user_trade_filter(user: AuthContext):
@@ -42,10 +45,10 @@ async def list_trades(
     """List trades for the authenticated user, optionally filtered by symbol."""
     query = select(Trade).where(_user_trade_filter(user))
     if symbol:
-        # Escape SQL LIKE wildcards to prevent pattern injection
-        safe_symbol = symbol.replace("%", "").replace("_", "").strip()
-        if safe_symbol:
-            query = query.where(Trade.symbol.ilike(f"%{safe_symbol}%"))
+        safe_symbol = symbol.upper().strip()
+        if not _SYMBOL_RE.match(safe_symbol):
+            raise HTTPException(status_code=400, detail="Invalid symbol format")
+        query = query.where(Trade.symbol.ilike(f"%{safe_symbol}%"))
     query = query.order_by(Trade.created_at.desc()).limit(limit)
     result = await db.execute(query)
     trades = result.scalars().all()
