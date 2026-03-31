@@ -379,6 +379,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 | Version | Date | Highlights |
 |---------|------|-----------|
+| **v1.3.51** | 31 Mar 2026 | MKG expert panel review (10 experts, 183 requirements) + System Requirements Document |
+| v1.3.50 | 31 Mar 2026 | Final security audit (OWASP Top 10) |
 | **v1.0.0** | 21 Mar 2026 | MVP release — full signal pipeline, dashboard, Telegram bot, 480+ tests |
 | v0.0.1 | 20 Mar 2026 | Feature-complete with testing and Docker setup |
 
