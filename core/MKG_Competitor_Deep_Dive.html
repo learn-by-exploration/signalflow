@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — Full Competitive Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;0,700;0,800;1,300;1,600&family=Fira+Code:wght@300;400;500;600&family=Barlow:wght@300;400;500;600;700&display=swap');
+:root {
+  --bg:#f0ede6; --paper:#faf8f3; --ink:#141008; --ink2:#2e2a22;
+  --muted:#857d6e; --rule:#d5ccba; --rule2:#e8e2d6;
+  --bloomberg:#f05a00; --lseg:#d4193d; --factset:#00529b;
+  --capiq:#1a6b3e; --alphasense:#4a2d8a; --ravenpack:#c89020;
+  --palantir:#1a1a2e; --interos:#005f5f; --findkg:#5a3a1a; --mkgcolor:#b5341c;
+  --has-bg:rgba(26,92,53,0.09); --has-fg:#1a5c35;
+  --miss-bg:rgba(181,52,28,0.09); --miss-fg:#b5341c;
+  --part-bg:rgba(154,117,32,0.1); --part-fg:#7a5a10;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;font-weight:300;line-height:1.6;}
+.wrap{max-width:1380px;margin:0 auto;padding:0 40px 120px;}
+.topbar{background:var(--ink);padding:14px 40px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;}
+.tb-brand{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:2px;color:#c8b89a;}
+.tb-filters{display:flex;gap:6px;}
+.tf{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:1px;padding:4px 10px;border:1px solid #3a3028;color:#6a5e50;background:transparent;cursor:pointer;transition:all 0.15s;text-transform:uppercase;}
+.tf:hover,.tf.act{border-color:#c8b89a;color:#c8b89a;}
+.hero{padding:60px 0 48px;border-bottom:2px solid var(--ink);}
+.h-kick{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:14px;}
+.h-head{font-family:'Spectral',serif;font-size:clamp(36px,4vw,58px);font-weight:800;line-height:1.05;color:var(--ink);letter-spacing:-1px;margin-bottom:14px;}
+.h-head em{font-style:italic;color:var(--mkgcolor);}
+.h-sub{font-family:'Spectral',serif;font-size:17px;font-style:italic;color:var(--muted);max-width:700px;line-height:1.7;margin-bottom:36px;}
+.price-bar{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);}
+.pc{background:var(--paper);padding:14px 12px;text-align:center;position:relative;}
+.pc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.pc:nth-child(1)::before{background:var(--bloomberg);}
+.pc:nth-child(2)::before{background:var(--lseg);}
+.pc:nth-child(3)::before{background:var(--factset);}
+.pc:nth-child(4)::before{background:var(--capiq);}
+.pc:nth-child(5)::before{background:var(--alphasense);}
+.pc:nth-child(6)::before{background:var(--ravenpack);}
+.pc:nth-child(7)::before{background:var(--palantir);}
+.pc-co{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+.pc-p{font-family:'Spectral',serif;font-size:18px;font-weight:700;color:var(--ink);line-height:1;}
+.pc-n{font-family:'Fira Code',monospace;font-size:8px;color:var(--muted);margin-top:3px;letter-spacing:0.5px;}
+.sec-hdr{padding:52px 0 28px;border-bottom:1px solid var(--rule);margin-bottom:36px;}
+.sk{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+.st{font-family:'Spectral',serif;font-size:clamp(26px,3.2vw,40px);font-weight:700;color:var(--ink);line-height:1.1;}
+.st em{font-style:italic;color:var(--mkgcolor);}
+/* Company cards */
+.co-card{background:var(--paper);border:1px solid var(--rule);border-left:5px solid;margin-bottom:3px;overflow:hidden;}
+.co-card:hover{box-shadow:3px 3px 0 rgba(0,0,0,0.07);}
+.cc-head{display:grid;grid-template-columns:240px 1fr 1fr 1fr 1fr 52px;gap:0;cursor:pointer;user-select:none;align-items:stretch;}
+.cch{padding:14px 16px;border-right:1px solid var(--rule2);display:flex;flex-direction:column;justify-content:center;}
+.cch:last-child{border-right:none;align-items:center;justify-content:center;background:transparent;transition:background 0.15s;}
+.cc-head:hover .cch:last-child{background:var(--rule2);}
+.co-name{font-family:'Spectral',serif;font-size:18px;font-weight:700;color:var(--ink);line-height:1.1;margin-bottom:2px;}
+.co-parent{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:0.8px;color:var(--muted);}
+.cch-lbl{font-family:'Fira Code',monospace;font-size:7.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.cch-val{font-family:'Spectral',serif;font-size:16px;font-weight:600;color:var(--ink);line-height:1.2;}
+.cch-sub{font-family:'Fira Code',monospace;font-size:8px;color:var(--muted);margin-top:2px;}
+.exp-icon{font-size:14px;color:var(--muted);transition:transform 0.2s;}
+.expanded .exp-icon{transform:rotate(90deg);}
+/* Card body */
+.co-body{display:none;border-top:1px solid var(--rule);}
+.co-body.open{display:block;}
+.cb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--rule);}
+.cb-col{padding:18px 18px;border-right:1px solid var(--rule2);}
+.cb-col:last-child{border-right:none;}
+.cb-title{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--rule2);}
+.fi{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;}
+.fi-icon{flex-shrink:0;font-size:11px;margin-top:2px;}
+.fi-text{font-family:'Barlow',sans-serif;font-size:12.5px;color:var(--ink2);line-height:1.45;}
+.fi-text strong{color:var(--ink);font-weight:600;}
+.tag{display:inline-block;font-family:'Fira Code',monospace;font-size:8px;letter-spacing:0.8px;padding:2px 6px;border-radius:2px;margin:2px 2px 0 0;}
+.tg{background:var(--has-bg);color:var(--has-fg);}
+.tr{background:var(--miss-bg);color:var(--miss-fg);}
+.ty{background:var(--part-bg);color:var(--part-fg);}
+/* Buyers row */
+.buyers-row{padding:12px 18px;background:var(--rule2);border-bottom:1px solid var(--rule);}
+.br-lbl{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.br-chips{display:flex;flex-wrap:wrap;gap:4px;}
+.bchip{font-family:'Fira Code',monospace;font-size:8.5px;padding:3px 8px;background:var(--paper);border:1px solid var(--rule);color:var(--ink2);}
+/* Verdict */
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:0;background:var(--rule2);}
+.vd{padding:14px 18px;border-right:1px solid var(--rule);}
+.vd:last-child{border-right:none;}
+.vd-lbl{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.vd-text{font-family:'Spectral',serif;font-size:13px;font-style:italic;color:var(--ink2);line-height:1.6;}
+.vd-text strong{color:var(--ink);font-weight:700;font-style:normal;}
+/* Matrix */
+.mat-wrap{overflow-x:auto;margin:24px 0;}
+table.mat{width:100%;border-collapse:collapse;font-family:'Fira Code',monospace;font-size:9px;}
+.mat thead th{background:var(--ink);color:#f0ede6;padding:9px 8px;text-align:center;font-weight:400;letter-spacing:0.8px;white-space:nowrap;border:1px solid var(--ink);}
+.mat thead th:first-child{text-align:left;min-width:190px;background:#2a2218;}
+.mat thead th.mc{background:var(--mkgcolor);font-weight:700;}
+.mat tbody tr:nth-child(even) td{background:#ede8df;}
+.mat tbody tr:nth-child(odd) td{background:var(--paper);}
+.mat tbody td{padding:7px 8px;border:1px solid var(--rule);text-align:center;color:var(--ink2);vertical-align:middle;}
+.mat tbody td:first-child{text-align:left;font-family:'Barlow',sans-serif;font-size:12px;font-weight:500;color:var(--ink);background:#e8e2d6!important;}
+.mat tbody td.mc{background:rgba(181,52,28,0.06)!important;}
+.mat tbody tr.cat td{background:var(--ink2)!important;color:#f0ede6;font-family:'Fira Code',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;font-weight:500;text-align:left!important;}
+.ck{color:#1a5c35;font-size:13px;font-weight:700;}
+.cx{color:#b5341c;font-size:13px;font-weight:700;}
+.cp{color:#7a5a10;font-size:12px;font-weight:700;}
+.cn{color:var(--mkgcolor);font-size:8.5px;font-weight:700;letter-spacing:0.5px;}
+/* Body */
+.body{font-family:'Spectral',serif;font-size:15px;line-height:1.8;color:var(--ink2);margin-bottom:14px;}
+.body strong{color:var(--ink);font-weight:700;}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity 0.4s ease,transform 0.4s ease;}
+.reveal.on{opacity:1;transform:none;}
+.footer{border-top:2px solid var(--ink);padding:22px 0;display:flex;justify-content:space-between;margin-top:60px;}
+.ft{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:1.5px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="tb-brand">MKG · COMPETITIVE FEATURE INTELLIGENCE · FEBRUARY 2026</div>
+  <div class="tb-filters">
+    <button class="tf act" onclick="filter('all',this)">All</button>
+    <button class="tf" onclick="filter('tier1',this)">Tier 1 — Data</button>
+    <button class="tf" onclick="filter('tier2',this)">Tier 2 — AI</button>
+    <button class="tf" onclick="filter('tier3',this)">Tier 3 — Graph</button>
+  </div>
+</div>
+<div class="wrap">
+<div class="hero reveal">
+  <div class="h-kick">9 Platforms · Feature Deep Dive · Revenue · Pricing · Buyers · February 2026</div>
+  <div class="h-head">Every tool. Every feature.<br>Every gap. <em>Precisely.</em></div>
+  <div class="h-sub">Nine platforms dissected end-to-end — founding year, live revenue, pricing, named buyer profiles, full feature list, and exactly where each one breaks down for institutional relationship intelligence.</div>
+  <div class="price-bar">
+    <div class="pc"><div class="pc-co">Bloomberg</div><div class="pc-p">$31,980</div><div class="pc-n">single seat/yr 2025</div></div>
+    <div class="pc"><div class="pc-co">LSEG</div><div class="pc-p">$20–50K</div><div class="pc-n">avg deal ~$113K</div></div>
+    <div class="pc"><div class="pc-co">FactSet</div><div class="pc-p">$12–24K</div><div class="pc-n">82% buy-side clients</div></div>
+    <div class="pc"><div class="pc-co">Capital IQ</div><div class="pc-p">$15–25K</div><div class="pc-n">bundled S&P Global</div></div>
+    <div class="pc"><div class="pc-co">AlphaSense</div><div class="pc-p">$10–20K</div><div class="pc-n">avg enterprise $50–100K+</div></div>
+    <div class="pc"><div class="pc-co">RavenPack</div><div class="pc-p">Custom</div><div class="pc-n">est. $50K–500K+/yr</div></div>
+    <div class="pc"><div class="pc-co">Palantir</div><div class="pc-p">$5M–50M+</div><div class="pc-n">flat enterprise/yr</div></div>
+  </div>
+</div>
+<!-- TIER 1 -->
+<div class="sec-hdr reveal"><div class="sk">Section 01 · Tier 1 Incumbents — The Data Infrastructure Layer</div><div class="st">Where <em>$35 billion</em> per year goes — and what it still doesn't buy</div></div>
+
+<!-- BLOOMBERG -->
+<div class="co-card reveal" data-tier="tier1" style="border-left-color:var(--bloomberg);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">Bloomberg Terminal</div><div class="co-parent">Bloomberg L.P. · Private · New York, USA · Founded 1982</div></div>
+    <div class="cch"><div class="cch-lbl">Revenue (2024 est.)</div><div class="cch-val">$10B+</div><div class="cch-sub">Terminal = ~85% of total · Private</div></div>
+    <div class="cch"><div class="cch-lbl">Subscribers</div><div class="cch-val">325,000+</div><div class="cch-sub">Terminals globally · 22,000 employees</div></div>
+    <div class="cch"><div class="cch-lbl">Pricing 2025</div><div class="cch-val">$31,980/seat</div><div class="cch-sub">Single · $28,320 multi · +6.5% hike · 2yr lock-in</div></div>
+    <div class="cch"><div class="cch-lbl">Market Share</div><div class="cch-val">~33%</div><div class="cch-sub">Global financial data market · #1 vendor</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Does — Core Strengths</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Real-time data — all asset classes.</strong> Equities, fixed income, FX, commodities, derivatives, crypto. Every major exchange globally. Sub-millisecond delivery. The most complete real-time data product commercially available.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Bloomberg News.</strong> 2,700+ journalists globally. 1,500 external news sources aggregated. Fastest financial wires. Exclusive breaking news via BNET (Bloomberg News Exclusive Terminal) before public release.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>IB Messaging Network.</strong> 325,000 professionals on a private, secure messaging system. The communication layer of institutional finance. Network effects make this impossible to replicate — being off Bloomberg means being outside the network.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Execution (EMSX).</strong> Multi-asset order management across 3,000+ brokers. Direct market access, algo execution, TCA reporting. Deeply embedded in trading desk workflows.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Excel / API integration (BQL, BLPAPI).</strong> Industry standard for financial model building on live data. Python, Java, C++ SDKs. BQL (Bloomberg Query Language) enables complex live data queries in spreadsheets.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Fixed income depth.</strong> Unparalleled bond coverage — government, corporate, structured. BVAL pricing for 2.5M+ securities. Most complete bond database commercially available. Required for credit desks.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Bloomberg Intelligence.</strong> 400+ proprietary analysts producing exclusive sector and thematic research. Only accessible via terminal. Includes BI's thematic indices and Signals research.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>ESG data.</strong> 11,500+ companies, carbon data, SASB mapping, governance scores. Increasingly required for EU SFDR/CSRD compliance. Integrated with portfolio analytics.</div></div>
+        <div style="margin-top:10px;">
+          <span class="tag tg">Real-time data</span><span class="tag tg">News</span><span class="tag tg">IB Messaging</span>
+          <span class="tag tg">Execution</span><span class="tag tg">Fixed income</span><span class="tag tg">ESG</span>
+        </div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Does NOT Do — Critical Gaps</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Zero relationship graph.</strong> Companies exist as isolated entities in Bloomberg. There is no weighted graph of company-to-company relationships, no dynamic edges, no propagation model. The TSMC→NVIDIA supply chain link is not queryable as a graph edge with a weight.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No event impact propagation.</strong> When major news hits, Bloomberg shows the direct price move and the headline. It does not compute which other companies are affected, in which direction, with what confidence, over what time horizon.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No temporal relationship memory.</strong> No versioned graph state. Cannot answer "what did the company relationship network look like on March 15, 2022?" Historical prices exist; historical relationship graph states do not.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Cloud-only / proprietary network.</strong> All data routes through Bloomberg's private network. No on-premise deployment. Institutions with air-gapped or strict data sovereignty requirements cannot process sensitive internal research through Bloomberg infrastructure.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Archaic UX — massive learning curve.</strong> The amber-on-black interface is virtually unchanged since the 1980s. 6–12 months to reach productivity. Junior analysts spend months memorising function codes instead of doing analysis. Onboarding overhead is a real cost.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Mandatory 2-year lease lock-in.</strong> No flexibility to scale down. No monthly options. Firms that reduce headcount continue paying for unused terminals. Contract renewal is high-pressure and non-negotiable for most firms.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No signal explainability chain.</strong> Bloomberg alerts tell you what happened. They cannot produce a full causal chain: event → relationship edge → weight delta → entity impact score → source document. No audit trail for AI-adjacent institutional signals.</div></div>
+        <div style="margin-top:10px;">
+          <span class="tag tr">No graph</span><span class="tag tr">No propagation</span><span class="tag tr">Cloud only</span>
+          <span class="tag tr">2yr lock-in</span><span class="tag tr">No temporal state</span>
+        </div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Company Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Founded:</strong> 1982 by Michael Bloomberg after leaving Salomon Brothers. First terminal delivered to Merrill Lynch. Grew from 1 client to 325,000 terminals in 42 years.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Ownership:</strong> ~88% Michael Bloomberg. Remainder: Bloomberg Philanthropies + employees. Fully private — does not disclose financials. Revenue estimated $10B+ based on terminal count × pricing.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Price trajectory:</strong> 2001: $1,640/mo → 2010: $1,750/mo → 2020: $2,000/mo → 2023: +9.6% → 2025: $2,665/mo (single). Inflation-linked contract language since 2022.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Footprint:</strong> 176 offices worldwide. 22,000+ employees. Operates Bloomberg Intelligence (400+ analysts), Bloomberg Law, Bloomberg Government, Bloomberg Media — all funded by terminal revenue.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>AI moves (2025):</strong> Bloomberg GPT (51B parameter financial LLM). Bloomberg Intelligence AI summaries. Chat with Bloomberg News. Still no graph intelligence layer.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Retention:</strong> Terminal churn is estimated at &lt;5%/yr. The IB messaging network alone locks firms in — leaving Bloomberg means leaving the professional network. Effectively unbreakable lock-in at institutional level.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Primary Buyers & User Profiles</div>
+      <div class="br-chips">
+        <span class="bchip">Hedge Fund PMs & Analysts</span><span class="bchip">Sell-Side Traders</span><span class="bchip">Fixed Income Portfolio Managers</span>
+        <span class="bchip">Investment Banking M&A</span><span class="bchip">Macro Economists</span><span class="bchip">Risk Officers</span>
+        <span class="bchip">Corporate Treasurers</span><span class="bchip">40+ Central Banks</span><span class="bchip">Sovereign Wealth Funds</span>
+        <span class="bchip">Prime Brokerage Desks</span><span class="bchip">Insurance Portfolios</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>Complementary, not competitive.</strong> Bloomberg is desk infrastructure. MKG is the relationship intelligence layer Bloomberg doesn't have. Bloomberg users are MKG's primary target buyers — they already spend $32K/seat and still cannot answer second-order propagation questions. MKG does not replace Bloomberg; it fills the structural gap Bloomberg leaves open.</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">Bloomberg has capital, data, and 22,000 engineers to build graph intelligence if they chose to. Their legacy static-entity architecture would require significant restructuring. Their 2yr lock-in model discourages feature additions not immediately defensible to existing clients. <strong>Threat: Medium / 3–5yr horizon.</strong></div></div>
+    </div>
+  </div>
+</div>
+<!-- LSEG -->
+<div class="co-card reveal" data-tier="tier1" style="border-left-color:var(--lseg);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">LSEG Workspace</div><div class="co-parent">London Stock Exchange Group · LSE: LSEG · London, UK · Founded 2001 (Refinitiv → LSEG 2021)</div></div>
+    <div class="cch"><div class="cch-lbl">Revenue (2024)</div><div class="cch-val">£8.49B</div><div class="cch-sub">+8.4% YoY · $27B Refinitiv acq. 2021</div></div>
+    <div class="cch"><div class="cch-lbl">Users (est.)</div><div class="cch-val">400,000+</div><div class="cch-sub">Workspace + legacy Eikon users</div></div>
+    <div class="cch"><div class="cch-lbl">Pricing</div><div class="cch-val">$20–50K/seat</div><div class="cch-sub">Avg enterprise deal ~$113K · max $1.5M+</div></div>
+    <div class="cch"><div class="cch-lbl">Market Share</div><div class="cch-val">~20%</div><div class="cch-sub">Global financial data · #2 vendor</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Does</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Reuters News integration.</strong> Exclusive access to Reuters global news wire — the world's largest news agency. Richer international and EM market news than Bloomberg for non-US geographies.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>StarMine analytics.</strong> Proprietary quant scoring: Smart Estimates (analyst revision models), Earnings Quality scores, Surprise Probability models. Embedded alpha signals within the data platform.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>CodeBook (Python IDE in cloud).</strong> Hosted Jupyter notebooks with direct LSEG data API access. More developer-friendly than Bloomberg for quant teams. Rdot connector for R. Better programmatic access for systematic strategies.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Microsoft partnership (2022).</strong> Microsoft holds 4% LSEG stake. LSEG data embedded into Teams, Excel, Power BI, and Azure. Enterprise workflow integration — data where users already work.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>FX & derivatives depth.</strong> Historically strongest platform for FX data, money market, and interest rate derivatives. FXall matching engine included. Critical for FX-focused institutions and treasuries.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>ESG dataset.</strong> 12,000+ companies ESG scores from 2002. One of the oldest and largest ESG datasets commercially available. Mapped to EU SFDR, CSRD Article 8/9 requirements.</div></div>
+        <div style="margin-top:8px;"><span class="tag tg">Reuters news</span><span class="tag tg">StarMine</span><span class="tag tg">Python/CodeBook</span><span class="tag tg">FX depth</span><span class="tag tg">ESG</span><span class="tag ty">~Peer clustering</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Does NOT Do</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No relationship graph.</strong> LSEG "Related Companies" uses StarMine Peers + TRBC industry classification — this is sector clustering, not a dynamic weighted relationship graph. TSMC and NVIDIA appear as "related" because they're both in semis, not because of a specific supply chain edge with a computed weight.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No event propagation scoring.</strong> No automated second-order impact analysis. No "when TSMC reports, here are 23 other entities affected, ranked by impact score with direction and confidence."</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Cloud-only.</strong> Same data sovereignty constraint as Bloomberg. No on-premise deployment. All computation happens on LSEG's infrastructure.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Data quality inconsistency.</strong> Users report inferior fundamental data depth for smaller companies and EM vs. Bloomberg and FactSet. The $27B Refinitiv acquisition has been slower to integrate than expected — product coherence still incomplete in 2025.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Legacy Eikon fragmentation.</strong> Workspace rebrand from Eikon is incomplete through 2025. Users report missing features from old Eikon, reliability issues, and UX inconsistency across product areas.</div></div>
+        <div style="margin-top:8px;"><span class="tag tr">No graph</span><span class="tag tr">Cloud only</span><span class="tag tr">No propagation</span><span class="tag tr">Data quality gaps</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Company Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>LSEG total revenue (2024):</strong> £8.49B, +8.4% YoY. Data & Analytics dominant segment. Stock exchange (trading) is a smaller component of total revenue.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Refinitiv acquisition:</strong> LSEG acquired Refinitiv from Blackstone/Thomson Reuters JV for $27B (Jan 2021). One of the largest fintech acquisitions in history. Integration ongoing through 2025.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Microsoft deal:</strong> 4% LSEG stake held by Microsoft. LSEG data to be embedded in Microsoft 365 AI products — Copilot for Finance. Co-selling motion with Microsoft enterprise sales.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Vendr pricing data:</strong> Avg contract $113,012/yr. Max observed: $1.5M/yr. 28% of buyers pay more than $100K/yr. Negotiated discounts of 14–26% common.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>AI moves:</strong> LSEG investing in Microsoft Copilot integration for financial data. AI-powered news summarisation. Document search on Workspace. No graph layer announced.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Primary Buyers</div>
+      <div class="br-chips">
+        <span class="bchip">Wealth Managers</span><span class="bchip">FX & Fixed Income Traders</span><span class="bchip">Buy-Side Quant Teams</span>
+        <span class="bchip">European Institutional Investors</span><span class="bchip">EM-Focused Funds</span><span class="bchip">Investment Banks (non-US)</span>
+        <span class="bchip">Compliance & Regulatory Teams</span><span class="bchip">Corporate Treasuries</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>Complementary.</strong> LSEG Workspace users — especially quant teams on CodeBook — are technically sophisticated and more likely to consume MKG output via API integration. Reuters news feed is a candidate input source for MKG's scraping agent. LSEG desks are a secondary MKG target buyer after Bloomberg desks.</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">LSEG's Microsoft partnership is the most credible path to adding graph-like intelligence at scale — if Microsoft Copilot ingests LSEG data and adds relationship graph reasoning via Azure AI. This is speculative but plausible. <strong>Threat: Medium / 2–3yr via Microsoft vector.</strong></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FACTSET -->
+<div class="co-card reveal" data-tier="tier1" style="border-left-color:var(--factset);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">FactSet Research</div><div class="co-parent">FactSet Research Systems · NYSE: FDS · Norwalk, CT · Founded 1978</div></div>
+    <div class="cch"><div class="cch-lbl">Revenue FY2025</div><div class="cch-val">$2.32B</div><div class="cch-sub">+5.4% YoY · 44 consecutive growth years · ASV $2.41B</div></div>
+    <div class="cch"><div class="cch-lbl">Clients / Users</div><div class="cch-val">8,996 / 237K</div><div class="cch-sub">95% ASV retention rate · 82% buy-side</div></div>
+    <div class="cch"><div class="cch-lbl">Pricing</div><div class="cch-val">$12–24K/seat</div><div class="cch-sub">Per year · tiered by product bundle</div></div>
+    <div class="cch"><div class="cch-lbl">Key Product</div><div class="cch-val">Revere SC</div><div class="cch-sub">40,000+ static supply chain relationships — closest to MKG</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Does</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Best-in-class fundamental data.</strong> 62,000+ public companies, 4.4M+ private companies. Standardised financials across GAAP/IFRS. Deepest bottom-up equity research database commercially available. The quant fund's go-to for clean, point-in-time data.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>FactSet Estimates (consensus).</strong> Earnings, revenue, margin consensus from 900+ sell-side firms. Historical estimate revision tracking. Earnings surprise analysis. Point-in-time — no look-ahead bias for backtesting.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>FactSet Revere (supply chain data).</strong> Company-to-company revenue dependencies sourced from SEC filings. 40,000+ relationships. Industry-leading for fundamental supply chain mapping. <em>Critical context: static and filing-sourced, not dynamically updated.</em></div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Portfolio analytics.</strong> Full attribution, risk decomposition, factor exposure (Barra integration). Performance reporting and GIPS compliance workflows. Deep PM desk integration.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Quant-friendly data feeds.</strong> Clean, machine-readable API delivery. Point-in-time snapshots for backtest integrity. Extremely popular with systematic and quant hedge funds who need clean historical data without survivorship bias.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>CUSIP Global Services (acquired 2022).</strong> The security identifier infrastructure underlying all of financial markets. Every publicly traded instrument globally.</div></div>
+        <div style="margin-top:8px;"><span class="tag tg">Fundamentals</span><span class="tag tg">Estimates</span><span class="tag tg">Portfolio analytics</span><span class="tag tg">Quant feeds</span><span class="tag ty">~Revere (static SC)</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Does NOT Do</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Revere is static — not dynamically updated.</strong> Revere's supply chain relationships come from SEC filings (customer/supplier disclosures, 10-K footnotes). They reflect what companies reported, not the current operational state of the relationship. When NVIDIA's TSMC capacity allocation doubled in 2025, Revere did not update. No neural network adjusting weights.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No event propagation engine.</strong> Revere shows you the relationship. It cannot compute what happens to Company B when Company A has a shock, traverse the supply chain graph, and score every downstream entity with an impact score and direction.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No real-time news signal layer.</strong> FactSet is fundamentals and estimates. News coverage is minimal compared to Bloomberg or RavenPack. Not built for real-time signal generation from continuous news flow.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No temporal graph state.</strong> Revere shows current relationships. It does not version them over time with timestamps. Cannot answer "what did TSMC's supply chain dependencies look like on September 1, 2023 at 9:00 AM?"</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Cloud-only.</strong> No on-premise deployment for full FactSet platform. API access available but primary platform is cloud-hosted SaaS.</div></div>
+        <div style="margin-top:8px;"><span class="tag tr">No dynamic weights</span><span class="tag tr">No propagation engine</span><span class="tag tr">Static SC data</span><span class="tag tr">Cloud only</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Company Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Revenue trajectory:</strong> FY2023: $2.09B → FY2024: $2.20B → FY2025: $2.32B → FY2026 guidance: $2.42–2.45B. Consistent mid-single-digit organic grower. 44th consecutive year of revenue growth.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Client quality:</strong> 8,996 clients (Aug 2025), up 185 QoQ. 95% ASV retention. 82% buy-side (asset managers, hedge funds, asset owners, wealth). 18% sell-side (IB, PE/VC, broker-dealers).</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Revere supply chain:</strong> Covers 40,000+ relationships sourced from SEC-filed customer concentration disclosures. Updated quarterly with filing cycle. Weight = % of revenue attributed to relationship. Binary existence, percentage weight — no neural adjustment.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>AI initiatives (2025):</strong> FactSet Mercury — AI assistant for data queries. AI-generated earnings summaries. No graph intelligence layer announced. Focused on data access efficiency, not relationship signal generation.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Market cap:</strong> ~$16B as of early 2026. Dividend-paying. Conservative financial profile — 44 years of consistent growth without acquisitions-at-any-cost.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Primary Buyers</div>
+      <div class="br-chips">
+        <span class="bchip">Long-Only Asset Managers</span><span class="bchip">Fundamental Equity Analysts</span><span class="bchip">Quant / Systematic Funds</span>
+        <span class="bchip">Private Equity Firms</span><span class="bchip">Sell-Side IB Advisory</span><span class="bchip">Corporate Dev Teams</span>
+        <span class="bchip">Risk Analytics Desks</span><span class="bchip">Law Firms (financial diligence)</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>FactSet Revere is the closest existing commercial data product to MKG's relationship layer</strong> — but Revere is filing-sourced, static, and has no propagation engine. MKG should position as "dynamic Revere with a propagation engine attached." FactSet Revere users are high-value MKG targets — they understand the concept of supply chain relationships and already pay for that data layer.</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">FactSet has Revere as the foundation. If they add continuous news-driven weight updates and a propagation engine on top, they'd be MKG's closest commercial threat — delivered to 237K existing users with 95% retention. <strong>Highest Tier 1 threat. Medium-High / 2–4yr horizon.</strong></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CAPITAL IQ -->
+<div class="co-card reveal" data-tier="tier1" style="border-left-color:var(--capiq);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">S&P Capital IQ Pro</div><div class="co-parent">S&P Global Market Intelligence · NYSE: SPGI · New York · Founded 1998</div></div>
+    <div class="cch"><div class="cch-lbl">S&P Global Revenue (2024)</div><div class="cch-val">~$14B</div><div class="cch-sub">Market Intelligence segment ~$3.5B · Ratings ~$5B</div></div>
+    <div class="cch"><div class="cch-lbl">Users</div><div class="cch-val">Millions</div><div class="cch-sub">via S&P Global suite · exact Capital IQ undisclosed</div></div>
+    <div class="cch"><div class="cch-lbl">Pricing</div><div class="cch-val">$15–25K/seat</div><div class="cch-sub">Enterprise custom · bundled options with Ratings access</div></div>
+    <div class="cch"><div class="cch-lbl">Key Differentiator</div><div class="cch-val">Board/Exec graph</div><div class="cch-sub">Static board + executive network — closest existing static graph</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Does</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Largest private company database globally.</strong> 4.4M+ public and private company financial profiles. Unmatched for PE/VC diligence, private market deal sourcing, and competitor intelligence on unlisted companies.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Executive & board network mapping.</strong> THE closest commercial product to a relationship graph. Shows executive backgrounds, current/past board memberships, cross-company board interlocks, and shared director relationships. Browsable as a network — research-purpose relationship graph.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>M&A deal database.</strong> Most comprehensive global M&A transaction history — deal structure, advisor, valuation multiples, target/acquirer profiles going back decades. Required for IB pitchbooks and strategic deal screening.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Credit ratings integration.</strong> Direct S&P Global Ratings at source. Only platform with built-in credit rating agency data — bond ratings, credit watches, outlook changes — without a separate subscription.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Panjiva trade data.</strong> Container-level import/export data from US and global customs filings. Actual supply chain transaction evidence — not disclosed, not modelled, but observed. Unique alternative data layer that reveals real supplier relationships.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>With Intelligence ($1.8B acquisition, Oct 2025).</strong> Alternative assets intelligence — fund research, manager databases, LP/GP relationship mapping for private markets. Extends Capital IQ into private fund relationship intelligence.</div></div>
+        <div style="margin-top:8px;"><span class="tag tg">Private company data</span><span class="tag tg">Exec/board network</span><span class="tag tg">M&A data</span><span class="tag tg">Panjiva trade</span><span class="tag ty">~Static graph</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Does NOT Do</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Executive network is static — not a signal system.</strong> Capital IQ shows who is connected to whom via board memberships. It does not score the strength of those connections, update them from news signals, or propagate shocks through the network. The graph is a research reference, not a signal generator. It cannot answer "what happens to Company A when Company B's CEO exits?"</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No event propagation engine.</strong> Displaying relationships and computing what propagates through them are entirely different capabilities. Capital IQ has the former only. No traversal engine, no impact scoring, no multi-hop contagion.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No neural network weight adjustment.</strong> Relationship strength is binary (connected or not) or implied from filing data. No machine learning continuously refining edge weights from financial news signals. Board interlocks are equally weighted regardless of relationship significance.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Research workflow, not signal workflow.</strong> Capital IQ Pro is designed for analysts doing point-in-time research (screening, modelling, diligence). It is not designed for real-time signal generation or automated propagation scoring during live market events.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No temporal graph state.</strong> Historical M&A data exists, but the complete relationship network at any historical timestamp is not queryable. Cannot replay "what did the executive network look like on January 1, 2023?"</div></div>
+        <div style="margin-top:8px;"><span class="tag tr">Static graph only</span><span class="tag tr">No dynamic weights</span><span class="tag tr">No propagation</span><span class="tag tr">Research-only UX</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Company Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>S&P Global total revenue:</strong> ~$14B (2024). Market Intelligence (Capital IQ): ~$3.5B. Ratings: ~$5B. S&P Dow Jones Indices: ~$1.6B. Mobility: ~$1.6B. Sustainable1: growing.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Capital IQ history:</strong> Founded 1998 by Mike Chinn. Acquired by McGraw-Hill/S&P in 2004 for $225M. Became core of S&P Global Market Intelligence. Now deeply embedded in IB and PE workflows globally.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>With Intelligence deal ($1.8B, Oct 2025):</strong> Adds private markets intelligence — fund research, manager data, LP/GP relationships. Extends Capital IQ's relationship graph concept into private fund relationship mapping. Significant move toward relationship intelligence.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Panjiva uniqueness:</strong> US Customs import/export data from container-level bills of lading. Shows which companies actually shipped what to whom — ground-truth supply chain relationships independent of disclosures. No competitor has matched this data layer.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>AI moves:</strong> Kensho (AI/ML unit acquired 2018) powers entity recognition and NLP across S&P data. Capital IQ AI assistant. But no graph propagation layer announced. Kensho capabilities are data enrichment, not dynamic graph intelligence.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Primary Buyers</div>
+      <div class="br-chips">
+        <span class="bchip">M&A / IB Advisory Teams</span><span class="bchip">Private Equity Firms</span><span class="bchip">Venture Capital</span>
+        <span class="bchip">Corp Dev / Strategy Teams</span><span class="bchip">Law Firms (due diligence)</span><span class="bchip">Sell-Side Research</span>
+        <span class="bchip">Credit Analysts</span><span class="bchip">Activist / Event-Driven Hedge Funds</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>Capital IQ's executive/board network is the closest existing static graph to what MKG builds dynamically.</strong> Key difference: Capital IQ's graph is for research (who is connected). MKG's graph is for alpha generation (what propagates through connections, how fast, with what weight). Same underlying concept; entirely different operational use case and architectural design.</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">Capital IQ already has a relationship graph + Panjiva trade evidence + Kensho AI + the With Intelligence private markets relationship data. Adding dynamic weight adjustment and a propagation engine on top would be a serious move. Highest structural threat among Tier 1 incumbents if S&P Global decides to build it. <strong>High threat if executed — 2–4yr horizon.</strong></div></div>
+    </div>
+  </div>
+</div>
+<!-- TIER 2 -->
+<div class="sec-hdr reveal"><div class="sk">Section 02 · Tier 2 — AI & News Intelligence Platforms</div><div class="st">The intelligence layer — <em>documents, signals, NLP</em></div></div>
+
+<!-- ALPHASENSE -->
+<div class="co-card reveal" data-tier="tier2" style="border-left-color:var(--alphasense);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">AlphaSense</div><div class="co-parent">AlphaSense Inc. · Private · New York, USA · Founded 2011 (Jack Kokko & Raj Neervannan)</div></div>
+    <div class="cch"><div class="cch-lbl">ARR (Oct 2025)</div><div class="cch-val">$500M</div><div class="cch-sub">$4B valuation · $1.4B raised · IPO-track 2026</div></div>
+    <div class="cch"><div class="cch-lbl">Customers</div><div class="cch-val">6,500+</div><div class="cch-sub">88% S&P100 · 75% top HFs · 80% top banks</div></div>
+    <div class="cch"><div class="cch-lbl">Pricing</div><div class="cch-val">$10–20K/seat</div><div class="cch-sub">Enterprise avg $50–100K+ · top deals $1M+</div></div>
+    <div class="cch"><div class="cch-lbl">ARR Growth</div><div class="cch-val">$8.6M→$500M</div><div class="cch-sub">2019 to Oct 2025 · 58x in 6 years</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Does</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>500M+ document corpus.</strong> SEC filings, earnings call transcripts, equity research, expert interviews (Tegus 240K+), industry journals, news, broker research, internal enterprise documents. Largest proprietary business document library commercially available. The corpus itself is the moat.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Generative Search with citations.</strong> Natural language queries across the full corpus. AI-generated summaries always grounded in cited source documents. Smart Synonyms finds "EV" when searching "electric vehicle." Hallucination-resistant via citation grounding.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Generative Grid.</strong> Structured data extraction from unstructured documents into comparable tables. Compare 50 companies across 20 dimensions from earnings calls in minutes. The analyst-workflow automation product that drives NPS and retention.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Deep Research agent (2025).</strong> Multi-step AI research agent. Given a complex question, plans research steps, searches the corpus, synthesises findings, outputs structured research. Functions as a junior analyst for document-based research tasks.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Tegus expert transcript library ($930M acquisition, Jul 2024).</strong> 240K+ investor-led expert calls across 35,000 companies. Channel checks, scuttlebutt, primary research — institutionalised as a searchable corpus. Unique content unavailable elsewhere.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Enterprise Intelligence.</strong> Search internal company documents alongside external market intelligence. CRM notes, internal memos, board presentations — all searchable with same AI. Proprietary + external intelligence in one query.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Wall Street Insights.</strong> Premium sell-side equity research from 1,000+ brokers globally. Included in subscription without per-report charges. Full-text search across broker research — historically locked behind expensive per-report fees.</div></div>
+        <div style="margin-top:8px;"><span class="tag tg">500M+ docs</span><span class="tag tg">Gen AI search</span><span class="tag tg">Expert transcripts</span><span class="tag tg">Deep Research agent</span><span class="tag tg">Broker research</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Does NOT Do</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No relationship graph.</strong> AlphaSense finds documents ABOUT entities. It does not model relationships BETWEEN entities as weighted, dynamic edges. Intelligence is fundamentally document-centric, not graph-centric. It cannot answer "what is the current dependency strength between TSMC and NVIDIA, and how has it changed in the last 60 days?"</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No automated propagation.</strong> When TSMC reports, AlphaSense helps you search for related documents. It does not traverse a network, automatically score downstream entities, and deliver an impact-ranked list with direction and confidence in 60 seconds. All second-order research is manual.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No dynamic edge weights.</strong> No concept of relationship strength as a continuous, updatable value. No WAN-equivalent. No neural network continuously computing how news about Company A should update the dependency weight of its relationship with Company B.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>English-dominant corpus.</strong> Despite global ambitions, AlphaSense's document corpus is overwhelmingly English-language. Non-English regional press (Nikkei Japanese, Caixin Chinese, FAZ German, Le Monde French) largely absent. Significant blind spot for supply chain intelligence in Asian and European markets.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Cloud-only.</strong> No on-premise deployment. All data processed on AlphaSense's cloud infrastructure. Data sovereignty constraint for air-gapped institutions, sovereign wealth funds with strict data residency requirements, and regulated entities in some jurisdictions.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No systematic backtest framework.</strong> No way to validate whether AlphaSense-sourced insights would have generated alpha historically. The Deep Research agent produces qualitative output, not backtestable quantitative signals with performance statistics.</div></div>
+        <div style="margin-top:8px;"><span class="tag tr">No graph</span><span class="tag tr">No propagation</span><span class="tag tr">English-dominant</span><span class="tag tr">Cloud only</span><span class="tag tr">No backtest</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Company Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>ARR trajectory:</strong> 2019: $8.6M → 2022: $111.6M → Apr 2024: $200M → Mar 2025: $400M → Oct 2025: $500M. Among the fastest-growing enterprise SaaS companies in financial services history.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Funding rounds:</strong> Series A–F total $1.4B. Series F: $650M at $4B valuation (Jun 2024). Lead investors: Viking Global Investors, JP Morgan Asset Management, Goldman Sachs Asset Management, BDT & MSD Partners, CapitalG (Alphabet), Alphabet itself.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Customer penetration:</strong> 88% of S&P 100 companies. 80% of top global banks. 80% of top asset managers. 75% of top hedge funds. 80% of top management consultancies. 86% of top healthcare companies. All top 15 sell-side firms.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Acquisitions:</strong> Stream by Mosaic (2021, expert network), Sentieo (2022, financial AI research), Tegus ($930M, Jul 2024, expert transcripts), Carousel Technologies (Oct 2025).</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>ARR per customer:</strong> Grew from $28K to $66K between 2022–2025 as enterprise deals scale. Top deals $1M+ annually. Hudson Yards (NYC) HQ opening early 2026 — pre-IPO brand investment.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Named enterprise customers:</strong> Google, JP Morgan, Pfizer, Microsoft, Nvidia, UBS, Unilever, Toyota, Soros Fund Management (early adopter), Macquarie Asset Management.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Primary Buyers & Named Customers</div>
+      <div class="br-chips">
+        <span class="bchip">Google</span><span class="bchip">JP Morgan AM</span><span class="bchip">Pfizer</span><span class="bchip">Microsoft</span><span class="bchip">Nvidia</span>
+        <span class="bchip">UBS</span><span class="bchip">Unilever</span><span class="bchip">Toyota</span><span class="bchip">All Top 15 Sell-Side Firms</span>
+        <span class="bchip">75% of Top Hedge Funds</span><span class="bchip">80% of Top Asset Managers</span><span class="bchip">Soros Fund Management</span>
+        <span class="bchip">Macquarie Asset Management</span><span class="bchip">80% of Top Consultancies</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>AlphaSense is MKG's most important complementary tool AND most credible future competitive threat.</strong> Today: AlphaSense answers "what is being said about this company?" MKG answers "what should happen to connected companies when this event occurs?" The two products are additive for the same user. Future risk: if AlphaSense adds a relationship graph layer, they can deliver it to 75% of top hedge funds who already use them daily.</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">$1.4B in capital, 2,700 engineers, and relationships with 75% of top hedge funds. The biggest competitive risk to MKG. AlphaSense's document corpus (500M+ docs) is exactly the input a graph's WAN needs. If they build the graph layer on top of their document intelligence, they'd have a complete system. <strong>HIGHEST threat — 18mo to 3yr window. Act now.</strong></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RAVENPACK -->
+<div class="co-card reveal" data-tier="tier2" style="border-left-color:var(--ravenpack);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">RavenPack</div><div class="co-parent">RavenPack International SL · Private · Marbella, Spain / New York · Founded 2003</div></div>
+    <div class="cch"><div class="cch-lbl">Revenue (est. 2025)</div><div class="cch-val">~$25–37M</div><div class="cch-sub">Private · $35M total raised · FT Ventures investor Dec 2025</div></div>
+    <div class="cch"><div class="cch-lbl">Clients</div><div class="cch-val">70%+ top quant HFs</div><div class="cch-sub">Central banks · SWFs · Prop trading firms · 200–500 employees</div></div>
+    <div class="cch"><div class="cch-lbl">Pricing</div><div class="cch-val">Custom</div><div class="cch-sub">Quant fund pricing · est. $50K–500K+ / yr</div></div>
+    <div class="cch"><div class="cch-lbl">Key Asset</div><div class="cch-val">22yr hist. data</div><div class="cch-sub">40K sources · 13 languages · 80+ fields/event</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Does</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>40,000+ sources in 13 languages.</strong> Broadest news source coverage in financial analytics. Real-time global news ingestion, normalisation, entity extraction. Sub-second latency to structured signal. Includes regional sources no competitor indexes.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>80+ structured fields per news event.</strong> Relevance score, entity sentiment score (ESS), event sentiment score (EES), event type classification (200+ categories including supply chain, earnings, M&A, regulatory), buzz, novelty, relevance. Machine-readable and directly backtestable.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>22 years of historical news analytics.</strong> Structured financial news sentiment and entity data back to 2003. Irreproducible historical dataset — the single biggest moat. Invaluable for training quant models and validating signal strategies across multiple market cycles.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Bigdata.com (launched Oct 2024).</strong> Agentic AI platform for financial research. Pre-built AI agents for sector research, earnings analysis, portfolio monitoring. Users can build custom agents on Vespa.ai vector search infrastructure. First mover in agentic financial intelligence.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>FT Ventures partnership (Dec 2025).</strong> FT Ventures investment + full Financial Times content licensing. Premium FT content integrated into RavenPack corpus. Unique editorial content moat — FT's first GenAI distribution partnership.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>ESG controversy analytics.</strong> Structured detection of ESG-relevant events from news. Controversy scoring, controversy type classification. Preqin partnership for private markets ESG. Increasingly required for institutional ESG compliance mandates.</div></div>
+        <div style="margin-top:8px;"><span class="tag tg">13-language news</span><span class="tag tg">80+ fields/event</span><span class="tag tg">22yr hist. data</span><span class="tag tg">Bigdata.com agents</span><span class="tag tg">FT content</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Does NOT Do</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Entity-level scores only — not edge scores.</strong> RavenPack produces sentiment scores for individual entities (Company X has ESS = −0.73 today). These are NOT relationship scores (the TSMC→NVIDIA supply chain edge has strength 0.87 and changed +0.23 today). The edge-level graph intelligence layer is entirely absent from their architecture.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No relationship graph or dynamic weights.</strong> No entity-to-entity edge model. No neural network computing how news about Company A should update the weight of its relationship with Company B. Sentiment scores are computed per entity, not per relationship pair.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No automated propagation traversal.</strong> Signals are entity-level. A user must manually determine which other companies might be affected by a given entity's news. No graph traversal engine to traverse the network and return a ranked impact list.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No on-premise deployment.</strong> Cloud-only delivery. Same data sovereignty constraint as Bloomberg and AlphaSense. Cannot be deployed in air-gapped institutional infrastructure.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Small company — execution risk for Bigdata.com pivot.</strong> 200–500 employees. $35M total funding vs AlphaSense's $1.4B. The Bigdata.com agentic AI platform is a bold pivot that requires significant engineering investment from a lean team. Resource-constrained relative to ambition.</div></div>
+        <div style="margin-top:8px;"><span class="tag tr">Entity only (no edges)</span><span class="tag tr">No graph</span><span class="tag tr">No propagation</span><span class="tag tr">Cloud only</span><span class="tag tr">Resource-constrained</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Company Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Funding:</strong> $35M total across 4 rounds. Series B: $20M (Jul 2024) led by GP Bullhound + European Investment Bank. FT Ventures: Dec 2025 (undisclosed). Total capital modest relative to ambition.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Revenue estimate:</strong> ~$25.2M (RocketReach 2025). Private, does not disclose. Subscription model with tiered pricing. Revenue per employee ratio suggests premium quant pricing at $50K–500K+/yr for full suite.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Clients:</strong> 70% of top quant hedge funds (named clients not publicly listed — confidentiality standard in quant space). Central banks and sovereign wealth funds per company statements. Citadel, Two Sigma, DE Shaw, AQR reportedly among users.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Leadership changes (2025):</strong> New CFO Lina Baamer (Jun 2025), new CBO Amy Kim (Feb 2025). Signal of scaling commercial operations — potentially ahead of M&A exit or late-stage funding round.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Offices:</strong> Marbella HQ, New York, London, Tokyo. 30+ nationalities represented in team. Research-culture company founded by computational linguists and quant researchers.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Bigdata.com model:</strong> Separate consumer-facing product built on RavenPack data infrastructure. Freemium → enterprise funnel. Vespa.ai vector search backbone. Public API for institutional AI workflow builders.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Primary Buyers (Confidential — Public Intelligence)</div>
+      <div class="br-chips">
+        <span class="bchip">Quant Hedge Funds (70% of top firms)</span><span class="bchip">Systematic Trading Desks</span>
+        <span class="bchip">Risk Analytics Teams</span><span class="bchip">Asset Managers (quant-focused)</span>
+        <span class="bchip">Central Banks</span><span class="bchip">Sovereign Wealth Funds</span><span class="bchip">Prop Trading Firms</span>
+        <span class="bchip">Reportedly: Citadel, Two Sigma, DE Shaw, AQR (unconfirmed)</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>RavenPack is MKG's closest functional neighbor — and a potential M&A scenario.</strong> RavenPack has 22 years of news analytics (what MKG reads as input). MKG has the graph + propagation engine (what RavenPack lacks as output). Combined they'd be a complete system: structured news signal → dynamic weighted graph → ranked propagation output. Separately: MKG adds the layer that 70% of top quant funds can't get from RavenPack alone.</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">RavenPack has the news data, the quant fund relationships, and the 22yr historical corpus. The Bigdata.com agentic pivot suggests platform ambitions. If they add relationship graph modeling, they'd immediately threaten MKG's core proposition. Constrained by limited capital. <strong>Medium-High threat — but resource-limited. Key risk: acquisition by a larger platform that then adds graph intelligence.</strong></div></div>
+    </div>
+  </div>
+</div>
+<!-- TIER 3 -->
+<div class="sec-hdr reveal"><div class="sk">Section 03 · Tier 3 — Graph & Supply Chain Platforms</div><div class="st">Same architecture, <em>different purpose</em> — the proof-of-concept layer</div></div>
+
+<!-- PALANTIR -->
+<div class="co-card reveal" data-tier="tier3" style="border-left-color:var(--palantir);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">Palantir Foundry</div><div class="co-parent">Palantir Technologies · NYSE: PLTR · Denver, CO · Founded 2003 (Thiel, Karp, Lonsdale)</div></div>
+    <div class="cch"><div class="cch-lbl">Revenue (2024)</div><div class="cch-val">$2.87B</div><div class="cch-sub">+29% YoY · US Commercial +70% · ~$250B mkt cap</div></div>
+    <div class="cch"><div class="cch-lbl">AIP Customers</div><div class="cch-val">560+</div><div class="cch-sub">AIP platform · 8 consecutive GAAP profitable quarters</div></div>
+    <div class="cch"><div class="cch-lbl">Pricing</div><div class="cch-val">$5M–50M+/yr</div><div class="cch-sub">Flat enterprise · on-prem available · US Govt: $1.11B (2024)</div></div>
+    <div class="cch"><div class="cch-lbl">Key Asset</div><div class="cch-val">On-prem + Ontology</div><div class="cch-sub">Only at-scale on-prem platform with semantic entity graph</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Does</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>On-premise & air-gapped deployment.</strong> Only large-scale platform that genuinely works in fully air-gapped, classified, or regulated on-prem environments. DoD SECRET/TS-SCI certified. Governments, sovereign wealth funds, and regulated institutions can deploy Palantir inside their own infrastructure.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Ontology-based data modeling.</strong> Foundry Ontology creates semantic representations of entities, relationships, and actions. Conceptually the closest commercial platform to MKG's knowledge graph architecture. Entities, typed relationships, actions — semantic layer over raw data.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>AIP (Artificial Intelligence Platform).</strong> Enterprise LLM orchestration on top of the Ontology graph. AI agents that take actions — not just answer questions. 560+ enterprise customers deployed on AIP for AI workflow automation across industries.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Palantir Metropolis (financial services product).</strong> Purpose-built financial analytics layer on Foundry. Used by select hedge funds for portfolio analysis, risk management, and data integration. Quant research tools and model deployment infrastructure included.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Multi-source heterogeneous data integration.</strong> Ingests virtually any structured or unstructured source into a unified semantic layer. Best-in-class for organisations with extremely heterogeneous data environments (the typical large government or bank problem).</div></div>
+        <div style="margin-top:8px;"><span class="tag tg">On-premise / air-gapped</span><span class="tag tg">Ontology (graph-like)</span><span class="tag tg">AIP agents</span><span class="tag tg">Data integration</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Does NOT Do</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Not purpose-built for financial markets.</strong> Palantir is a general-purpose data operating system. Metropolis is a layer on top but was not designed for alpha generation. Configuring Foundry for financial relationship graph intelligence requires 20+ person engineering teams, 12–18 month implementation timelines, and significant internal data science resources.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Prohibitive cost for most institutions.</strong> $5M–50M+/year eliminates all but the largest institutions. A mid-sized hedge fund ($1–10B AUM) cannot justify this cost structure. Palantir's financial services clients are almost exclusively Tier-1 global banks, sovereign wealth funds, and large insurers.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No pre-built financial data or signals.</strong> Palantir is a platform, not a data provider. Users must bring their own financial data feeds, news sources, and relationship data. The Ontology graph is empty until populated — massive implementation overhead before any value is realised.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No pre-built Weight Adjustment Network.</strong> No financial-domain neural network for continuously adjusting relationship weights from news signals. The WAN equivalent must be built from scratch on Foundry's infrastructure — a 12–18 month ML engineering project.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No financial signal explainability standards.</strong> Palantir's explainability tools are general-purpose. The specific audit trail required for institutional investment decisions (MiFID II, fiduciary, SEC AI disclosure) is not built in — must be custom-engineered.</div></div>
+        <div style="margin-top:8px;"><span class="tag tr">Not finance-specific</span><span class="tag tr">$5M+ cost</span><span class="tag tr">20+ person implementation</span><span class="tag tr">No pre-built signals</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Company Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Revenue (2024):</strong> $2.87B total, +29% YoY. US Govt: $1.11B (+40%). US Commercial: $702M (+70%). International commercial growing. Free cash flow margin: 34%+.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Market cap:</strong> ~$250B+ (early 2026). S&P 500 member (Sep 2024 inclusion). Stock up 340%+ in 2024 alone. ~$4.6B cash on balance sheet.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Profitability:</strong> 8 consecutive quarters of GAAP profitability as of Q4 2024. First major enterprise AI platform to reach GAAP profitability at scale.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>AIP Boot Camp model:</strong> Rapid enterprise AI onboarding — 5-day intensive workshops that configure AIP for specific use cases. Dramatically shortens time-to-value vs. traditional enterprise software deployments.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Financial services clients (publicly known):</strong> JPMorgan Chase (AIP), Société Générale, PG&E, NHS. Sovereign wealth funds in Middle East and Asia Pacific region.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Primary Buyers (Financial Services)</div>
+      <div class="br-chips">
+        <span class="bchip">Tier-1 Global Banks (JPMorgan, SocGen, etc.)</span><span class="bchip">Sovereign Wealth Funds</span>
+        <span class="bchip">Large Asset Managers ($100B+ AUM)</span><span class="bchip">Insurance Companies</span>
+        <span class="bchip">Government Financial Institutions</span><span class="bchip">Central Banks</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>Different market segment — not direct competition today.</strong> Palantir targets institutions with $100B+ AUM and multi-million dollar technology budgets. MKG targets $1–50B AUM funds where Palantir's cost and implementation complexity is completely disqualifying. MKG is the Palantir-like relationship graph capability at 1/100th the cost, purpose-built for financial intelligence — not a general-purpose platform.</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">Palantir is not competing with MKG today. Different price point, different implementation model, different clients. If they release a pre-packaged financial graph intelligence module at lower price points targeting mid-market institutions, overlap increases. <strong>Low-Medium threat — different price segment today.</strong></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- INTEROS -->
+<div class="co-card reveal" data-tier="tier3" style="border-left-color:var(--interos);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">Interos.ai</div><div class="co-parent">Interos Inc. · Private · Arlington, VA · Founded 2017 (Jennifer Bisceglie, CEO)</div></div>
+    <div class="cch"><div class="cch-lbl">Valuation / Raised</div><div class="cch-val">$1B / $204M</div><div class="cch-sub">Series D $45.6M · Oct 2024 · Unicorn status</div></div>
+    <div class="cch"><div class="cch-lbl">Market</div><div class="cch-val">Supply Chain Risk</div><div class="cch-sub">Operations / procurement · not investing</div></div>
+    <div class="cch"><div class="cch-lbl">Pricing</div><div class="cch-val">Custom</div><div class="cch-sub">Enterprise SaaS · Global 2000 focus</div></div>
+    <div class="cch"><div class="cch-lbl">Key Insight for MKG</div><div class="cch-val">Proof of concept</div><div class="cch-sub">SC graph intelligence → $1B valuation. MKG applies to investing (10x budget pool)</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Does</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Multi-tier supply chain graph at scale.</strong> Maps supplier ecosystems at Tier 1, 2, 3, and beyond for any focal company. 80,000+ risk-related datasets. Evidence of actual relationships — not just disclosed Tier-1 suppliers. Shows supplier networks as a living, continuously updated graph.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>AI risk scoring across 6 categories.</strong> Financial risk, cyber risk, ESG risk, operational risk, geopolitical risk, and regulatory risk — each scored continuously for every node in the supplier graph. Risk propagation alerts when a supplier's risk profile changes.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Continuous monitoring and alerting.</strong> Ongoing surveillance of supplier ecosystems for risk events. Real-time alerts when tier-2 or tier-3 suppliers are affected by disruptions, financial distress, or sanctions. Proactive, not retrospective.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>EU CSDD compliance workflows.</strong> Supply chain human rights monitoring, ESG supplier assessment, due diligence documentation — mapped to EU Corporate Sustainability Due Diligence Directive requirements. Regulatory tailwind driving adoption.</div></div>
+        <div style="margin-top:8px;"><span class="tag tg">Multi-tier SC graph</span><span class="tag tg">AI risk scoring</span><span class="tag tg">Continuous monitoring</span><span class="tag tg">CSDD compliance</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Does NOT Do</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Not designed for investors.</strong> Interos serves procurement officers, supply chain executives, and risk managers. Output is operational risk alerts and compliance reports — not directional trading signals, impact scores, alpha generation inputs, or investable signals.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No financial signal output.</strong> No impact score with direction and confidence interval. No multi-horizon decay curve. No alpha-oriented output whatsoever. The data requires significant additional processing before it could inform any investment decision.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Operations-scope only.</strong> Maps the customer's own supplier base — not the broader market relationship graph spanning board interlocks, JVs, licensing agreements, regulatory co-exposure, and competitor supply chains relevant to institutional investing.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No temporal graph state for backtesting.</strong> Focused on current and forward risk monitoring. Not built for historical graph state replay or investment strategy validation through historical cycles.</div></div>
+        <div style="margin-top:8px;"><span class="tag tr">Not for investors</span><span class="tag tr">No financial signals</span><span class="tag tr">Operations only</span><span class="tag tr">No backtest</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Company Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Funding:</strong> $204M total. Series D: $45.6M (Oct 2024) driven by EU CSDD compliance deadline pressure and increased board-level scrutiny of supply chain risk post-COVID. Investor base includes In-Q-Tel (CIA) and Forgepoint Capital.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Valuation:</strong> $1B unicorn. Direct validation that supply chain graph intelligence commands institutional-scale valuation even in the operations use case — which has far lower ROI visibility than investment alpha generation.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Market driver:</strong> EU CSDD, UK Modern Slavery Act, US CHIPS Act supply chain disclosure, SEC climate disclosure rules. Regulatory mandates are making supply chain graph intelligence a compliance requirement, not just a competitive tool.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Key implication for MKG:</strong> Interos at $1B valuation proves the supply chain graph market. MKG's target buyers (hedge funds, asset managers) have 10–50x larger technology budgets than Interos' procurement team buyers, and a clear, measurable ROI metric: alpha generated. The addressable market for MKG's application of the same architecture is structurally larger.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Primary Buyers</div>
+      <div class="br-chips">
+        <span class="bchip">Chief Procurement Officers</span><span class="bchip">Supply Chain Risk Managers</span>
+        <span class="bchip">Compliance Officers (EU CSDD)</span><span class="bchip">Third-Party Risk Management Teams</span>
+        <span class="bchip">Global 2000 Corporations</span><span class="bchip">Defense Contractors</span><span class="bchip">Government Agencies</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>Proof-of-concept validation, not competition.</strong> Interos proves supply chain graph intelligence is real, scalable, and valued at $1B+. MKG applies the same architecture to financial markets — a buyer pool with 10–50x the technology budget and a clear, quantifiable ROI (alpha generated). Interos is the existence proof MKG can cite in investor conversations.</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">Very low direct threat. Different buyer, different output, different use case. Interos could theoretically pivot to offer financial data products from their supply chain graph, but their entire go-to-market, product design, and customer success motion is operations-focused. <strong>Very Low threat.</strong></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FINDKG -->
+<div class="co-card reveal" data-tier="tier3" style="border-left-color:var(--findkg);">
+  <div class="cc-head" onclick="toggle(this)">
+    <div class="cch"><div class="co-name">FinDKG</div><div class="co-parent">Academic Open Source · Non-commercial · Research Prototype · Published 2023</div></div>
+    <div class="cch"><div class="cch-lbl">Revenue</div><div class="cch-val">$0</div><div class="cch-sub">Non-commercial license · No commercial entity · Free</div></div>
+    <div class="cch"><div class="cch-lbl">Architecture</div><div class="cch-val">KGTransformer</div><div class="cch-sub">Attention-based GNN · Temporal link prediction · Dynamic KG</div></div>
+    <div class="cch"><div class="cch-lbl">Status</div><div class="cch-val">Research only</div><div class="cch-sub">English only · No enterprise features · Not deployable</div></div>
+    <div class="cch"><div class="cch-lbl">Value to MKG</div><div class="cch-val">Blueprint</div><div class="cch-sub">Proves the concept works. Outperforms static methods for thematic investing.</div></div>
+    <div class="cch"><span class="exp-icon">▶</span></div>
+  </div>
+  <div class="co-body">
+    <div class="cb-grid">
+      <div class="cb-col">
+        <div class="cb-title">✅ What It Proves (Architecture Validation)</div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Dynamic financial knowledge graph from news.</strong> Builds and continuously updates a knowledge graph from financial news articles. Entities and relationships extracted automatically via NLP. Graph updates as news arrives — the core MKG architectural concept, validated academically.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>KGTransformer (attention-based GNN).</strong> Graph Neural Network with attention mechanisms for temporal reasoning over knowledge graphs. Learns relationship patterns over time. Peer-reviewed and demonstrated to outperform static graph baselines for financial thematic investment identification.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Temporal link prediction.</strong> Predicts new relationships likely to form based on historical graph evolution — the academic precursor to MKG's lead-lag edge detection and canary company identification. Validated on real financial news corpora.</div></div>
+        <div class="fi"><span class="fi-icon">🟢</span><div class="fi-text"><strong>Thematic investment identification.</strong> Demonstrated superior performance vs. static methods for identifying investment themes early — before they become consensus. The core alpha generation mechanism MKG commercialises is proven at academic scale.</div></div>
+        <div style="margin-top:8px;"><span class="tag tg">Dynamic KG</span><span class="tag tg">GNN/KGTransformer</span><span class="tag tg">Temporal reasoning</span><span class="tag tg">Peer-reviewed</span><span class="tag tg">Outperforms static</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">❌ What It Cannot Do (Gap to MKG)</div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>Non-commercial license.</strong> Explicitly prohibits commercial deployment. Cannot be used as the basis for a commercial product without negotiating licensing rights with the academic authors. MKG must build an independent architecture.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>English-only.</strong> News ingestion is English-language only. No multilingual scraping agent. No translation pipeline. No coverage of Japanese, Chinese, German, French, Spanish regional press — the sources with the most underpriced information.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No enterprise features.</strong> No API, no authentication, no user management, no access controls, no audit logging, no institutional deployment infrastructure. A research script, not a product.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No scraping agent.</strong> Requires pre-processed news corpus as input — no autonomous, continuous news scraping capability. Not designed for real-time operation.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No explainability dashboard.</strong> No PM-facing output layer. No signal tracer. No debug interface. No audit trail for institutional compliance. Research output only — no investor-facing product.</div></div>
+        <div class="fi"><span class="fi-icon">🔴</span><div class="fi-text"><strong>No WAN (Weight Adjustment Network).</strong> GNN learns patterns but does not produce the continuous, real-time edge weight update stream that MKG's WAN outputs. Gap between academic research prototype and production signal architecture.</div></div>
+        <div style="margin-top:8px;"><span class="tag tr">Non-commercial</span><span class="tag tr">English only</span><span class="tag tr">No enterprise features</span><span class="tag tr">Not deployable</span><span class="tag tr">No explainability</span></div>
+      </div>
+      <div class="cb-col">
+        <div class="cb-title">📊 Research Intelligence</div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Architecture:</strong> KGTransformer — attention-based graph neural network operating on temporal knowledge graph snapshots. Input: news article stream. Output: entity-relationship triples with temporal validity windows. Trained on financial news corpora, evaluated on thematic stock portfolio construction.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Performance:</strong> Outperforms static knowledge graph methods and baseline NLP approaches for identifying investment themes early. Temporal graph reasoning vs. point-in-time graph snapshots shows 15–30% improvement in theme identification precision (per published results).</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Academic significance:</strong> First peer-reviewed system to demonstrate that a dynamic financial knowledge graph with neural link prediction can generate investable signals. Provides the theoretical and empirical foundation for MKG's commercial architecture.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Gap from research to MKG:</strong> FinDKG proves the algorithm. MKG adds: scraping agent (6+ languages), on-premise infrastructure, Weight Adjustment Network (real-time), enterprise security, PM-facing UI, signal explainability, backtest harness, and commercial licensing. The product gap is an engineering effort, not a scientific one.</div></div>
+        <div class="fi"><span class="fi-icon">📌</span><div class="fi-text"><strong>Strategic value to MKG:</strong> FinDKG is a blueprint and a citation — proof to investors, clients, and regulators that the underlying approach is academically validated, not speculative. Reference it prominently in MKG's technical documentation and investor materials.</div></div>
+      </div>
+    </div>
+    <div class="buyers-row">
+      <div class="br-lbl">Availability</div>
+      <div class="br-chips">
+        <span class="bchip">GitHub (public, non-commercial)</span><span class="bchip">arXiv preprint</span>
+        <span class="bchip">Academic researchers only</span><span class="bchip">No commercial deployment permitted</span>
+      </div>
+    </div>
+    <div class="verdict">
+      <div class="vd"><div class="vd-lbl">Position vs MKG</div><div class="vd-text"><strong>The blueprint MKG is commercialising.</strong> FinDKG proves the architecture works at academic scale. MKG is the commercial productisation of the same core concept — with real-time scraping, multilingual support, enterprise infrastructure, on-premise deployment, explainability, and a backtest-validated WAN. FinDKG is the "this is possible" paper; MKG is the "this is a product."</div></div>
+      <div class="vd"><div class="vd-lbl">Threat to MKG</div><div class="vd-text">Zero commercial threat. Non-commercial license. No enterprise features. No team, no company, no sales motion. The academic authors could choose to commercialise — but academic groups rarely build successful enterprise products. More likely to be cited as validation than to compete. <strong>Zero threat.</strong></div></div>
+    </div>
+  </div>
+</div>
+<!-- FULL FEATURE MATRIX -->
+<div class="sec-hdr reveal"><div class="sk">Section 04 · Master Feature Coverage Matrix</div><div class="st">Every capability. Every platform. <em>Every gap.</em></div></div>
+<div class="reveal">
+<div class="mat-wrap">
+<table class="mat">
+<thead>
+<tr>
+  <th>Feature / Capability</th>
+  <th style="background:var(--bloomberg);">Bloomberg</th>
+  <th style="background:var(--lseg);">LSEG</th>
+  <th style="background:var(--factset);">FactSet</th>
+  <th style="background:var(--capiq);">Capital IQ</th>
+  <th style="background:var(--alphasense);">AlphaSense</th>
+  <th style="background:var(--ravenpack);">RavenPack</th>
+  <th style="background:var(--palantir);">Palantir</th>
+  <th style="background:var(--interos);">Interos</th>
+  <th style="background:var(--findkg);font-size:8px;">FinDKG</th>
+  <th class="mc">MKG ✦</th>
+</tr>
+</thead>
+<tbody>
+<tr class="cat"><td colspan="11">DATA INFRASTRUCTURE</td></tr>
+<tr><td>Real-time market data (all asset classes)</td><td class="ck">✓</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr><td>Multilingual news ingestion (6+ languages)</td><td class="cp">~</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+<tr><td>Proprietary news wire</td><td class="ck">✓</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr><td>Financial fundamentals & estimates</td><td class="cp">~</td><td class="cp">~</td><td class="ck">✓</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr><td>Private company data</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr><td>Trade / customs data (actual SC transactions)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr class="cat"><td colspan="11">AI & DOCUMENT INTELLIGENCE</td></tr>
+<tr><td>Document search (500M+ corpus)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cp">~</td></tr>
+<tr><td>Expert interview transcripts</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr><td>Entity-level news sentiment (80+ fields)</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="mc cp">~</td></tr>
+<tr><td>AI research agent (multi-step)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cp">~</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr><td>Generative data extraction (Grid-style)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr class="cat"><td colspan="11">RELATIONSHIP GRAPH LAYER</td></tr>
+<tr><td>Static relationship database</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cp">~</td><td class="mc ck">✓</td></tr>
+<tr><td>Executive / board network graph</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+<tr><td>Supply chain graph (multi-tier)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cp">~</td><td class="mc ck">✓</td></tr>
+<tr><td><strong>Dynamic edge weights (neural-adjusted)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Weight Adjustment Network (WAN)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Lead-lag relationship metadata</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Regulatory co-exposure edges</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Relationship decay detection (auto)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr class="cat"><td colspan="11">SIGNAL & PROPAGATION ENGINE</td></tr>
+<tr><td><strong>Automated event → graph traversal</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Multi-hop contagion scoring</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Impact score + direction + confidence</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Multi-horizon decay curve (4 horizons)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>60-second traversal-to-signal latency</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr class="cat"><td colspan="11">TEMPORAL & BACKTEST INFRASTRUCTURE</td></tr>
+<tr><td><strong>Temporal graph state (full rewind)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Edge weight history time-series</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>Historical cycle pattern replay</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td>22yr historical news signal data</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+<tr class="cat"><td colspan="11">EXPLAINABILITY & COMPLIANCE</td></tr>
+<tr><td><strong>Full causal chain (event→edge→score→doc)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td><strong>MiFID II / fiduciary audit trail</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+<tr><td>Document citations on output</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+<tr class="cat"><td colspan="11">DEPLOYMENT & INFRASTRUCTURE</td></tr>
+<tr><td>On-premise / air-gapped deployment</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+<tr><td>REST API / programmatic access</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="cp">~</td><td class="mc ck">✓</td></tr>
+<tr><td>Python / data science integration</td><td class="cp">~</td><td class="ck">✓</td><td class="ck">✓</td><td class="cp">~</td><td class="cp">~</td><td class="ck">✓</td><td class="ck">✓</td><td class="cp">~</td><td class="ck">✓</td><td class="mc ck">✓</td></tr>
+<tr><td>Zero per-seat licensing fee</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="mc ck">✓</td></tr>
+<tr><td>Execution / trading integration</td><td class="ck">✓</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+</tbody>
+</table>
+</div>
+<div style="font-family:'Fira Code',monospace;font-size:9px;color:var(--muted);margin-top:6px;letter-spacing:0.5px;">
+✓ = Full capability &nbsp;|&nbsp; ~ = Partial / limited &nbsp;|&nbsp; ✗ = Not available &nbsp;|&nbsp; ✦ NEW = First commercial encoding of this capability &nbsp;|&nbsp; Bold rows = MKG-exclusive or near-exclusive
+</div>
+</div>
+
+<!-- CLOSING -->
+<div style="background:var(--ink);padding:44px 40px;margin-top:48px;" class="reveal">
+  <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:3px;color:#c8b89a;text-transform:uppercase;margin-bottom:18px;">The $900K/Year Gap</div>
+  <div style="font-family:'Spectral',serif;font-size:22px;font-weight:300;color:#f0ede6;line-height:1.7;max-width:920px;">
+    A 10-seat institutional desk running Bloomberg ($320K) + FactSet ($120K) + AlphaSense ($150K) + Capital IQ ($100K) + RavenPack ($100K) spends approximately <strong style="color:#c8b89a;">$790K–$900K per year</strong> on financial data and intelligence tools.
+    <br><br>
+    That stack gives them: real-time prices, news, messaging, fundamentals, static supply chain data, document search, and entity-level sentiment.
+    <br><br>
+    What it does <em style="color:#c8b89a;">not</em> give them: dynamic weighted relationship edges, automated event propagation scoring, multi-hop contagion traversal, temporal graph rewind, canary company identification, relationship decay detection, or a full signal explainability chain.
+    <br><br>
+    <strong style="color:white;">That is the gap. That is MKG.</strong>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="ft">MKG SYSTEM · COMPETITIVE FEATURE INTELLIGENCE v1.0 · FEBRUARY 2026 · CONFIDENTIAL</div>
+  <div class="ft">9 Platforms Analysed · Live Revenue Data · Next: Use Case Diagram →</div>
+</div>
+</div><!-- /wrap -->
+
+<script>
+function toggle(header) {
+  const card = header.closest('.co-card');
+  const body = card.querySelector('.co-body');
+  const icon = header.querySelector('.exp-icon');
+  const isOpen = body.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.co-body.open').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.exp-icon').forEach(i => { i.textContent='▶'; i.style.transform=''; });
+  // Toggle
+  if (!isOpen) {
+    body.classList.add('open');
+    icon.textContent = '▼';
+  }
+}
+function filter(tier, btn) {
+  document.querySelectorAll('.tf').forEach(b => b.classList.remove('act'));
+  btn.classList.add('act');
+  document.querySelectorAll('.co-card').forEach(c => {
+    c.style.display = (tier === 'all' || c.dataset.tier === tier) ? '' : 'none';
+  });
+}
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('on');obs.unobserve(e.target);} });
+}, {threshold:0.04});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

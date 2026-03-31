@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — The Tribal Knowledge Gap</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  --bg:       #f7f4ef;
+  --paper:    #fefcf8;
+  --ink:      #16120e;
+  --ink2:     #352e25;
+  --muted:    #8a7e6e;
+  --rule:     #ddd5c5;
+  --rule2:    #ede7db;
+  
+  /* Zone colors */
+  --explicit:   #2a4a8a;  /* Deep blue — tools cover this */
+  --implicit:   #5a3a8a;  /* Purple — tools partially cover */
+  --tacit:      #8a3a2a;  /* Burnt red — tools miss this */
+  --tribal:     #1a5c35;  /* Deep green — completely in heads */
+  
+  --explicit-l: rgba(42,74,138,0.08);
+  --implicit-l: rgba(90,58,138,0.08);
+  --tacit-l:    rgba(138,58,42,0.08);
+  --tribal-l:   rgba(26,92,53,0.08);
+  
+  --bridge:     #b5341c;  /* MKG bridge — red accent */
+  --bridge-l:   rgba(181,52,28,0.08);
+  
+  --gold:       #9a7520;
+  --gold-l:     #f7f0e0;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:300;
+  line-height:1.6;
+}
+
+/* ── Layout ── */
+.wrap{max-width:1280px;margin:0 auto;padding:0 48px 120px;}
+
+/* ── NAV ── */
+.topbar{
+  background:var(--ink);
+  padding:14px 48px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:sticky;top:0;z-index:100;
+}
+.tb-brand{
+  font-family:'Space Mono',monospace;
+  font-size:11px;letter-spacing:2px;
+  color:#c8b89a;
+}
+.tb-nav{display:flex;gap:32px;}
+.tb-nav a{
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:1.5px;
+  color:#6a5e50;text-decoration:none;
+  text-transform:uppercase;
+  transition:color 0.2s;
+}
+.tb-nav a:hover{color:#c8b89a;}
+
+/* ── Hero ── */
+.hero{
+  padding:80px 0 60px;
+  border-bottom:1px solid var(--rule);
+  display:grid;
+  grid-template-columns:1fr 380px;
+  gap:60px;
+  align-items:end;
+}
+
+.hero-kicker{
+  font-family:'Space Mono',monospace;
+  font-size:10px;letter-spacing:3px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:20px;
+}
+
+.hero-headline{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(44px,5.5vw,72px);
+  font-weight:900;
+  line-height:1.02;
+  color:var(--ink);
+  letter-spacing:-1.5px;
+  margin-bottom:24px;
+}
+.hero-headline em{font-style:italic;color:var(--bridge);}
+
+.hero-body{
+  font-family:'Playfair Display',serif;
+  font-size:18px;
+  font-style:italic;
+  color:var(--ink2);
+  line-height:1.7;
+  max-width:580px;
+}
+
+.hero-right{}
+
+.iceberg-wrap{
+  width:100%;
+  aspect-ratio:1/1.4;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+}
+
+.ice-label{
+  font-family:'Space Mono',monospace;
+  font-size:8px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+
+.ice-band{
+  display:flex;
+  align-items:center;
+  padding:0 14px;
+  position:relative;
+  transition:transform 0.25s ease;
+  cursor:default;
+}
+.ice-band:hover{transform:translateX(4px);}
+
+.ice-icon{font-size:14px;margin-right:10px;flex-shrink:0;}
+
+.ice-name{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  font-weight:600;
+  line-height:1.2;
+}
+
+.ice-sub{
+  font-family:'Space Mono',monospace;
+  font-size:9px;
+  color:rgba(255,255,255,0.5);
+  margin-top:2px;
+}
+
+/* ── Section styling ── */
+.sec{padding:64px 0 0;}
+.sec-kicker{
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:3px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+.sec-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(28px,3.5vw,46px);
+  font-weight:700;
+  color:var(--ink);
+  line-height:1.1;
+  margin-bottom:10px;
+}
+.sec-title em{font-style:italic;color:var(--bridge);}
+.sec-sub{
+  font-family:'Playfair Display',serif;
+  font-size:16px;font-style:italic;
+  color:var(--muted);
+  max-width:600px;
+  line-height:1.6;
+  margin-bottom:40px;
+}
+
+/* ── Grid layouts ── */
+.col-2{display:grid;grid-template-columns:1fr 1fr;gap:32px;}
+.col-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;}
+.col-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:20px;}
+
+/* ── Body text ── */
+.body{
+  font-family:'Playfair Display',serif;
+  font-size:16px;
+  line-height:1.8;
+  color:var(--ink2);
+  margin-bottom:16px;
+}
+.body strong{color:var(--ink);font-weight:700;}
+.body em{color:var(--bridge);font-style:italic;}
+
+/* ── Knowledge layer cards ── */
+.layer-card{
+  border:1px solid var(--rule);
+  background:var(--paper);
+  overflow:hidden;
+  transition:transform 0.2s, box-shadow 0.2s;
+  cursor:default;
+}
+.layer-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 24px rgba(0,0,0,0.07);
+}
+
+.layer-top{
+  padding:20px 20px 16px;
+  position:relative;
+}
+
+.layer-badge{
+  position:absolute;
+  top:16px;right:16px;
+  font-family:'Space Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  padding:3px 8px;
+  border-radius:2px;
+  font-weight:700;
+  text-transform:uppercase;
+}
+
+.layer-icon{
+  font-size:28px;
+  margin-bottom:10px;
+}
+
+.layer-name{
+  font-family:'Playfair Display',serif;
+  font-size:20px;
+  font-weight:700;
+  line-height:1.1;
+  margin-bottom:4px;
+}
+
+.layer-tagline{
+  font-family:'Space Mono',monospace;
+  font-size:9px;
+  letter-spacing:1px;
+  color:var(--muted);
+  margin-bottom:12px;
+}
+
+.layer-body{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13px;
+  color:var(--ink2);
+  line-height:1.6;
+}
+
+.layer-divider{border-top:1px solid var(--rule2);margin:14px 0;}
+
+.layer-tools{
+  padding:14px 20px 16px;
+  background:var(--rule2);
+}
+
+.tools-label{
+  font-family:'Space Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+
+.tool-tag{
+  display:inline-block;
+  font-family:'Space Mono',monospace;
+  font-size:9px;
+  letter-spacing:0.5px;
+  padding:3px 8px;
+  border-radius:2px;
+  margin:2px;
+  font-weight:400;
+}
+
+/* ── Tribal knowledge items ── */
+.tribal-item{
+  display:grid;
+  grid-template-columns:44px 1fr;
+  gap:16px;
+  align-items:start;
+  padding:20px 0;
+  border-bottom:1px solid var(--rule2);
+}
+
+.ti-num{
+  font-family:'Playfair Display',serif;
+  font-size:48px;
+  font-weight:700;
+  color:var(--rule);
+  line-height:1;
+  text-align:right;
+  transition:color 0.2s;
+}
+.tribal-item:hover .ti-num{color:var(--tribal);}
+
+.ti-content{}
+.ti-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+.ti-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:15px;
+  font-weight:600;
+  color:var(--ink);
+  line-height:1.3;
+}
+.ti-type{
+  font-family:'Space Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  padding:3px 7px;
+  border-radius:2px;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.ti-body{
+  font-family:'Playfair Display',serif;
+  font-size:14px;
+  color:var(--ink2);
+  line-height:1.65;
+  margin-bottom:10px;
+}
+.ti-quote{
+  border-left:2px solid var(--rule);
+  padding:6px 12px;
+  margin:8px 0;
+  font-family:'Playfair Display',serif;
+  font-size:13px;
+  font-style:italic;
+  color:var(--muted);
+  line-height:1.5;
+}
+.ti-bridge{
+  background:var(--bridge-l);
+  border:1px solid rgba(181,52,28,0.2);
+  padding:8px 12px;
+  margin-top:8px;
+}
+.ti-bridge-label{
+  font-family:'Space Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  color:var(--bridge);
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.ti-bridge-text{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  color:var(--ink2);
+  line-height:1.5;
+}
+
+/* ── The "when they leave" section ── */
+.leave-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:2px;
+  background:var(--rule);
+  border:1px solid var(--rule);
+  margin:32px 0;
+}
+
+.lg-cell{
+  background:var(--paper);
+  padding:24px;
+}
+
+.lgc-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:16px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--rule2);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+.lgc-item{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.lgc-icon{flex-shrink:0;font-size:14px;margin-top:1px;}
+
+.lgc-text{
+  font-family:'Playfair Display',serif;
+  font-size:13px;
+  color:var(--ink2);
+  line-height:1.55;
+}
+.lgc-text strong{color:var(--ink);font-weight:700;}
+
+/* ── Knowledge vs tools matrix ── */
+.ktm-wrap{
+  overflow-x:auto;
+  margin:24px 0;
+}
+table.ktm{
+  width:100%;
+  border-collapse:collapse;
+  font-family:'Space Mono',monospace;
+  font-size:10px;
+}
+.ktm thead th{
+  background:var(--ink);
+  color:#f0ebe2;
+  padding:10px 12px;
+  text-align:center;
+  font-weight:400;
+  letter-spacing:0.8px;
+  white-space:nowrap;
+  border:1px solid var(--ink);
+}
+.ktm thead th:first-child{text-align:left;min-width:200px;background:#2a2218;}
+.ktm thead th.mkgcol{background:var(--bridge);}
+
+.ktm tbody tr:nth-child(even) td{background:#f5f0e8;}
+.ktm tbody tr:nth-child(odd) td{background:var(--paper);}
+.ktm tbody td{
+  padding:9px 12px;
+  border:1px solid var(--rule);
+  text-align:center;
+  color:var(--ink2);
+  vertical-align:middle;
+}
+.ktm tbody td:first-child{
+  text-align:left;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  font-weight:500;
+  color:var(--ink);
+  background:#ede8df !important;
+}
+.ktm tbody td.mkgcol{background:rgba(181,52,28,0.06) !important;}
+
+.check{color:#1a5c35;font-size:14px;font-weight:700;}
+.cross{color:#b5341c;font-size:14px;font-weight:700;}
+.part{color:#9a7520;font-size:13px;font-weight:700;}
+.new{color:var(--bridge);font-size:10px;font-weight:700;letter-spacing:0.5px;}
+
+/* ── Scenario walkthrough ── */
+.scenario{
+  background:var(--paper);
+  border:1px solid var(--rule);
+  border-top:3px solid var(--gold);
+  padding:32px;
+  margin:32px 0;
+}
+.sc-label{
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:2px;
+  color:var(--gold);
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.sc-title{
+  font-family:'Playfair Display',serif;
+  font-size:22px;font-weight:700;
+  color:var(--ink);
+  margin-bottom:24px;
+  line-height:1.3;
+}
+
+.step-flow{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.step{
+  display:grid;
+  grid-template-columns:120px 1fr 240px;
+  gap:20px;
+  align-items:stretch;
+}
+
+.step-who{
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  color:white;
+  padding:12px 14px;
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+}
+
+.step-action{
+  padding:12px 16px;
+  background:var(--rule2);
+  font-family:'Playfair Display',serif;
+  font-size:14px;
+  color:var(--ink2);
+  line-height:1.55;
+  display:flex;
+  align-items:center;
+}
+.step-action strong{color:var(--ink);}
+
+.step-tribal{
+  padding:10px 14px;
+  font-family:'Space Mono',monospace;
+  font-size:10px;
+  line-height:1.5;
+  display:flex;
+  align-items:center;
+}
+
+.step-conn{
+  height:2px;
+  background:var(--rule);
+  margin:0 14px;
+}
+
+/* ── Bridge section ── */
+.bridge-item{
+  border:1px solid var(--rule);
+  background:var(--paper);
+  padding:0;
+  overflow:hidden;
+  margin-bottom:16px;
+}
+
+.bi-header{
+  display:grid;
+  grid-template-columns:280px 1fr 1fr;
+  gap:0;
+  background:var(--rule2);
+}
+
+.bi-h-cell{
+  padding:10px 16px;
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:1.5px;
+  color:var(--muted);
+  text-transform:uppercase;
+  border-right:1px solid var(--rule);
+}
+
+.bi-body{
+  display:grid;
+  grid-template-columns:280px 1fr 1fr;
+  gap:0;
+}
+
+.bi-b-cell{
+  padding:16px 16px;
+  border-right:1px solid var(--rule);
+  border-top:1px solid var(--rule);
+  vertical-align:top;
+}
+
+.bi-b-cell.name{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px;
+  font-weight:600;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.bi-b-cell.before{
+  font-family:'Playfair Display',serif;
+  font-size:13px;
+  color:var(--ink2);
+  line-height:1.55;
+  background:rgba(138,58,42,0.04);
+}
+
+.bi-b-cell.after{
+  font-family:'Playfair Display',serif;
+  font-size:13px;
+  color:var(--ink2);
+  line-height:1.55;
+  background:rgba(26,92,53,0.04);
+}
+
+.bi-b-cell.after strong{color:var(--tribal);}
+
+/* ── Info boxes ── */
+.ibox{
+  padding:16px 18px;
+  margin-bottom:12px;
+  border-left:3px solid;
+}
+.ibox.b{background:var(--explicit-l);border-color:var(--explicit);}
+.ibox.p{background:var(--implicit-l);border-color:var(--implicit);}
+.ibox.r{background:var(--tacit-l);border-color:var(--tacit);}
+.ibox.g{background:var(--tribal-l);border-color:var(--tribal);}
+.ibox.br{background:var(--bridge-l);border-color:var(--bridge);}
+
+.ib-label{
+  font-family:'Space Mono',monospace;
+  font-size:8px;letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.ib-text{
+  font-family:'Playfair Display',serif;
+  font-size:14px;
+  color:var(--ink2);
+  line-height:1.6;
+}
+.ib-text strong{color:var(--ink);}
+
+/* ── Pull quote ── */
+.pq{
+  border-top:2px solid var(--ink);
+  border-bottom:1px solid var(--rule);
+  padding:20px 0;
+  margin:28px 0;
+}
+.pq-text{
+  font-family:'Playfair Display',serif;
+  font-size:22px;font-style:italic;font-weight:600;
+  color:var(--ink);line-height:1.4;
+}
+.pq-attr{
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  color:var(--muted);
+  margin-top:10px;
+  text-transform:uppercase;
+}
+
+/* ── Rule ── */
+hr.rule{border:none;border-top:1px solid var(--rule);margin:40px 0;}
+
+/* ── Chip ── */
+.chip{
+  display:inline-block;
+  font-family:'Space Mono',monospace;
+  font-size:9px;
+  padding:3px 7px;
+  border-radius:2px;
+  margin:2px;
+  letter-spacing:0.5px;
+}
+.chip.b{background:var(--explicit-l);color:var(--explicit);}
+.chip.p{background:var(--implicit-l);color:var(--implicit);}
+.chip.r{background:var(--tacit-l);color:var(--tacit);}
+.chip.g{background:var(--tribal-l);color:var(--tribal);}
+.chip.br{background:var(--bridge-l);color:var(--bridge);}
+
+/* ── Scroll reveal ── */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.5s ease,transform 0.5s ease;}
+.reveal.on{opacity:1;transform:none;}
+
+/* ── Footer ── */
+.footer{
+  border-top:2px solid var(--rule);
+  padding:24px 0;
+  display:flex;
+  justify-content:space-between;
+  margin-top:80px;
+}
+.ft{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--muted);}
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="topbar">
+  <div class="tb-brand">MKG RESEARCH &nbsp;·&nbsp; TRIBAL KNOWLEDGE GAP ANALYSIS</div>
+  <nav class="tb-nav">
+    <a href="#layers">Knowledge Layers</a>
+    <a href="#tribal">Tribal Types</a>
+    <a href="#walkthrough">Walkthrough</a>
+    <a href="#bridge">MKG Bridge</a>
+  </nav>
+</div>
+
+<div class="wrap">
+
+  <!-- ── HERO ── -->
+  <div class="hero reveal">
+    <div>
+      <div class="hero-kicker">Tribal Knowledge Gap Analysis &nbsp;·&nbsp; February 2026</div>
+      <div class="hero-headline">
+        What the tools show.<br>
+        What the<br>
+        <em>expert knows.</em><br>
+        The gap between.
+      </div>
+      <div class="hero-body">
+        A veteran portfolio manager and a junior analyst looking at the same Bloomberg terminal see entirely different things. The terminal is identical. The knowledge they bring to it is not. That gap — between what tools provide and what experienced humans carry in their heads — is precisely where most investment edge actually lives. And it's almost entirely unencoded.
+      </div>
+    </div>
+
+    <!-- ICEBERG -->
+    <div>
+      <div class="ice-label" style="color:var(--muted);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:12px;">The Knowledge Iceberg</div>
+
+      <!-- Explicit -->
+      <div class="ice-band" style="background:var(--explicit);height:70px;margin-bottom:2px;">
+        <div class="ice-icon">📊</div>
+        <div>
+          <div class="ice-name" style="color:white;">Explicit Knowledge</div>
+          <div class="ice-sub">Prices · Filings · News · Models — What Bloomberg shows</div>
+        </div>
+      </div>
+
+      <!-- Implicit -->
+      <div class="ice-band" style="background:var(--implicit);height:80px;margin-bottom:2px;">
+        <div class="ice-icon">🧩</div>
+        <div>
+          <div class="ice-name" style="color:white;">Implicit Knowledge</div>
+          <div class="ice-sub">Industry dynamics · Management quality · Peer patterns — Partially in tools</div>
+        </div>
+      </div>
+
+      <!-- Tacit -->
+      <div class="ice-band" style="background:var(--tacit);height:90px;margin-bottom:2px;">
+        <div class="ice-icon">🧠</div>
+        <div>
+          <div class="ice-name" style="color:white;">Tacit Knowledge</div>
+          <div class="ice-sub">Personal judgment · Sector intuition · Pattern recognition — Not in tools</div>
+        </div>
+      </div>
+
+      <!-- Tribal -->
+      <div class="ice-band" style="background:var(--tribal);height:110px;">
+        <div class="ice-icon">🗣</div>
+        <div>
+          <div class="ice-name" style="color:white;">Tribal Knowledge</div>
+          <div class="ice-sub">Undocumented relationship maps · Shared desk heuristics · "Everyone knows X but it's not written anywhere" — Completely outside tools</div>
+        </div>
+      </div>
+
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);text-align:center;margin-top:10px;">
+        42% of institutional knowledge lives only in individual heads — Panopto Research
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: THE FOUR KNOWLEDGE LAYERS ── -->
+  <div id="layers" class="sec reveal">
+    <div class="sec-kicker">Section 01 &nbsp;·&nbsp; The Four Knowledge Layers</div>
+    <div class="sec-title">What tools give. What humans carry.<br><em>Where the edge actually lives.</em></div>
+    <div class="sec-sub">There are four distinct layers of knowledge a portfolio manager brings to every investment decision. Commercial tools serve the top layer brilliantly and the second partially. The bottom two — where the genuine edge lives — are completely unencoded.</div>
+
+    <div class="col-4">
+
+      <!-- EXPLICIT -->
+      <div class="layer-card">
+        <div class="layer-top" style="border-left:4px solid var(--explicit);">
+          <div class="layer-badge" style="background:var(--explicit-l);color:var(--explicit);">Well-Served</div>
+          <div class="layer-icon">📊</div>
+          <div class="layer-name" style="color:var(--explicit);">Explicit</div>
+          <div class="layer-tagline">DOCUMENTED · TRANSFERABLE · QUERYABLE</div>
+          <div class="layer-body">What is written down. Prices, financial statements, earnings releases, SEC filings, analyst reports, news articles. Unambiguous. Any analyst can retrieve it instantly. Zero interpretation required. Zero edge remaining.</div>
+          <div class="layer-divider"></div>
+          <div><strong style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink);">Examples:</strong>
+            <div style="font-family:'Playfair Display',serif;font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.55;">TSMC Q4 2025 revenue: $26.9B (+37% YoY). NVIDIA stock price: $145.83 at close. S&P 500 PE ratio: 28.6x.</div>
+          </div>
+        </div>
+        <div class="layer-tools">
+          <div class="tools-label">Tools That Cover It</div>
+          <span class="tool-tag" style="background:var(--explicit-l);color:var(--explicit);">Bloomberg</span>
+          <span class="tool-tag" style="background:var(--explicit-l);color:var(--explicit);">FactSet</span>
+          <span class="tool-tag" style="background:var(--explicit-l);color:var(--explicit);">Capital IQ</span>
+          <span class="tool-tag" style="background:var(--explicit-l);color:var(--explicit);">LSEG</span>
+        </div>
+      </div>
+
+      <!-- IMPLICIT -->
+      <div class="layer-card">
+        <div class="layer-top" style="border-left:4px solid var(--implicit);">
+          <div class="layer-badge" style="background:var(--implicit-l);color:var(--implicit);">Partially Served</div>
+          <div class="layer-icon">🧩</div>
+          <div class="layer-name" style="color:var(--implicit);">Implicit</div>
+          <div class="layer-tagline">INFERRABLE · SLOW · ANALYST-DEPENDENT</div>
+          <div class="layer-body">Knowledge that can be extracted from explicit data with effort. Industry dynamics, management tone quality on earnings calls, peer relationship patterns, sector cycle timing. Requires interpretation. Edge varies by analyst skill. Partially served by AI search tools.</div>
+          <div class="layer-divider"></div>
+          <div><strong style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink);">Examples:</strong>
+            <div style="font-family:'Playfair Display',serif;font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.55;">"TSMC's management sounded more confident than usual on pricing power." "NVIDIA's margins are expanding faster than Street consensus."</div>
+          </div>
+        </div>
+        <div class="layer-tools">
+          <div class="tools-label">Tools That Cover It</div>
+          <span class="tool-tag" style="background:var(--implicit-l);color:var(--implicit);">AlphaSense</span>
+          <span class="tool-tag" style="background:var(--implicit-l);color:var(--implicit);">RavenPack</span>
+          <span class="tool-tag" style="background:var(--implicit-l);color:var(--implicit);">Tegus</span>
+          <span class="tool-tag" style="background:rgba(0,0,0,0.05);color:var(--muted);">Partially</span>
+        </div>
+      </div>
+
+      <!-- TACIT -->
+      <div class="layer-card">
+        <div class="layer-top" style="border-left:4px solid var(--tacit);">
+          <div class="layer-badge" style="background:var(--tacit-l);color:var(--tacit);">Not In Tools</div>
+          <div class="layer-icon">🧠</div>
+          <div class="layer-name" style="color:var(--tacit);">Tacit</div>
+          <div class="layer-tagline">PERSONAL · EXPERIENTIAL · IMPOSSIBLE TO DOCUMENT</div>
+          <div class="layer-body">Personal intuition built from years of experience. The "feel" for when a CEO is nervous, when a sector is about to inflect, when a price pattern looks familiar. Kahneman's System 1 thinking applied to markets. Not transferable. Dies when the analyst leaves. Zero tool coverage.</div>
+          <div class="layer-divider"></div>
+          <div><strong style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink);">Examples:</strong>
+            <div style="font-family:'Playfair Display',serif;font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.55;">"I've seen this pattern in semis before — this is the early phase of an upcycle." "Something felt off about that CFO's tone when asked about Q3 guidance."</div>
+          </div>
+        </div>
+        <div class="layer-tools">
+          <div class="tools-label">Tools That Cover It</div>
+          <span class="tool-tag" style="background:rgba(0,0,0,0.05);color:var(--muted);">None</span>
+          <span class="tool-tag" style="background:rgba(0,0,0,0.05);color:var(--muted);">Essentia Analytics (partial)</span>
+        </div>
+      </div>
+
+      <!-- TRIBAL -->
+      <div class="layer-card">
+        <div class="layer-top" style="border-left:4px solid var(--tribal);">
+          <div class="layer-badge" style="background:var(--tribal-l);color:var(--tribal);">Completely Unencoded</div>
+          <div class="layer-icon">🗣</div>
+          <div class="layer-name" style="color:var(--tribal);">Tribal</div>
+          <div class="layer-tagline">SHARED · UNWRITTEN · GROUP-SPECIFIC · THE REAL EDGE</div>
+          <div class="layer-body">Shared, undocumented knowledge held collectively by a team or desk. "We all know" that these two companies move together. "Everyone here knows" this CEO calls this specific sell-side analyst before announcements. "It's common knowledge on the desk" that this supply chain link is underdisclosed. Passed down verbally. Lost with turnover.</div>
+          <div class="layer-divider"></div>
+          <div><strong style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink);">Examples:</strong>
+            <div style="font-family:'Playfair Display',serif;font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.55;">"Everyone on this desk knows AMAT moves 3 weeks after ASML." "This substrate supplier is always the canary — never covered by anyone."</div>
+          </div>
+        </div>
+        <div class="layer-tools">
+          <div class="tools-label">Tools That Cover It</div>
+          <span class="tool-tag" style="background:rgba(0,0,0,0.05);color:var(--muted);">None exist</span>
+          <span class="tool-tag" style="background:var(--bridge-l);color:var(--bridge);">MKG (target)</span>
+        </div>
+      </div>
+
+    </div><!-- /col-4 -->
+
+    <div class="pq" style="margin-top:48px;">
+      <div class="pq-text">"42% of institutional knowledge is unique to individual employees and isn't documented anywhere else in the organization. In investment management, where the 'institution' is a fund's accumulated relationship map, this figure is almost certainly higher."</div>
+      <div class="pq-attr">Panopto Research · Knowledge Retention Study &nbsp;·&nbsp; Applied to investment management context</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 2: SIX TYPES OF TRIBAL KNOWLEDGE IN FINANCE ── -->
+  <div id="tribal" class="sec reveal">
+    <div class="sec-kicker">Section 02 &nbsp;·&nbsp; Taxonomy of Financial Tribal Knowledge</div>
+    <div class="sec-title">The six things a veteran PM<br><em>knows that no tool shows</em></div>
+    <div class="sec-sub">These are not vague intuitions. They are specific, actionable, computable insights — carried verbally in experienced heads, lost on departure, and completely invisible to every commercial financial data platform.</div>
+
+    <!-- TYPE 1 -->
+    <div class="tribal-item">
+      <div class="ti-num">01</div>
+      <div class="ti-content">
+        <div class="ti-head">
+          <div class="ti-title">The Secret Relationship Map — "These two move together, nobody covers it"</div>
+          <div class="ti-type" style="background:var(--tribal-l);color:var(--tribal);">Relationship</div>
+        </div>
+        <div class="ti-body">Every seasoned sector analyst carries a mental map of undisclosed or under-covered relationship edges. These are not in Capital IQ. They don't appear in Bloomberg relationship databases. They emerge from years of reading earnings call footnotes, noticing pattern co-movement, attending industry conferences, and reading regional press that no data vendor indexes. <strong>A veteran semiconductor analyst knows 50 relationships that the database doesn't.</strong></div>
+        <div class="ti-quote">"AMAT always moves 2–3 weeks after ASML results, because their booking lead times are almost identical but AMAT's IR doesn't front-run it the way ASML's does. It's not in any database. You just know it after two cycles."</div>
+        <div class="ti-body" style="font-size:13px;margin-bottom:8px;">The problem is structural: Capital IQ records relationships from filings. But the most valuable relationship intelligence comes from <em>patterns not disclosed in filings</em> — operational dependencies revealed only in aggregate market behavior, industry contacts, and historical co-movement. When the analyst who tracked this leaves, the knowledge goes with them.</div>
+        <div class="ti-bridge">
+          <div class="ti-bridge-label">MKG Bridge Point</div>
+          <div class="ti-bridge-text">Graph construction from co-movement signals + earnings call NLP extracts the implicit relationship structure. Edge weights built from co-mention frequency, lead-lag co-movement, and supply chain filing cross-reference surface relationships that are "known but unwritten" — encoding tribal knowledge into graph edges that survive analyst turnover.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE 2 -->
+    <div class="tribal-item">
+      <div class="ti-num">02</div>
+      <div class="ti-content">
+        <div class="ti-head">
+          <div class="ti-title">Company-Specific Calibration — "This CEO always sandbagged by 15%"</div>
+          <div class="ti-type" style="background:var(--tacit-l);color:var(--tacit);">Calibration</div>
+        </div>
+        <div class="ti-body">Experienced analysts develop precise, company-specific calibration adjustments that are never written in any research note. <strong>They know which CEOs systematically underpromise and which overstate. They know which quarters of the year a company consistently surprises in one direction.</strong> They know which management teams get nervous under pressure from specific analysts, and what that nervousness signals. Fuller &amp; Thaler built a $3B fund exploiting anchoring bias in analyst estimates — exactly this type of calibration. But it lives entirely in human heads at most funds.</div>
+        <div class="ti-quote">"This CFO always guides down 8–12% from what they actually expect in Q3. It's his style. We adjust for it every single time. It's never written in any note — it's just what the desk knows."</div>
+        <div class="ti-bridge">
+          <div class="ti-bridge-label">MKG Bridge Point</div>
+          <div class="ti-bridge-text">Historical guidance vs. actuals database per entity per executive. WAN learns systematic over/under-guidance patterns per management team from historical earnings data. Calibration factors become explicit, computable, and survivable beyond individual analyst tenure.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE 3 -->
+    <div class="tribal-item">
+      <div class="ti-num">03</div>
+      <div class="ti-content">
+        <div class="ti-head">
+          <div class="ti-title">The Canary Companies — "Watch this one, nobody else does"</div>
+          <div class="ti-type" style="background:var(--tribal-l);color:var(--tribal);">Leading Indicator</div>
+        </div>
+        <div class="ti-body">In every sector, there are small, under-covered companies whose results systematically lead larger, better-covered companies by weeks. <strong>Experienced sector analysts know these canaries intimately. They watch small substrate suppliers before semiconductors, small trucking companies before industrials, obscure chemicals distributors before energy.</strong> These are not discoverable by searching Bloomberg. They are found through years of sector immersion and pattern recognition. The research finding from Shanghai lockdown data confirms it: tier-1 suppliers showed significant abnormal returns before focal firms did. The canaries exist. Knowing which ones requires tribal knowledge.</div>
+        <div class="ti-quote">"There's a substrate supplier in Taiwan — 10 analysts cover it globally. When their order intake drops more than 12%, TSMC's advanced packaging revenue misses 6 weeks later. Every cycle, like clockwork. It's not in any database."</div>
+        <div class="ti-bridge">
+          <div class="ti-bridge-label">MKG Bridge Point</div>
+          <div class="ti-bridge-text">Lead-lag relationship detection across the graph: edges with consistent temporal precedence (Company A moves before Company B by N weeks, validated across N historical events) are automatically surfaced as "leading indicator" edge types. The canaries are encoded as graph edges with directional temporal lag metadata.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE 4 -->
+    <div class="tribal-item">
+      <div class="ti-num">04</div>
+      <div class="ti-content">
+        <div class="ti-head">
+          <div class="ti-title">Relationship Decay Knowledge — "That partnership means less than it used to"</div>
+          <div class="ti-type" style="background:var(--tacit-l);color:var(--tacit);">Weight Decay</div>
+        </div>
+        <div class="ti-body">Relationships change in strength over time, but databases don't update. <strong>A veteran analyst knows that a joint venture announced four years ago has become less operationally significant as one party diversified. They know that a supply chain relationship that was critical in 2019 has been partially onshored by 2024.</strong> They know that executive relationships that drove a board interloc appointment are no longer active because the executives moved on. Capital IQ still shows all of these as active, with the same implied weight as day one. The analyst's calibrated decay knowledge is entirely unencoded.</div>
+        <div class="ti-quote">"That JV is still in the database. But anyone who followed it knows the two companies barely interact anymore — one of them pivoted their strategy in 2022. The edge weight in any system treating it as 2019-equivalent is simply wrong."</div>
+        <div class="ti-bridge">
+          <div class="ti-bridge-label">MKG Bridge Point</div>
+          <div class="ti-bridge-text">Temporal edge weight decay: edges with no news reinforcement decay toward zero on a configurable schedule. WAN reads absence of co-mention, filing reference drops, and management departure signals to automatically reduce edge weights of aging relationships — encoding the decay knowledge that currently lives only in experienced analysts' heads.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE 5 -->
+    <div class="tribal-item">
+      <div class="ti-num">05</div>
+      <div class="ti-content">
+        <div class="ti-head">
+          <div class="ti-title">Sector Cycle Timing — "We're at week 6 of a 14-week pattern"</div>
+          <div class="ti-type" style="background:var(--tacit-l);color:var(--tacit);">Cycle Timing</div>
+        </div>
+        <div class="ti-body">Experienced sector analysts develop precise mental models of cycle dynamics that go far beyond what any data system captures. <strong>They know the historical sequence of which companies announce first, how the market initially misreads the announcement, which second-order companies reprice with what typical delay, and how long the cycle typically lasts before a correction.</strong> This is Pattern Recognition built from witnessing 3–5 full cycles in a sector — typically 10–15 years of sector experience. No data system captures the cycle sequence as a structured, queryable, replayable pattern.</div>
+        <div class="ti-quote">"I've seen four semiconductor upcycles. They all follow the same sequence. We're at week 6 of a typical 14-week propagation — TSMC has reported, ASML has confirmed the orders, now we're waiting for the memory players to inflect. The desk consensus is we're 40% through this particular cycle."</div>
+        <div class="ti-bridge">
+          <div class="ti-bridge-label">MKG Bridge Point</div>
+          <div class="ti-bridge-text">Temporal graph rewind enables cycle pattern comparison: replay graph state at any historical timestamp, diff two cycle starting points, and identify which edges activated in which sequence. Historical propagation sequences become queryable baselines for current cycle comparison — cycle timing knowledge becomes a graph query, not a PM's memory.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE 6 -->
+    <div class="tribal-item" style="border-bottom:none;">
+      <div class="ti-num">06</div>
+      <div class="ti-content">
+        <div class="ti-head">
+          <div class="ti-title">Regulatory Co-Exposure — "Both face the same regulator, nobody is writing about it"</div>
+          <div class="ti-type" style="background:var(--tribal-l);color:var(--tribal);">Regulatory</div>
+        </div>
+        <div class="ti-body">Certain companies face the same regulatory body, the same political risk exposure, or the same policy environment — and <strong>when scrutiny hits one, it systematically reaches the other</strong>. This knowledge is not in any commercial database. It comes from reading regulatory filings, understanding agency jurisdictions, following congressional committee assignments, and tracking which companies have shared lobbying relationships. An experienced DC-focused analyst knows which tech companies share a critical FTC commissioner relationship, which energy companies are on the same EPA permit renewal schedule, which banks have the same internal model validation cycle. This knowledge is almost never documented.</div>
+        <div class="ti-quote">"Both these companies file under the same FERC docket number. Nobody outside DC knows this. When FERC ruled against the first one last month, the second one will follow within 90 days. I've watched this commissioner for six years."</div>
+        <div class="ti-bridge">
+          <div class="ti-bridge-label">MKG Bridge Point</div>
+          <div class="ti-bridge-text">Regulatory entity nodes in the graph: regulatory bodies, government agencies, and policy instruments become first-class entities with edges to the companies they govern. WAN reads regulatory news, agency announcements, and congressional filings to create co-exposure edges that are currently carried only in specialists' heads.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sec -->
+
+  <!-- ── SECTION 3: WHAT LEAVES WHEN THEY LEAVE ── -->
+  <div class="sec reveal">
+    <div class="sec-kicker">Section 03 &nbsp;·&nbsp; The Knowledge Destruction Event</div>
+    <div class="sec-title">What a fund loses when a<br><em>15-year sector analyst walks out</em></div>
+    <div class="sec-sub">Bloomberg subscription: transferable. Factset model: exportable. Mental map of 200+ relationship edges, calibrated heuristics, cycle timing patterns, canary companies: completely lost. The talent drain is also a knowledge drain — and it happens every time.</div>
+
+    <div class="leave-grid">
+      <div class="lg-cell">
+        <div class="lgc-title" style="color:var(--explicit);">✓ What Transfers (Tool-Captured)</div>
+        <div class="lgc-item">
+          <div class="lgc-icon">✅</div>
+          <div class="lgc-text">Bloomberg Terminal access — <strong>$31,980/yr subscription</strong>, fully re-assignable</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">✅</div>
+          <div class="lgc-text">FactSet financial models — Excel exports, transferable to successor</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">✅</div>
+          <div class="lgc-text">AlphaSense search history — can be reviewed and searched</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">✅</div>
+          <div class="lgc-text">Written research memos and investment theses — archived</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">✅</div>
+          <div class="lgc-text">Portfolio position history — logged in OMS/PMS systems</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">✅</div>
+          <div class="lgc-text">Sell-side research saved to shared folders — retrievable</div>
+        </div>
+      </div>
+
+      <div class="lg-cell" style="background:rgba(138,58,42,0.04);">
+        <div class="lgc-title" style="color:var(--tacit);">✗ What Is Permanently Lost (Tribal Knowledge)</div>
+        <div class="lgc-item">
+          <div class="lgc-icon">❌</div>
+          <div class="lgc-text">Mental relationship map — <strong>200+ edge weights calibrated from 15 years of sector observation</strong>. AMAT lags ASML by 3 weeks. This substrate supplier is the canary for TSMC packaging. Lost.</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">❌</div>
+          <div class="lgc-text">Company-specific calibration — this CFO sandbagged Q3 by 12% for 8 consecutive years. This one overstates margin expansion by a consistent factor. Lost.</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">❌</div>
+          <div class="lgc-text">Cycle sequence knowledge — week-by-week propagation order across 4 historical semiconductor upcycles. Lost.</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">❌</div>
+          <div class="lgc-text">Relationship decay calibrations — which JVs and partnerships have become operationally dormant despite active database entries. Lost.</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">❌</div>
+          <div class="lgc-text">Regulatory co-exposure map — which companies share the same regulator, docket, or policy cycle. Never documented. Lost.</div>
+        </div>
+        <div class="lgc-item">
+          <div class="lgc-icon">❌</div>
+          <div class="lgc-text">Informal channel knowledge — which IR contacts tip off order flow changes ahead of announcements. Lost with their personal phone contacts.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ibox br">
+      <div class="ib-label">The Measurement</div>
+      <div class="ib-text"><strong>Investment management has a turnover-driven knowledge destruction cycle.</strong> Average PM tenure at a hedge fund is 3–5 years. Senior sector analyst tenure is longer but still ends. Every departure takes the bottom two layers of the iceberg with it. The top two (Bloomberg, FactSet) stay. The edge — the relationship map, the calibrations, the canaries — goes. The successor starts rebuilding from scratch, spending 12–18 months reconstructing what their predecessor had accumulated over a decade. This is a permanent, structural inefficiency at every fund.</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 4: THE WALKTHROUGH ── -->
+  <div id="walkthrough" class="sec reveal">
+    <div class="sec-kicker">Section 04 &nbsp;·&nbsp; The Research Walkthrough</div>
+    <div class="sec-title">Same event. Two analysts.<br><em>Radically different intelligence.</em></div>
+    <div class="sec-sub">TSMC reports earnings. A junior analyst and a 15-year semiconductor veteran sit at the same Bloomberg terminal. Here is exactly what each one does — and what tools cannot provide for either.</div>
+
+    <div class="scenario">
+      <div class="sc-label">Scenario &nbsp;·&nbsp; TSMC Q4 Earnings Release &nbsp;·&nbsp; January 2026 &nbsp;·&nbsp; 06:00 AM NY Time</div>
+      <div class="sc-title">What each analyst layer does — and what no tool provides at each step</div>
+
+      <div class="step-flow">
+
+        <!-- Step 1 -->
+        <div class="step">
+          <div class="step-who" style="background:var(--explicit);">Bloomberg / FactSet</div>
+          <div class="step-action">Both analysts open the TSMC earnings: Revenue $26.9B +37%, EPS $2.24 vs $2.10 est. AI server demand cited as primary driver. CoWoS packaging capacity mentioned. <strong>Both see identical data.</strong></div>
+          <div class="step-tribal" style="background:var(--explicit-l);">
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--explicit);letter-spacing:1.5px;margin-bottom:4px;">TOOL COVERAGE: 100%</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink2);">Fully automated. No edge for either analyst here.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step" style="margin-top:2px;">
+          <div class="step-who" style="background:var(--implicit);">AlphaSense / RavenPack</div>
+          <div class="step-action">Junior analyst searches AlphaSense for "TSMC CoWoS packaging" — finds 12 relevant analyst notes and 3 earnings call transcripts. Senior analyst also reads these, but with calibration: <em>she knows the CoWoS mention means the allocation increase to NVIDIA is larger than disclosed.</em></div>
+          <div class="step-tribal" style="background:var(--implicit-l);">
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--implicit);letter-spacing:1.5px;margin-bottom:4px;">TOOL COVERAGE: 60% (documents only)</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink2);">Junior gets the documents. Senior gets the implication. Gap = calibration layer.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step" style="margin-top:2px;">
+          <div class="step-who" style="background:var(--tacit);">Tacit — No Tool</div>
+          <div class="step-action">Junior analyst notes NVIDIA, AMD, ASML as obvious beneficiaries. Senior analyst instantly mentally triggers her list of 14 second-order names — <strong>including the substrate supplier no analyst covers</strong>, the memory company whose HBM allocation follows TSMC CoWoS by 6 weeks, and the Korean PCB maker whose order book changes with TSMC packaging capacity.</div>
+          <div class="step-tribal" style="background:var(--tacit-l);">
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--tacit);letter-spacing:1.5px;margin-bottom:4px;">TOOL COVERAGE: 0%</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink2);">Junior misses 11 of 14 actionable names. All tribal knowledge. Zero tool coverage.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step" style="margin-top:2px;">
+          <div class="step-who" style="background:var(--tribal);">Tribal — No Tool</div>
+          <div class="step-action">Senior analyst shares with the desk: "This pattern is identical to Q2 2023. AMAT will follow in 17 days. The Taiwanese substrate play — that small-cap nobody covers — should move by week 3. We got burned missing that name last cycle." <strong>Nobody writes this down. It's the desk's shared memory.</strong></div>
+          <div class="step-tribal" style="background:var(--tribal-l);">
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--tribal);letter-spacing:1.5px;margin-bottom:4px;">TOOL COVERAGE: 0%</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink2);">Verbal only. If this analyst leaves, this pattern recognition is gone. No audit trail.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step" style="margin-top:2px;">
+          <div class="step-who" style="background:var(--bridge);">MKG Bridge</div>
+          <div class="step-action">MKG triggers automatically at T+60 seconds: graph traversal scores 47 entities. Surfaces the substrate supplier (score: 73), the HBM memory play (score: 68), the Korean PCB maker (score: 51). Shows lead-lag metadata: "This edge historically activates 17 days after TSMC CoWoS announcements (n=4 events, confidence: 78%)." <strong>The tribal knowledge is now encoded.</strong></div>
+          <div class="step-tribal" style="background:rgba(181,52,28,0.06);">
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--bridge);letter-spacing:1.5px;margin-bottom:4px;">MKG COVERAGE: Encodes layer 3+4</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--ink2);">The 15-year pattern is now a graph query. Survives analyst departure. No verbal required.</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /step-flow -->
+    </div><!-- /scenario -->
+  </div>
+
+  <!-- ── SECTION 5: WHAT TOOLS COVER vs WHAT MKG BRIDGES ── -->
+  <div id="bridge" class="sec reveal">
+    <div class="sec-kicker">Section 05 &nbsp;·&nbsp; The MKG Bridge Points</div>
+    <div class="sec-title">Precisely where MKG begins<br><em>to encode what was tribal</em></div>
+    <div class="sec-sub">MKG does not replace Bloomberg. It does not replace AlphaSense. It encodes what no tool has ever touched: the bottom two layers of the knowledge iceberg. Here are the precise bridge points.</div>
+
+    <!-- Bridge matrix header -->
+    <div class="bridge-item">
+      <div class="bi-header">
+        <div class="bi-h-cell">Tribal Knowledge Type</div>
+        <div class="bi-h-cell">Before MKG (In Heads Only)</div>
+        <div class="bi-h-cell" style="color:var(--bridge);">After MKG (Encoded in Graph)</div>
+      </div>
+      <div class="bi-body">
+        <div class="bi-b-cell name"><span>🗺</span> Secret Relationship Map</div>
+        <div class="bi-b-cell before">"AMAT lags ASML by 3 weeks. The desk knows this. We watch it every cycle." Only the veteran knows the full 200-edge version of the map. Lost when she leaves.</div>
+        <div class="bi-b-cell after"><strong>Lead-lag edge metadata:</strong> temporal precedence relationships encoded from co-movement analysis across all historical events. The map becomes a queryable graph. The 200 edges survive the analyst.</div>
+      </div>
+    </div>
+
+    <div class="bridge-item">
+      <div class="bi-header">
+        <div class="bi-h-cell">Tribal Knowledge Type</div>
+        <div class="bi-h-cell">Before MKG (In Heads Only)</div>
+        <div class="bi-h-cell" style="color:var(--bridge);">After MKG (Encoded in Graph)</div>
+      </div>
+      <div class="bi-body">
+        <div class="bi-b-cell name"><span>🎯</span> CEO/CFO Calibration</div>
+        <div class="bi-b-cell before">"This CFO guides down 12% every Q3, then beats by 10%. We just adjust. It's not written anywhere — it's just what everyone on the desk knows."</div>
+        <div class="bi-b-cell after"><strong>Entity-level guidance bias model:</strong> historical guidance vs. actual delta per executive per quarter. Systematic over/under-guidance becomes a computable correction factor, not a verbal desk heuristic.</div>
+      </div>
+    </div>
+
+    <div class="bridge-item">
+      <div class="bi-header">
+        <div class="bi-h-cell">Tribal Knowledge Type</div>
+        <div class="bi-h-cell">Before MKG (In Heads Only)</div>
+        <div class="bi-h-cell" style="color:var(--bridge);">After MKG (Encoded in Graph)</div>
+      </div>
+      <div class="bi-body">
+        <div class="bi-b-cell name"><span>🐦</span> Canary Companies</div>
+        <div class="bi-b-cell before">"There's a tiny Taiwanese substrate supplier that signals TSMC packaging capacity 6 weeks ahead. 10 analysts cover it globally. The desk watches it obsessively."</div>
+        <div class="bi-b-cell after"><strong>Leading indicator edge type:</strong> graph edges with temporal precedence metadata identify canary relationships automatically. Event history validates the lead-lag across N cycles. The canary becomes discoverable by any analyst, not just the veteran.</div>
+      </div>
+    </div>
+
+    <div class="bridge-item">
+      <div class="bi-header">
+        <div class="bi-h-cell">Tribal Knowledge Type</div>
+        <div class="bi-h-cell">Before MKG (In Heads Only)</div>
+        <div class="bi-h-cell" style="color:var(--bridge);">After MKG (Encoded in Graph)</div>
+      </div>
+      <div class="bi-body">
+        <div class="bi-b-cell name"><span>📉</span> Relationship Decay</div>
+        <div class="bi-b-cell before">"That JV is still in the database, but the two companies barely interact anymore. Anyone treating it as 2019-equivalent is using a dead edge. The analyst who tracked the decay left two years ago."</div>
+        <div class="bi-b-cell after"><strong>Temporal weight decay:</strong> edges without recent news reinforcement automatically decay toward zero. Absence of co-mention, filing reference drops, executive departures = weight reduction. Dead edges become visible as dead, not phantom-active.</div>
+      </div>
+    </div>
+
+    <div class="bridge-item">
+      <div class="bi-header">
+        <div class="bi-h-cell">Tribal Knowledge Type</div>
+        <div class="bi-h-cell">Before MKG (In Heads Only)</div>
+        <div class="bi-h-cell" style="color:var(--bridge);">After MKG (Encoded in Graph)</div>
+      </div>
+      <div class="bi-body">
+        <div class="bi-b-cell name"><span>🔄</span> Cycle Sequence Timing</div>
+        <div class="bi-b-cell before">"Week 6 of a typical 14-week propagation. We're at the ASML confirmation point. Memory players inflect next, then PCB suppliers, then software stack. I've seen four cycles. Everyone on the desk knows the sequence."</div>
+        <div class="bi-b-cell after"><strong>Temporal graph rewind:</strong> historical propagation sequences stored and queryable. "Compare current state to Q2 2023 at T+6 weeks." Cycle positioning becomes a graph query, not a verbal consensus. New analysts access institutional cycle memory from day one.</div>
+      </div>
+    </div>
+
+    <div class="bridge-item" style="margin-bottom:0;">
+      <div class="bi-header">
+        <div class="bi-h-cell">Tribal Knowledge Type</div>
+        <div class="bi-h-cell">Before MKG (In Heads Only)</div>
+        <div class="bi-h-cell" style="color:var(--bridge);">After MKG (Encoded in Graph)</div>
+      </div>
+      <div class="bi-body">
+        <div class="bi-b-cell name"><span>⚖️</span> Regulatory Co-Exposure</div>
+        <div class="bi-b-cell before">"Both companies file under the same FERC docket. Nobody outside DC tracks this. When the commission rules against one, the other follows within 90 days. Three times running. Nobody wrote it down."</div>
+        <div class="bi-b-cell after"><strong>Regulatory entity nodes:</strong> government agencies, commissions, and policy instruments are graph entities. Companies sharing a regulator are connected by a "regulatory co-exposure" edge. Ruling on one triggers graph traversal to all co-exposed entities. Never tribal again.</div>
+      </div>
+    </div>
+
+    <!-- Final synthesis box -->
+    <div style="background:var(--ink);padding:48px 40px;margin-top:48px;">
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:#c8b89a;text-transform:uppercase;margin-bottom:20px;">The Core Insight</div>
+      <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:400;color:#f0ebe2;line-height:1.65;max-width:900px;">
+        Bloomberg gives you what happened. AlphaSense gives you what was said. RavenPack gives you how people felt about it. FactSet gives you what it's worth.
+        <br><br>
+        <span style="color:#c8b89a;font-style:italic;">But the $900K/year tool stack still cannot answer:</span> which other companies does this signal reach, through what relationships, with what weights, in what sequence, with what historical precedent — in the next 60 seconds, automatically, with full explainability?
+        <br><br>
+        That answer has lived entirely in experienced humans' heads for 50 years. <strong style="color:white;">MKG is the first system designed to encode it.</strong>
+      </div>
+    </div>
+
+  </div><!-- /sec bridge -->
+
+  <!-- Knowledge vs Tools Matrix -->
+  <div class="sec reveal">
+    <div class="sec-kicker">Section 06 &nbsp;·&nbsp; Coverage Matrix</div>
+    <div class="sec-title">What tools cover.<br><em>What MKG adds to it.</em></div>
+
+    <div class="ktm-wrap">
+      <table class="ktm">
+        <thead>
+          <tr>
+            <th>Knowledge Type</th>
+            <th>Bloomberg</th>
+            <th>AlphaSense</th>
+            <th>RavenPack</th>
+            <th>Capital IQ</th>
+            <th>FactSet</th>
+            <th class="mkgcol">MKG ✦</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Real-time prices + data</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="mkgcol cross">✗</td></tr>
+          <tr><td>News ingestion (multilingual)</td><td class="part">~</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol check">✓</td></tr>
+          <tr><td>Document search + NLP</td><td class="cross">✗</td><td class="check">✓</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol part">~</td></tr>
+          <tr><td>Entity-level sentiment</td><td class="cross">✗</td><td class="part">~</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol part">~</td></tr>
+          <tr><td>Static relationship database</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="mkgcol check">✓</td></tr>
+          <tr><td>Financial models + fundamentals</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="check">✓</td><td class="mkgcol cross">✗</td></tr>
+          <tr><td style="color:var(--tacit);font-weight:700;">● Dynamic edge weights</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+          <tr><td style="color:var(--tacit);font-weight:700;">● Lead-lag relationship metadata</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+          <tr><td style="color:var(--tacit);font-weight:700;">● CEO/CFO guidance calibration</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+          <tr><td style="color:var(--tacit);font-weight:700;">● Canary company identification</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+          <tr><td style="color:var(--tacit);font-weight:700;">● Relationship decay detection</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+          <tr><td style="color:var(--tribal);font-weight:700;">●● Historical cycle pattern storage</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+          <tr><td style="color:var(--tribal);font-weight:700;">●● Regulatory co-exposure edges</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+          <tr><td style="color:var(--tribal);font-weight:700;">●● Event propagation scoring</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+          <tr><td style="color:var(--tribal);font-weight:700;">●● Full signal explainability chain</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="mkgcol new">NEW ✦</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:0.5px;">● Tacit knowledge layer &nbsp;·&nbsp; ●● Tribal knowledge layer &nbsp;·&nbsp; ✦ NEW = first commercial encoding of this capability</div>
+
+  </div>
+
+  <div class="footer">
+    <div class="ft">MKG SYSTEM &nbsp;·&nbsp; TRIBAL KNOWLEDGE ANALYSIS &nbsp;·&nbsp; FEBRUARY 2026 &nbsp;·&nbsp; CONFIDENTIAL</div>
+    <div class="ft">Next: Use Case Diagram →</div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('on');obs.unobserve(e.target);}
+  });
+},{threshold:0.06});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

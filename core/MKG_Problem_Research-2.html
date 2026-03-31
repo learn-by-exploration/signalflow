@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — The Problem. Deeply Researched.</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --night:    #0c0f14;
+  --coal:     #141820;
+  --surface:  #1a1f29;
+  --surface2: #212835;
+  --border:   #2a3245;
+  --border2:  #323d54;
+  --dim:      #4a5872;
+  --mid:      #7a8ca8;
+  --text:     #c8d4e8;
+  --bright:   #e8f0fd;
+  --white:    #f5f8ff;
+  --red:      #e84040;
+  --red-dim:  rgba(232,64,64,0.12);
+  --red-glow: rgba(232,64,64,0.06);
+  --amber:    #f0a030;
+  --amber-dim:rgba(240,160,48,0.12);
+  --green:    #34c47c;
+  --green-dim:rgba(52,196,124,0.12);
+  --blue:     #4a9eff;
+  --blue-dim: rgba(74,158,255,0.12);
+  --violet:   #9b6fff;
+  --violet-dim:rgba(155,111,255,0.12);
+  --accent:   #e84040;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+
+body {
+  background: var(--night);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.wrap { max-width:1200px;margin:0 auto;padding:0 40px 120px; }
+
+.topbar {
+  background: var(--coal);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.tb-logo { font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--accent);font-weight:500; }
+.tb-nav { display:flex;gap:28px; }
+.tb-nav a { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--dim);text-decoration:none;text-transform:uppercase;transition:color 0.2s; }
+.tb-nav a:hover { color:var(--bright); }
+
+.hero {
+  padding: 100px 0 80px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.hero::before {
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(ellipse 800px 600px at 20% 30%, rgba(232,64,64,0.04) 0%, transparent 60%);
+  pointer-events:none;
+}
+.hero-kicker { font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:24px;text-transform:uppercase; }
+.hero-headline { font-family:'Libre Baskerville',serif;font-size:clamp(40px,6vw,80px);font-weight:700;color:var(--white);line-height:1.05;margin-bottom:28px;letter-spacing:-1px; }
+.hero-headline span { color:var(--accent);font-style:italic; }
+.hero-sub { font-family:'Libre Baskerville',serif;font-size:18px;font-style:italic;color:var(--mid);line-height:1.7;max-width:680px;margin-bottom:48px; }
+
+.stat-row { display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border); }
+.stat-cell { background:var(--coal);padding:24px 20px;position:relative; }
+.stat-cell::before { content:'';position:absolute;top:0;left:0;right:0;height:2px; }
+.stat-cell.r::before { background:var(--red); }
+.stat-cell.a::before { background:var(--amber); }
+.stat-cell.g::before { background:var(--green); }
+.stat-cell.b::before { background:var(--blue); }
+.sc-num { font-family:'Syne',sans-serif;font-size:40px;font-weight:800;line-height:1;margin-bottom:4px; }
+.sc-num.r{color:var(--red);}.sc-num.a{color:var(--amber);}.sc-num.g{color:var(--green);}.sc-num.b{color:var(--blue);}
+.sc-label { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:8px; }
+.sc-desc { font-size:12px;color:var(--mid);line-height:1.5; }
+
+.section-hdr { padding:60px 0 40px;border-bottom:1px solid var(--border);margin-bottom:48px; }
+.sec-eyebrow { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:16px; }
+.sec-title { font-family:'Libre Baskerville',serif;font-size:clamp(28px,4vw,46px);font-weight:700;color:var(--white);line-height:1.1; }
+.sec-title em { color:var(--accent);font-style:italic; }
+.sec-sub { font-family:'Libre Baskerville',serif;font-size:16px;font-style:italic;color:var(--mid);margin-top:12px;max-width:600px;line-height:1.6; }
+
+.col-2{display:grid;grid-template-columns:1fr 1fr;gap:32px;}
+.col-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;}
+
+.body { font-family:'Libre Baskerville',serif;font-size:16px;line-height:1.8;color:var(--text);margin-bottom:16px; }
+.body strong { color:var(--bright);font-weight:700; }
+.body em { color:var(--amber);font-style:italic; }
+
+.pull-quote { border-left:3px solid var(--accent);padding:16px 24px;margin:24px 0;background:var(--red-glow); }
+.pq-text { font-family:'Libre Baskerville',serif;font-size:20px;font-style:italic;color:var(--bright);line-height:1.5; }
+.pq-source { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--dim);margin-top:8px;text-transform:uppercase; }
+
+.box { background:var(--surface);border:1px solid var(--border);padding:20px;margin-bottom:16px;position:relative;overflow:hidden; }
+.box::before { content:'';position:absolute;left:0;top:0;bottom:0;width:3px; }
+.box.r::before{background:var(--red);}.box.a::before{background:var(--amber);}
+.box.g::before{background:var(--green);}.box.b::before{background:var(--blue);}.box.v::before{background:var(--violet);}
+.box-label { font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px; }
+.box-text { font-family:'Libre Baskerville',serif;font-size:14px;color:var(--text);line-height:1.65; }
+.box-text strong { color:var(--bright); }
+
+.speed-diagram { margin:40px 0; }
+.speed-item { display:grid;grid-template-columns:180px 1fr 200px;gap:20px;align-items:center;padding:20px 0;border-bottom:1px solid var(--border); }
+.speed-badge { padding:12px 16px;text-align:center; }
+.speed-time { font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1;margin-bottom:4px; }
+.speed-unit { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--dim); }
+.speed-title { font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px; }
+.speed-desc { font-family:'Libre Baskerville',serif;font-size:14px;color:var(--text);line-height:1.6; }
+.speed-who { text-align:right; }
+.who-label { font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--dim);margin-bottom:6px;text-transform:uppercase; }
+.who-val { font-family:'Syne',sans-serif;font-size:12px;font-weight:600;line-height:1.4; }
+
+.evidence-grid { display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--border);border:1px solid var(--border);margin:32px 0; }
+.ev-card { background:var(--coal);padding:24px 22px; }
+.ev-source { font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:12px; }
+.ev-finding { font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1.1;margin-bottom:10px; }
+.ev-finding.r{color:var(--red);}.ev-finding.a{color:var(--amber);}.ev-finding.g{color:var(--green);}
+.ev-finding.b{color:var(--blue);}.ev-finding.v{color:var(--violet);}
+.ev-context { font-family:'Libre Baskerville',serif;font-size:14px;color:var(--text);line-height:1.6; }
+
+.case-study { background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--amber);padding:32px 32px 24px;margin:40px 0; }
+.cs-label { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin-bottom:12px; }
+.cs-title { font-family:'Libre Baskerville',serif;font-size:24px;font-weight:700;color:var(--white);margin-bottom:20px;line-height:1.3; }
+
+.fn-box { padding:12px 16px;border:1px solid var(--border2);background:var(--surface2);min-width:120px;position:relative; }
+.fn-box.trigger{border-color:var(--red);background:var(--red-dim);}
+.fn-box.direct{border-color:var(--amber);background:var(--amber-dim);}
+.fn-box.hop2{border-color:var(--blue);background:var(--blue-dim);}
+.fn-box.unknown{border-color:var(--dim);border-style:dashed;}
+.fn-company{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px;}
+.fn-change{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;}
+.fn-change.neg{color:var(--red);}.fn-change.pos{color:var(--green);}.fn-change.unk{color:var(--dim);}
+.fn-lag{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:4px;}
+
+.problem-item { display:grid;grid-template-columns:80px 1fr;gap:24px;align-items:start;padding:32px 0;border-bottom:1px solid var(--border); }
+.pi-num { font-family:'Syne',sans-serif;font-size:72px;font-weight:800;line-height:1;color:var(--border2);text-align:right;transition:color 0.3s; }
+.problem-item:hover .pi-num { color:var(--accent); }
+.pi-title { font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--white);margin-bottom:10px;line-height:1.2; }
+.pi-body { font-family:'Libre Baskerville',serif;font-size:15px;color:var(--text);line-height:1.75;margin-bottom:12px; }
+.pi-body strong { color:var(--bright); }
+.pi-evidence { font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blue);letter-spacing:0.5px;line-height:1.5; }
+
+.niche-diagram { margin:40px 0;background:var(--surface);border:1px solid var(--border);padding:32px; }
+.nd-title { font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:24px;text-align:center; }
+.nd-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;background:var(--border); }
+.nd-cell { padding:20px 16px;text-align:center; }
+.nd-cell.current{background:var(--coal);}
+.nd-cell.gap{background:var(--red-dim);border:2px solid var(--red);margin:-2px;}
+.nd-cell.mkgsol{background:var(--green-dim);border:2px solid var(--green);margin:-2px;}
+.nd-speed { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--dim);margin-bottom:8px;text-transform:uppercase; }
+.nd-who { font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:8px; }
+.nd-desc { font-family:'Libre Baskerville',serif;font-size:12px;color:var(--mid);line-height:1.5; }
+.nd-status { font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;margin-top:10px;font-weight:600; }
+
+.bar-section{margin:24px 0;}
+.bar-title{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;}
+.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.bar-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text);width:160px;flex-shrink:0;letter-spacing:0.3px;}
+.bar-track{flex:1;height:20px;background:var(--surface2);position:relative;overflow:hidden;}
+.bar-fill{height:100%;display:flex;align-items:center;padding:0 8px;transition:width 1.4s cubic-bezier(0.23,1,0.32,1);}
+.bar-val{font-family:'JetBrains Mono',monospace;font-size:9px;color:white;font-weight:500;white-space:nowrap;}
+
+.chip{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:2px;font-weight:500;margin:2px;}
+.chip.r{background:var(--red-dim);color:var(--red);}.chip.a{background:var(--amber-dim);color:var(--amber);}
+.chip.g{background:var(--green-dim);color:var(--green);}.chip.b{background:var(--blue-dim);color:var(--blue);}
+.chip.v{background:var(--violet-dim);color:var(--violet);}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.reveal.on{opacity:1;transform:none;}
+
+.doc-footer{border-top:1px solid var(--border);padding:28px 0;display:flex;justify-content:space-between;align-items:center;margin-top:60px;}
+.df-l{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--dim);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-logo">MKG RESEARCH &nbsp;·&nbsp; PROBLEM ANALYSIS v1.0</div>
+  <nav class="tb-nav">
+    <a href="#speeds">Three Speeds</a>
+    <a href="#evidence">Evidence</a>
+    <a href="#anatomy">Problem Anatomy</a>
+    <a href="#niche">The Niche</a>
+    <a href="#alpha">Alpha Mechanism</a>
+  </nav>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero reveal">
+    <div class="hero-kicker">Problem Research &nbsp;·&nbsp; Deep Analysis &nbsp;·&nbsp; Market Structure</div>
+    <div class="hero-headline">Markets have<br><span>three speeds.</span><br>No one is serving<br>the third one.</div>
+    <div class="hero-sub">The financial system prices direct company news in milliseconds. It prices intra-industry spillovers in hours. But cross-network, supply-chain, and relationship-driven contagion takes days to weeks to reflect in prices — and that lag is backed by decades of academic evidence. This is the precise gap MKG is built to exploit.</div>
+    <div class="stat-row">
+      <div class="stat-cell r">
+        <div class="sc-label">Speed 1 — Direct pricing</div>
+        <div class="sc-num r">&lt;100ms</div>
+        <div class="sc-desc">HFT reprices the announcing company in milliseconds. Trading opportunities vanish in 2 seconds. Zero edge left.</div>
+      </div>
+      <div class="stat-cell a">
+        <div class="sc-label">Speed 2 — Intra-industry</div>
+        <div class="sc-num a">Hours–3d</div>
+        <div class="sc-desc">Peer stocks react in a 3-day window. Bloomberg terminal users track this. Well-covered by sell-side.</div>
+      </div>
+      <div class="stat-cell g">
+        <div class="sc-label">Speed 3A — Supply chain</div>
+        <div class="sc-num g">~2 weeks</div>
+        <div class="sc-desc">Peer-reviewed research: crash risk transmits customer→supplier with up to 2-week delay. No commercial tool closes this.</div>
+      </div>
+      <div class="stat-cell b">
+        <div class="sc-label">Speed 3B — Relationship nets</div>
+        <div class="sc-num b">Weeks+</div>
+        <div class="sc-desc">Board, JV, licensing, regulatory co-exposure contagion. PEAD documented since 1968. Essentially invisible commercially.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: THREE SPEEDS -->
+  <div id="speeds" class="section-hdr reveal">
+    <div class="sec-eyebrow">Section 01 &nbsp;·&nbsp; Core Problem</div>
+    <div class="sec-title">The <em>three-speed</em> market,<br>and who falls through the gap</div>
+    <div class="sec-sub">Every participant in financial markets lives in one of three temporal zones. The first two are overcrowded. The third is completely unaddressed.</div>
+  </div>
+
+  <div class="reveal">
+    <div class="body">The financial data industry has spent 50 years solving the first two speeds. Bloomberg exists entirely to serve Speed 1 — millisecond price data, real-time news, immediate execution. AlphaSense and RavenPack serve Speed 2 — same-day document search, news analytics, intra-industry context. But <strong>Speed 3 — the slow propagation of shocks through relationship networks, supply chains, board interlocks, and JVs — remains completely unserved by any commercial platform.</strong></div>
+    <div class="body">This is not ignorance. Academic finance has documented this problem since 1968. <em>The delay persists because it is cognitively impossible for humans to solve.</em> No analyst can simultaneously cross-reference every company connected to TSMC by every relationship type, weight each connection by its current strength, and score how the shock travels. That requires a graph. A dynamic, neural-network-weighted one.</div>
+
+    <div class="speed-diagram">
+      <div class="speed-item">
+        <div class="speed-badge">
+          <div class="speed-time" style="color:var(--red);">ms</div>
+          <div class="speed-unit">SPEED 1</div>
+        </div>
+        <div class="speed-body">
+          <div class="speed-title">Direct Entity Pricing — Solved</div>
+          <div class="speed-desc">Stock reprices in under 100 milliseconds. UC San Diego study across 89 billion after-hours quotes (2025) confirms trading opportunities "virtually vanish within a couple of seconds." High-frequency algorithms absorb this signal entirely. MKG does not compete here.</div>
+          <div style="margin-top:10px;"><span class="chip r">Priced in ms</span><span class="chip r">HFT dominated</span><span class="chip r">Zero edge left</span></div>
+        </div>
+        <div class="speed-who">
+          <div class="who-label">Who captures it</div>
+          <div class="who-val" style="color:var(--red);">HFT algorithms<br>Market makers</div>
+        </div>
+      </div>
+
+      <div class="speed-item">
+        <div class="speed-badge">
+          <div class="speed-time" style="color:var(--amber);">Hours</div>
+          <div class="speed-unit">SPEED 2</div>
+        </div>
+        <div class="speed-body">
+          <div class="speed-title">Intra-Industry Spillover — Well-Covered</div>
+          <div class="speed-desc">Peer firms in the same industry react within hours. Research across 440,000+ earnings announcements in six global markets confirms peer cumulative abnormal returns show significant correlation with the announcer's returns over a three-day window. Strongest for large-cap announcers and high-volatility periods. Any attentive PM covers this via Bloomberg or AlphaSense.</div>
+          <div style="margin-top:10px;"><span class="chip a">Hours to 3 days</span><span class="chip a">Industry proximity</span><span class="chip a">Widely tracked</span></div>
+        </div>
+        <div class="speed-who">
+          <div class="who-label">Who captures it</div>
+          <div class="who-val" style="color:var(--amber);">Bloomberg users<br>Sell-side analysts</div>
+        </div>
+      </div>
+
+      <div class="speed-item">
+        <div class="speed-badge">
+          <div class="speed-time" style="color:var(--green);">~2 wks</div>
+          <div class="speed-unit">SPEED 3A</div>
+        </div>
+        <div class="speed-body">
+          <div class="speed-title">Supply Chain Contagion — The Gap Zone</div>
+          <div class="speed-desc">The most precisely measured piece of the gap. Production and Operations Management (2024): stock price crash risk transmitted from major customers to their suppliers with a delay of up to two weeks. A separate study (ScienceDirect, 2025) confirms negative CSR events create asymmetric supply chain contagion — customers more affected than suppliers — with relationship closeness amplifying the effect. These delays are information transmission failures caused by the invisibility of relationship networks.</div>
+          <div style="margin-top:10px;"><span class="chip g">1–2 week lag</span><span class="chip g">Supply chain</span><span class="chip g">Peer-reviewed confirmed</span><span class="chip r">Commercially unaddressed</span></div>
+        </div>
+        <div class="speed-who">
+          <div class="who-label">Who captures it</div>
+          <div class="who-val" style="color:var(--green);">Nobody commercially.<br>MKG's primary zone.</div>
+        </div>
+      </div>
+
+      <div class="speed-item" style="border-bottom:none;">
+        <div class="speed-badge">
+          <div class="speed-time" style="color:var(--blue);">Weeks+</div>
+          <div class="speed-unit">SPEED 3B</div>
+        </div>
+        <div class="speed-body">
+          <div class="speed-title">Non-Supply-Chain Relationship Contagion — Deepest Gap</div>
+          <div class="speed-desc">Board interlocks, JVs, shared institutional investors, licensing agreements, regulatory co-exposure. Post-Earnings Announcement Drift (PEAD) — documented since Ball &amp; Brown 1968 — shows prices continue drifting in the direction of earnings surprises for months. PEAD is strongest for small firms, fewer analysts, and firms with high information opacity. For connected but non-obvious firms, the drift is magnified because no analyst covers the relationship.</div>
+          <div style="margin-top:10px;"><span class="chip b">Weeks to months</span><span class="chip b">Board / JV / license</span><span class="chip b">Oldest known anomaly (1968)</span><span class="chip r">Completely unaddressed</span></div>
+        </div>
+        <div class="speed-who">
+          <div class="who-label">Who captures it</div>
+          <div class="who-val" style="color:var(--blue);">Only those with<br>graph intelligence.<br>Currently: nobody.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: EVIDENCE -->
+  <div id="evidence" class="section-hdr reveal">
+    <div class="sec-eyebrow">Section 02 &nbsp;·&nbsp; Academic Evidence</div>
+    <div class="sec-title">The research is <em>unambiguous</em></div>
+    <div class="sec-sub">Decades of peer-reviewed finance research confirm the three-speed market structure. The gap is not speculative — it is one of the most documented phenomena in academic finance.</div>
+  </div>
+
+  <div class="reveal">
+    <div class="evidence-grid">
+      <div class="ev-card">
+        <div class="ev-source">Production & Operations Management · 2024 · Qiu, Xu, Yeung, Zeng</div>
+        <div class="ev-finding r">Up to 2 weeks</div>
+        <div class="ev-context">Stock price crash risk is transmitted from major customers to their suppliers with a delay of up to two weeks. Effect is more pronounced as customer importance increases. Supplier information opacity is the primary cause of the delay — the market does not know the strength of the relationship. Contagion also stronger for customer operational incidents versus financial incidents.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-source">ScienceDirect · January 2025 · Chinese A-Share Study (2016–2021)</div>
+        <div class="ev-finding a">Asymmetric</div>
+        <div class="ev-context">Negative CSR events create asymmetric supply chain contagion: customers are affected more negatively than suppliers. The closeness of supply chain relationships and economic policy uncertainty both amplify the contagion. This asymmetry itself represents an exploitable information advantage for anyone mapping relationship strength with dynamic weights.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-source">Ball & Brown 1968 / 55+ years of PEAD research</div>
+        <div class="ev-finding g">Months of drift</div>
+        <div class="ev-context">Post-Earnings Announcement Drift is the oldest and most persistent capital market anomaly. Prices continue drifting in the direction of earnings surprises for weeks to months. PEAD is stronger for small firms, less-covered stocks, firms announcing during busy earnings periods, and firms with high information opacity — including relationship opacity between companies.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-source">440,000+ Earnings Announcements · 6 Global Markets</div>
+        <div class="ev-finding b">3-day window</div>
+        <div class="ev-context">Peer firms in the same country and industry show significant cumulative abnormal return relationships over a three-day window. Effect is magnified in high-volatility markets and for large-cap announcers. This clearly defines Speed 2's operational window — everything beyond 3 days in cross-industry relationships is Speed 3 territory.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-source">UC San Diego Rady School · 89 Billion After-Hours Quotes · 2025</div>
+        <div class="ev-finding v">&lt;100ms</div>
+        <div class="ev-context">Markets price direct earnings news in under 100 milliseconds. Trading opportunities for anyone with even small delays of a few seconds have virtually vanished. This confirms Speed 1 is completely captured with zero alpha remaining — and also confirms that what MKG exploits is architecturally different: not faster delivery of the same news, but a network traversal no tool currently performs.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-source">DellaVigna & Pollett · Investor Inattention / Friday Earnings</div>
+        <div class="ev-finding r">60% delayed</div>
+        <div class="ev-context">On Fridays, 60% of the total stock price response to earnings news is delayed — versus 40% on other weekdays. Structural inattention affects even direct announcements. For complex, non-obvious second-order relationship effects, structural inattention is far greater and not fixable by more analysts. Limited attention is a permanent market structural feature, not a temporary gap.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-source">Shanghai Lockdown Study · 2022 Data · Asia-Pacific Journal Financial Studies 2025</div>
+        <div class="ev-finding a">Tier-1 suppliers</div>
+        <div class="ev-context">During the 2022 Shanghai lockdown: Tesla, VW, GM, SAIC (the focal firms) showed no statistically significant stock reaction — but their tier-1 global suppliers showed significant systematic abnormal returns. The market correctly identified direct focal-firm impacts as already priced, while second-order supply chain impacts were not. This is the exact dynamic MKG exploits.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-source">McKinsey Global Supply Chain Survey · 2024</div>
+        <div class="ev-finding g">30% boards</div>
+        <div class="ev-context">Only 30% of boards have deep understanding of supply chain risks. Companies reverted from regular risk reporting to ad hoc disruption-response reporting in 2024. If the companies themselves lack systematic supply chain intelligence, market participants have no independent mechanism to map relationship networks without dedicated graph infrastructure.</div>
+      </div>
+    </div>
+
+    <!-- CASE STUDY -->
+    <div class="case-study">
+      <div class="cs-label">Live Case Study &nbsp;·&nbsp; The TSMC → NVIDIA Preview Network &nbsp;·&nbsp; January 2026</div>
+      <div class="cs-title">How Wall Street accidentally discovered the relationship graph — and why they still cannot systematize it</div>
+      <div class="col-2">
+        <div>
+          <div class="body">The TSMC→NVIDIA relationship has become so well-understood that market analysts now explicitly call TSMC's quarterly results a <em>"preview network"</em> for Nvidia's earnings. Before Nvidia reports, analysts read TSMC results, ASML bookings, cloud hyperscaler capex plans, and AMD guidance as a coordinated signal cluster. This is ad hoc, undocumented, uncurated graph traversal.</div>
+          <div class="body">When TSMC reported Q4 2025 earnings in January 2026, net income rose ~35% and revenue jumped 20%+. <strong>NVIDIA, AMD, ASML, and the SOX semiconductor index immediately moved</strong>. This is Speed 2 — well-known relationship, priced within hours. But this case reveals the gap, not closes it.</div>
+          <div class="body">The TSMC→NVIDIA link is one of the most followed relationships on Earth. What about TSMC's 2,000+ other customers? The 500+ companies supplying TSMC's fabs? The companies competing for TSMC capacity with NVIDIA — whose allocations just changed? The software companies whose compute cost assumptions just shifted because GPU availability changed? These are invisible, untouched, mis-priced.</div>
+          <div class="pull-quote">
+            <div class="pq-text">"Financial updates from upstream and downstream partners form a clear 'preview network.' Stock moves often precede the announcing firm's own earnings report."</div>
+            <div class="pq-source">NAI 500 · January 2026 · Nvidia Earnings Preview Analysis</div>
+          </div>
+        </div>
+        <div>
+          <div class="box-label" style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:12px;">TSMC Q4 2025 Propagation — Speed Zones</div>
+
+          <div style="background:var(--red-dim);border:1px solid var(--red);padding:14px;margin-bottom:8px;">
+            <div class="fn-company">TSMC &nbsp;[TSM]</div>
+            <div class="fn-change neg">Revenue +37% YoY · EPS +57% · Stock +6–7%</div>
+            <div class="fn-lag">Event trigger — Speed 1 (&lt;100ms)</div>
+          </div>
+
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--amber);letter-spacing:1.5px;text-align:center;margin:8px 0;">▼ DIRECT CUSTOMERS — SPEED 2 (hours)</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+            <div class="fn-box direct"><div class="fn-company" style="font-size:11px;">NVIDIA</div><div class="fn-change pos" style="font-size:10px;">+5% pre-mkt</div></div>
+            <div class="fn-box direct"><div class="fn-company" style="font-size:11px;">AMD</div><div class="fn-change pos" style="font-size:10px;">+3% move</div></div>
+            <div class="fn-box direct"><div class="fn-company" style="font-size:11px;">ASML</div><div class="fn-change pos" style="font-size:10px;">+5% surge</div></div>
+          </div>
+
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--blue);letter-spacing:1.5px;text-align:center;margin:8px 0;">▼ 2ND HOP — NVIDIA CUSTOMERS — SPEED 3A (days)</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+            <div class="fn-box hop2"><div class="fn-company" style="font-size:11px;">MS Azure</div><div class="fn-change pos" style="font-size:10px;">? delayed</div></div>
+            <div class="fn-box hop2"><div class="fn-company" style="font-size:11px;">CoreWeave</div><div class="fn-change pos" style="font-size:10px;">? delayed</div></div>
+            <div class="fn-box hop2"><div class="fn-company" style="font-size:11px;">Lambda Labs</div><div class="fn-change pos" style="font-size:10px;">? weeks</div></div>
+          </div>
+
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:1.5px;text-align:center;margin:8px 0;">▼ 3RD+ HOP — INVISIBLE — SPEED 3B (weeks)</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px;">
+            <div class="fn-box unknown"><div class="fn-company" style="font-size:11px;">Cooling cos</div><div class="fn-change unk" style="font-size:10px;">? invisible</div></div>
+            <div class="fn-box unknown"><div class="fn-company" style="font-size:11px;">HBM memory</div><div class="fn-change unk" style="font-size:10px;">? invisible</div></div>
+            <div class="fn-box unknown"><div class="fn-company" style="font-size:11px;">AI software</div><div class="fn-change unk" style="font-size:10px;">? invisible</div></div>
+          </div>
+
+          <div class="box b">
+            <div class="box-label">The key insight</div>
+            <div class="box-text">Speed 2 relationships are tracked. The same propagation mechanism that makes TSMC a signal for NVIDIA makes NVIDIA a signal for every GPU-dependent company — but those are <strong>invisible, untracked, and mis-priced for days to weeks.</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: PROBLEM ANATOMY -->
+  <div id="anatomy" class="section-hdr reveal">
+    <div class="sec-eyebrow">Section 03 &nbsp;·&nbsp; Problem Anatomy</div>
+    <div class="sec-title">Five layers of the problem,<br><em>precisely defined</em></div>
+    <div class="sec-sub">The problem is not "markets are inefficient." Markets are extremely efficient at pricing what they can see. The problem is a structural information architecture failure — the relationship layer of the market is invisible.</div>
+  </div>
+
+  <div class="reveal">
+    <div class="problem-item">
+      <div class="pi-num">01</div>
+      <div class="pi-content">
+        <div class="pi-title">Relationships Are Stored as Static Binary Records, Not Living Signals</div>
+        <div class="pi-body">Capital IQ contains "TSMC is a supplier to NVIDIA." It does not contain "TSMC's supply of 5nm capacity to NVIDIA represents 11% of TSMC's total revenue, constitutes a risk dependency that <strong>intensified by ~40% in the past 18 months</strong> as NVIDIA's order book expanded, and is projected to reach 63% of TSMC's advanced packaging capacity in 2026." The relationship exists as a binary record. Actual weight, direction, intensity, trend — none of this is tracked.</div>
+        <div class="pi-body">This is not a data availability problem. The signals to compute these weights exist across earnings calls, news articles, and transaction volumes. <strong>No system continuously reads those signals and updates a weighted relationship graph.</strong> Every time the underlying relationship changes, the database entry stays the same.</div>
+        <div class="pi-evidence">→ Evidence: Nasini & Erdemlioglu model shows stock price dynamics require multi-channel network weights (supply chain, competition, partnerships) with time-varying parameters. No commercial system implements this.</div>
+      </div>
+    </div>
+
+    <div class="problem-item">
+      <div class="pi-num">02</div>
+      <div class="pi-content">
+        <div class="pi-title">Human Analyst Capacity Is the Hard Ceiling — and It Does Not Scale</div>
+        <div class="pi-body">A skilled semiconductor analyst can track ~30–50 companies and ~200–300 named relationships between them. That is the human ceiling. The global listed equities market contains <strong>58,000+ companies with millions of relationship edges</strong>. Even if all buy-side analysts worked simultaneously on relationship signals, total human capacity would cover perhaps 5% of the relevant relationship graph.</div>
+        <div class="pi-body">This is why TSMC→NVIDIA is well-known — thousands of analysts cover it. But NVIDIA's 800+ enterprise customers, 200+ software partners, and 400+ data center partners are <strong>almost entirely uncovered from a relationship-signal perspective.</strong> When TSMC's earnings imply something about each of those entities, the information travels through no systematic mechanism to reach those stock prices.</div>
+        <div class="pi-evidence">→ Evidence: 87% of buy-side firms use GenAI primarily for document summarization and research — NOT for relationship mapping or network traversal. The bottleneck is not intelligence but architecture. (AIMA, 2024)</div>
+      </div>
+    </div>
+
+    <div class="problem-item">
+      <div class="pi-num">03</div>
+      <div class="pi-content">
+        <div class="pi-title">Signals Are Scattered Across Incompatible Unstructured Sources</div>
+        <div class="pi-body">Signals for computing dynamic relationship weights exist across: SEC filings (quarterly, structured), earnings call transcripts (semi-structured NL), news articles (continuous, unstructured), press releases (event-driven), analyst reports (sparse), regional press in 6+ languages (mostly unindexed), and social media (noisy). <strong>No single system collects all of these, extracts relationship signals, and maps them to entity-pair edges simultaneously.</strong></div>
+        <div class="pi-body">AlphaSense has 500M+ documents but is fundamentally a search interface — it finds documents about entities, not relationship weight changes between entity pairs. Bloomberg has real-time news but zero graph layer. RavenPack produces entity-level sentiment scores attached to individual entities — not to relationship edges between pairs. The graph layer is entirely absent in every existing platform.</div>
+        <div class="pi-evidence">→ Evidence: RavenPack covers 40,000+ sources in 13 languages with 80+ sentiment fields per entity — but those fields are on individual entities, not on the edges between them. The graph architecture does not exist.</div>
+      </div>
+    </div>
+
+    <div class="problem-item">
+      <div class="pi-num">04</div>
+      <div class="pi-content">
+        <div class="pi-title">No Temporal Memory — Every Relationship Is Treated as Eternal Until Changed</div>
+        <div class="pi-body">When NVIDIA announced it would receive ~63% of TSMC's increased advanced packaging capacity in 2025, <strong>this massively changed the risk profile of the TSMC→NVIDIA relationship</strong>. No system: (a) detected that signal, (b) updated the edge weight, (c) stored the old weight with a timestamp, or (d) propagated the implication to NVIDIA's downstream customers. The change is invisible in every commercial data platform.</div>
+        <div class="pi-body">Without temporal memory, backtesting is impossible at the relationship level. "What would the model have known in November 2024 about TSMC's capacity allocation?" is unanswerable by any existing commercial system. This means the predictive validity of relationship signals cannot be proven — which is why the alpha opportunity has gone unexploited at commercial scale despite being documented for 55+ years.</div>
+        <div class="pi-evidence">→ Evidence: Post-Earnings Announcement Drift persists partly because investors fail to incorporate implications of current earnings for future earnings (Bernard & Thomas 1990). Without temporal relationship state, that forward inference across the network is computationally impossible.</div>
+      </div>
+    </div>
+
+    <div class="problem-item" style="border-bottom:none;">
+      <div class="pi-num">05</div>
+      <div class="pi-content">
+        <div class="pi-title">Explainability Is Zero — Signals Without Causal Chains Are Institutionally Unusable</div>
+        <div class="pi-body">Even if a PM received a signal: "Company X will be negatively impacted by TSMC's earnings in 5 days, confidence 78%," they <strong>cannot act on it.</strong> Fiduciary decisions require documented rationale. MiFID II requires explainability for AI-driven investment decisions. Risk committees require audit trails. "The model said so" fails every institutional compliance test.</div>
+        <div class="pi-body">This is the reason quant funds using black-box signals face increasing regulatory pressure. The full causal chain is required: relationship edge E1 (supply_chain, w=0.91) → news event D at T=09:31 UTC → weight delta +0.23 on edge E2 → entity score of −73. Every element clickable, timestamped, model-versioned. Without this, <strong>no institutional investor can legally or operationally use the signal.</strong></div>
+        <div class="pi-evidence">→ Evidence: 50% of North American hedge fund managers cite regulatory compliance as a top concern for AI tool adoption (Hedgeweek 2024). SEC 2023 rules tightened AI signal disclosure requirements. MiFID II requires documented rationale for AI-assisted investment decisions at institutional scale.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: THE NICHE -->
+  <div id="niche" class="section-hdr reveal">
+    <div class="sec-eyebrow">Section 04 &nbsp;·&nbsp; The Niche</div>
+    <div class="sec-title">Precisely who is<br><em>hurt by this problem</em></div>
+  </div>
+
+  <div class="reveal">
+    <div class="col-2" style="margin-bottom:24px;">
+      <div>
+        <div class="box r">
+          <div class="box-label">Primary — Long/Short Equity PM</div>
+          <div class="box-text">A PM with a concentrated semiconductor position holds NVIDIA long. TSMC reports positively. The PM correctly positions for NVIDIA's move. But <strong>three companies in their short book are undiscovered second-order beneficiaries of the same TSMC result</strong> — a cooling equipment supplier, a memory vendor, a data center software company. Those shorts move against the position 10 days later unexpectedly. The loss is not from bad analysis of NVIDIA — it is from an invisible relationship network.</div>
+        </div>
+        <div class="box a">
+          <div class="box-label">Secondary — Multi-PM Platform Risk Desk</div>
+          <div class="box-text">A pod shop (Citadel, Millennium, Balyasny) runs 50 pods with overlapping supply chain exposure. When TSMC announces disruption, <strong>12 pods simultaneously face concentrated risk through relationships they don't know they share.</strong> This is the "re-correlation risk" that now drives $350B in QIS notional — but without a graph, no one can identify shared relationship exposure until correlated losses appear. The pod shop model with $342B AUM and $2T gross exposures is structurally exposed.</div>
+        </div>
+      </div>
+      <div>
+        <div class="box g">
+          <div class="box-label">Tertiary — Thematic / Macro PM</div>
+          <div class="box-text">A manager building an AI infrastructure thematic position needs every company benefiting from GPU buildout. Bloomberg finds the obvious ones. AlphaSense surfaces analyst notes on tier-1 beneficiaries. But <strong>third-ring companies — specialized software vendors, electrical grid operators near data centers, industrial gas suppliers, fiber providers for AI campuses</strong> — require a relationship graph traversal no tool provides. The PM's thematic position is always incomplete and always late to less-obvious beneficiaries.</div>
+        </div>
+        <div class="box b">
+          <div class="box-label">Deep Niche — Quant Signal Developer</div>
+          <div class="box-text">A quant team building systematic strategies needs to model which events at which firms propagate to which others with what magnitude and timing. Without a dynamic relationship graph, they estimate this from historical correlations — backward-looking, capturing spurious correlations, failing to reflect current relationship states. The FinDKG architecture proves dynamic financial knowledge graphs with neural link prediction <strong>significantly outperform static historical correlations for thematic investing.</strong> The academic proof exists. The commercial tool does not.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NICHE DIAGRAM -->
+    <div class="niche-diagram">
+      <div class="nd-title">Market Structure — Where MKG Lives</div>
+      <div class="nd-grid">
+        <div class="nd-cell current">
+          <div class="nd-speed">Speed 1 — ms</div>
+          <div class="nd-who">HFT Zone</div>
+          <div class="nd-desc">Direct entity pricing. Post-announcement window: 2 seconds. Closed to manual participants.</div>
+          <div class="nd-status" style="color:var(--dim);">● Saturated</div>
+        </div>
+        <div class="nd-cell current">
+          <div class="nd-speed">Speed 2 — Hours</div>
+          <div class="nd-who">Bloomberg Zone</div>
+          <div class="nd-desc">Intra-industry spillovers. Peer stocks. Sector rotation. Analyst coverage.</div>
+          <div class="nd-status" style="color:var(--amber);">● Well-covered</div>
+        </div>
+        <div class="nd-cell gap">
+          <div class="nd-speed">Speed 3 — Days / Weeks</div>
+          <div class="nd-who" style="color:var(--white);">MKG Zone</div>
+          <div class="nd-desc" style="color:var(--text);">Cross-industry supply chain + relationship contagion. 1–2 week delay confirmed by peer-reviewed research.</div>
+          <div class="nd-status" style="color:var(--red);">⚡ Commercially Unaddressed</div>
+        </div>
+        <div class="nd-cell current">
+          <div class="nd-speed">Tool</div>
+          <div class="nd-who">Bloomberg / HFT</div>
+          <div class="nd-desc">$32K/seat/yr. Lock-in. Network effects. Irreplaceable for Speeds 1–2.</div>
+          <div class="nd-status" style="color:var(--dim);">300K+ seats</div>
+        </div>
+        <div class="nd-cell current">
+          <div class="nd-speed">Tool</div>
+          <div class="nd-who">AlphaSense / RavenPack</div>
+          <div class="nd-desc">Document search. News analytics. Sentiment. No relationship graph.</div>
+          <div class="nd-status" style="color:var(--amber);">$500M ARR / 70% top quant HFs</div>
+        </div>
+        <div class="nd-cell mkgsol">
+          <div class="nd-speed">Tool</div>
+          <div class="nd-who" style="color:var(--white);">Market Knowledge Graph</div>
+          <div class="nd-desc" style="color:var(--text);">Dynamic weighted graph + neural WAN + temporal rewind + on-premise + full explainability.</div>
+          <div class="nd-status" style="color:var(--green);">⚡ Built for this zone exclusively</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: ALPHA MECHANISM -->
+  <div id="alpha" class="section-hdr reveal">
+    <div class="sec-eyebrow">Section 05 &nbsp;·&nbsp; The Alpha Mechanism</div>
+    <div class="sec-title">Why this generates<br><em>exploitable, durable alpha</em></div>
+  </div>
+
+  <div class="reveal">
+    <div class="col-2">
+      <div>
+        <div class="body">The three-speed market structure creates an alpha opportunity that is <strong>predictable</strong> (academic research has confirmed the delay patterns for 55+ years), <strong>exploitable</strong> (the mechanism — relationship graph traversal with weighted edges — is implementable with current technology), and <strong>durable</strong> (the delay exists for structural cognitive reasons, not temporary information gaps).</div>
+        <div class="body">The structural reason the delay persists: <em>human cognitive limits cannot be removed by faster news delivery.</em> Getting TSMC's earnings faster does not help a PM know which of their 2,000 tracked companies has an undiscovered second-order dependency on TSMC capacity. Even with AlphaSense surfacing every relevant document, the PM must still manually map those documents to relationship weights, traverse the network, and score the impact. That takes hours to days. The market moves while they work.</div>
+        <div class="pull-quote">
+          <div class="pq-text">"The delay does not exist because information is unavailable. It exists because no system translates that information into a relationship-weighted network traversal and scores the propagation automatically."</div>
+          <div class="pq-source">MKG Research · Problem Definition · February 2026</div>
+        </div>
+        <div class="body">MKG's alpha mechanism works in three steps: <strong>(1)</strong> A news event triggers the Weight Adjustment Network, which reads signals and updates edge weights across the graph. <strong>(2)</strong> The event triggers a graph traversal scoring every reachable entity — before the market has priced second-order effects. <strong>(3)</strong> The ranked impact list, with direction, confidence, and decay curve for four time horizons, reaches the PM within 60 seconds — days before traditional analysis surfaces the same connection.</div>
+      </div>
+      <div>
+        <div class="bar-section">
+          <div class="bar-title">Delay Duration by Relationship Type (research-backed)</div>
+          <div class="bar-row"><div class="bar-lbl">Direct announcement</div><div class="bar-track"><div class="bar-fill" style="width:1%;background:var(--violet);"></div></div><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-left:6px;">&lt;100ms</span></div>
+          <div class="bar-row"><div class="bar-lbl">Same-industry peers</div><div class="bar-track"><div class="bar-fill" style="width:12%;background:var(--amber);"><span class="bar-val">Hours–3 days</span></div></div></div>
+          <div class="bar-row"><div class="bar-lbl">Direct customers/suppliers</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--green);"><span class="bar-val">Up to 2 weeks (POM 2024)</span></div></div></div>
+          <div class="bar-row"><div class="bar-lbl">2nd-hop supply chain</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--green);"><span class="bar-val">Weeks (unquantified)</span></div></div></div>
+          <div class="bar-row"><div class="bar-lbl">Board / JV / license links</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--blue);"><span class="bar-val">Weeks–months (PEAD)</span></div></div></div>
+          <div class="bar-row"><div class="bar-lbl">Regulatory co-exposure</div><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--blue);"><span class="bar-val">Months (essentially never priced)</span></div></div></div>
+        </div>
+
+        <div class="bar-section" style="margin-top:24px;">
+          <div class="bar-title">Problem Severity by Participant Type</div>
+          <div class="bar-row"><div class="bar-lbl">L/S Equity PM</div><div class="bar-track"><div class="bar-fill" style="width:92%;background:var(--red);"><span class="bar-val">Severe — relationship blind spots daily / 92</span></div></div></div>
+          <div class="bar-row"><div class="bar-lbl">Risk Management</div><div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--red);"><span class="bar-val">Severe — shared exposure invisible / 85</span></div></div></div>
+          <div class="bar-row"><div class="bar-lbl">Multi-PM Platform</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--red);"><span class="bar-val">Severe — cross-pod exposure untracked / 80</span></div></div></div>
+          <div class="bar-row"><div class="bar-lbl">Thematic / Macro PM</div><div class="bar-track"><div class="bar-fill" style="width:76%;background:var(--amber);"><span class="bar-val">High — positions always incomplete / 76</span></div></div></div>
+          <div class="bar-row"><div class="bar-lbl">Quant Signal Dev</div><div class="bar-track"><div class="bar-fill" style="width:68%;background:var(--amber);"><span class="bar-val">High — static correlations miss nets / 68</span></div></div></div>
+        </div>
+
+        <div class="box g">
+          <div class="box-label">The Alpha Window</div>
+          <div class="box-text">The window between shock occurrence and full Speed 3 pricing ranges from 1–2 weeks for direct supply chain to months for softer relationship types. MKG's 60-second traversal places signal delivery at T+60s, versus the market's T+10 days for the same network-derived signal. <strong>That is the exploitable edge — not speed of news, but speed of network traversal.</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY STATEMENT -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent);padding:40px;margin:48px 0 0;">
+      <div class="sec-eyebrow" style="margin-bottom:20px;">The Problem — Summary Statement</div>
+      <div style="font-family:'Libre Baskerville',serif;font-size:21px;color:var(--bright);line-height:1.7;font-weight:400;">
+        Markets price direct earnings news in milliseconds. They price intra-industry spillovers in hours. But the shock propagation through supply chains, board networks, joint ventures, and regulatory co-exposures — confirmed by decades of peer-reviewed research to take days to weeks — is <em>completely invisible</em> to every commercial financial data platform.
+        <br><br>
+        The reason is structural: relationship networks are stored as static binary records, not as weighted, time-varying graphs. No commercial system continuously reads news signals, extracts relationship implications, updates edge weights, traverses the graph, and scores downstream impact — automatically, in real time, with full explainability.
+        <br><br>
+        The alpha opportunity is not a theory. It is a documented market anomaly confirmed since 1968. The technology to exploit it exists. The product does not. That is what MKG is.
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <div class="df-l">MKG SYSTEM &nbsp;·&nbsp; PROBLEM RESEARCH v1.0 &nbsp;·&nbsp; FEBRUARY 2026 &nbsp;·&nbsp; CONFIDENTIAL</div>
+    <div class="df-l">Next: Use Case Diagram →</div>
+  </div>
+
+</div>
+
+<script>
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');obs.unobserve(e.target);}});
+},{threshold:0.07});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

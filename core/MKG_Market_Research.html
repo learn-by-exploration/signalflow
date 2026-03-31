@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — Market Research & Competitive Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,600&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg:       #f4f1eb;
+  --paper:    #faf8f4;
+  --ink:      #1a1612;
+  --ink2:     #3d3630;
+  --muted:    #8a7f74;
+  --rule:     #d8d0c4;
+  --rule2:    #efe9e0;
+  --red:      #b5341c;
+  --red-l:    #f9ede9;
+  --green:    #1a5c2e;
+  --green-l:  #e8f4ed;
+  --gold:     #9a7520;
+  --gold-l:   #f7f0e0;
+  --blue:     #1a3a6b;
+  --blue-l:   #e8edf6;
+  --teal:     #0d5c52;
+  --teal-l:   #e5f3f1;
+  --accent:   #b5341c;
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Page grid ── */
+.page-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 40px 120px;
+}
+
+/* ── Masthead ── */
+.masthead {
+  border-bottom: 3px double var(--ink);
+  padding: 32px 0 20px;
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.masthead-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pub-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 11px;
+  letter-spacing: 4px;
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.pub-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -1px;
+}
+
+.pub-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.pub-date {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* ── Section band ── */
+.section-band {
+  background: var(--ink);
+  color: #f4f1eb;
+  padding: 8px 16px;
+  margin: 48px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.band-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.band-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ── Headline styles ── */
+.story-wrap {
+  padding: 32px 0 0;
+}
+
+.headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(32px, 4.5vw, 56px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.headline em { font-style: italic; color: var(--accent); }
+
+.deck {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 19px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--ink2);
+  line-height: 1.5;
+  margin-bottom: 28px;
+  max-width: 700px;
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+}
+
+.byline {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ── Column layouts ── */
+.col-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.col-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+
+.col-4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 20px;
+}
+
+.col-3-1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 40px;
+}
+
+/* ── Rule ── */
+.rule { border:none; border-top: 1px solid var(--rule); margin: 28px 0; }
+.rule-double { border:none; border-top: 3px double var(--rule); margin: 40px 0; }
+.rule-bold { border:none; border-top: 2px solid var(--ink); margin: 28px 0; }
+
+/* ── Body copy ── */
+.body-copy {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.75;
+  color: var(--ink2);
+  margin-bottom: 16px;
+}
+
+.body-copy strong { font-weight: 700; color: var(--ink); }
+
+.caption {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* ── Pull quote ── */
+.pull-quote {
+  border-top: 3px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding: 20px 0;
+  margin: 28px 0;
+}
+
+.pull-quote p {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+/* ── Stat box ── */
+.stat-box {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--ink);
+  padding: 20px 18px;
+  text-align: center;
+}
+
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.stat-num.red { color: var(--red); }
+.stat-num.green { color: var(--green); }
+.stat-num.gold { color: var(--gold); }
+.stat-num.blue { color: var(--blue); }
+
+.stat-unit {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.stat-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink2);
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+/* ── Competitor card ── */
+.comp-card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.comp-card:hover { box-shadow: 4px 4px 0 var(--ink); }
+
+.comp-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.comp-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.comp-tier {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  padding: 3px 7px;
+  border-radius: 2px;
+  font-weight: 500;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.tier-1 { background: var(--ink); color: #f4f1eb; }
+.tier-2 { background: var(--rule); color: var(--ink2); }
+.tier-3 { background: var(--blue-l); color: var(--blue); }
+.tier-ours { background: var(--green); color: white; }
+
+.comp-body { padding: 14px 16px; }
+
+.comp-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.comp-price-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.comp-desc {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+
+.tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+.tag-has  { background: var(--green-l); color: var(--green); }
+.tag-miss { background: var(--red-l); color: var(--red); }
+.tag-part { background: var(--gold-l); color: var(--gold); }
+
+/* ── Bar chart ── */
+.bar-chart { margin: 16px 0; }
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink2);
+  width: 130px;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+
+.bar-track {
+  flex: 1;
+  height: 16px;
+  background: var(--rule2);
+  border-radius: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 0;
+  transition: width 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
+}
+
+.bar-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+}
+
+/* ── Market segment boxes ── */
+.seg-box {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--ink);
+  padding: 16px 18px;
+  margin-bottom: 8px;
+}
+
+.seg-box.red    { border-left-color: var(--red); }
+.seg-box.green  { border-left-color: var(--green); }
+.seg-box.gold   { border-left-color: var(--gold); }
+.seg-box.blue   { border-left-color: var(--blue); }
+.seg-box.teal   { border-left-color: var(--teal); }
+
+.seg-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.seg-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.seg-cagr {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--green);
+  font-weight: 500;
+}
+
+.seg-desc {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* ── Matrix table ── */
+.matrix-wrap {
+  overflow-x: auto;
+  margin: 20px 0;
+}
+
+table.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+}
+
+.matrix thead th {
+  background: var(--ink);
+  color: #f4f1eb;
+  padding: 8px 10px;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  border: 1px solid var(--ink);
+}
+
+.matrix thead th:first-child {
+  text-align: left;
+  background: var(--ink2);
+  min-width: 180px;
+}
+
+.matrix thead th.ours-col {
+  background: var(--green);
+  font-weight: 700;
+}
+
+.matrix tbody tr:nth-child(even) td { background: var(--rule2); }
+.matrix tbody tr:nth-child(odd) td { background: var(--paper); }
+
+.matrix tbody td {
+  padding: 7px 10px;
+  border: 1px solid var(--rule);
+  text-align: center;
+  color: var(--ink2);
+  vertical-align: middle;
+}
+
+.matrix tbody td:first-child {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink);
+  background: #f0ece4 !important;
+  letter-spacing: 0.3px;
+}
+
+.matrix tbody td.ours-col { background: var(--green-l) !important; }
+
+.check { color: var(--green); font-size: 14px; font-weight: 700; }
+.cross { color: var(--red); font-size: 14px; font-weight: 700; }
+.part  { color: var(--gold); font-size: 13px; font-weight: 700; }
+
+/* ── Gap analysis section ── */
+.gap-item {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 20px;
+  align-items: start;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.gap-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--rule);
+  line-height: 1;
+  text-align: right;
+  transition: color 0.2s;
+}
+
+.gap-item:hover .gap-num { color: var(--accent); }
+
+.gap-content {}
+
+.gap-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.gap-body {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  line-height: 1.65;
+  margin-bottom: 8px;
+}
+
+.gap-current {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.gap-solution {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--green);
+  margin-bottom: 4px;
+}
+
+/* ── Power analysis ── */
+.power-box {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  padding: 20px;
+}
+
+.power-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.power-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.5;
+}
+
+.power-icon { flex-shrink:0; font-size: 14px; margin-top: 2px; }
+
+/* ── Info sidebar box ── */
+.sidebar-box {
+  background: var(--gold-l);
+  border: 1px solid var(--gold);
+  border-left: 4px solid var(--gold);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.sidebar-box.blue {
+  background: var(--blue-l);
+  border-color: var(--blue);
+  border-left-color: var(--blue);
+}
+
+.sidebar-box.green {
+  background: var(--green-l);
+  border-color: var(--green);
+  border-left-color: var(--green);
+}
+
+.sidebar-box.red {
+  background: var(--red-l);
+  border-color: var(--red);
+  border-left-color: var(--red);
+}
+
+.sidebar-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.sidebar-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.6;
+}
+
+/* ── Timeline ── */
+.timeline {
+  position: relative;
+  padding-left: 20px;
+  border-left: 2px solid var(--rule);
+  margin: 20px 0;
+}
+
+.t-item {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.t-item::before {
+  content: '';
+  position: absolute;
+  left: -25px;
+  top: 6px;
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.t-date {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.t-event {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+/* ── Footer ── */
+.doc-footer {
+  border-top: 3px double var(--ink);
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 80px;
+}
+
+.footer-l {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+
+/* ── Scroll reveal ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Price comparison visual ── */
+.price-ladder {
+  margin: 20px 0;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.price-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  width: 120px;
+  flex-shrink: 0;
+  color: var(--ink2);
+}
+
+.price-bar-wrap {
+  flex: 1;
+  height: 20px;
+  background: var(--rule2);
+  position: relative;
+  overflow: hidden;
+}
+
+.price-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  transition: width 1.2s cubic-bezier(0.23,1,0.32,1);
+}
+
+.price-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: white;
+  font-weight: 500;
+}
+
+/* ── Bubble grid for market size ── */
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.market-bubble {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  padding: 20px 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+.market-bubble:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.market-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.market-bubble.m1::before { background: var(--ink); }
+.market-bubble.m2::before { background: var(--red); }
+.market-bubble.m3::before { background: var(--gold); }
+.market-bubble.m4::before { background: var(--blue); }
+.market-bubble.m5::before { background: var(--teal); }
+.market-bubble.m6::before { background: var(--green); }
+
+.mb-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.mb-size {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.mb-proj {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--green);
+  font-weight: 500;
+}
+
+.mb-cagr {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <div class="masthead-left">
+      <div class="pub-title">Market Knowledge Graph System</div>
+      <div class="pub-name">Market Intelligence Report</div>
+      <div class="pub-meta">ISSUE 001 &nbsp;·&nbsp; PRE-IMPLEMENTATION EDITION &nbsp;·&nbsp; CONFIDENTIAL</div>
+    </div>
+    <div class="pub-date">February 2026<br>Research Edition</div>
+  </div>
+
+  <!-- HERO STORY -->
+  <div class="story-wrap reveal">
+    <div class="headline">The <em>$35 billion market</em><br>with a structural blind spot</div>
+    <div class="deck">Institutional investors spend extraordinary sums on financial data yet cannot answer the most fundamental question in markets: when a shock hits Company X, which other companies does it travel to, by how much, and why?</div>
+    <div class="byline">Research &nbsp;·&nbsp; Competitive Intelligence &nbsp;·&nbsp; Gap Analysis &nbsp;·&nbsp; Strategic Positioning</div>
+
+    <div class="col-4">
+      <div class="stat-box">
+        <div class="stat-num red">$35B</div>
+        <div class="stat-unit">Annual Spend</div>
+        <div class="stat-label">Global institutional financial data spend — without relationship intelligence</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num gold">63%</div>
+        <div class="stat-unit">CAGR 2025–30</div>
+        <div class="stat-label">Alternative data market growth rate — fastest of any segment</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num blue">$32K</div>
+        <div class="stat-unit">Per Seat / Year</div>
+        <div class="stat-label">Bloomberg Terminal 2025 price — still no graph intelligence included</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num green">0</div>
+        <div class="stat-unit">Competitors</div>
+        <div class="stat-label">Commercial systems combining dynamic graph weights + neural WAN + on-prem</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: MARKET LANDSCAPE ── -->
+  <div class="section-band reveal">
+    <span class="band-num">01</span>
+    <span class="band-title">Market Landscape — Size & Segments</span>
+  </div>
+
+  <div class="story-wrap reveal">
+    <div class="col-3-1">
+      <div>
+        <p class="body-copy">The financial data and analytics market spans multiple overlapping segments. MKG operates at the intersection of three of them: the traditional financial data infrastructure (Bloomberg, FactSet), the AI market intelligence layer (AlphaSense, RavenPack), and the fast-growing knowledge graph technology vertical. Each segment is large, each is growing, and <strong>none has solved the problem MKG addresses</strong>.</p>
+
+        <p class="body-copy">The alternative data market — the segment most relevant to MKG's signal output — <strong>is the fastest-growing segment in financial services</strong>. From $11.65B in 2024, it is projected to reach $135B by 2030 at a 63% CAGR, driven almost entirely by hedge funds seeking alpha signals that traditional data cannot provide. Hedge fund operators account for 68–71% of all alternative data spending.</p>
+
+        <div class="pull-quote">
+          <p>"More than 60% of buy-side respondents currently use alternative data; 54% use it extensively. The average large fund subscribes to 43 separate datasets, spending $1.6M per year."</p>
+        </div>
+
+        <p class="body-copy">The knowledge graph market itself — MKG's core architectural technology — is growing at 37% CAGR and financial services (BFSI) is already its largest vertical. <strong>By 2025, 60% of financial institutions are expected to adopt graph analytics as their core fraud detection technology</strong> — a proof point that the graph paradigm has institutional legitimacy, even if no one has yet applied it to alpha generation with neural-network-adjusted weights.</p>
+      </div>
+
+      <div>
+        <div class="seg-box">
+          <div class="seg-name">Traditional Financial Data</div>
+          <div class="seg-val">$35B</div>
+          <div class="seg-cagr">↑ ~8% CAGR</div>
+          <div class="seg-desc">Bloomberg, Refinitiv, FactSet. Stable incumbents, slow growth, zero relationship intelligence.</div>
+        </div>
+        <div class="seg-box red">
+          <div class="seg-name">Alternative Data</div>
+          <div class="seg-val">$11.65B</div>
+          <div class="seg-cagr">↑ 63% CAGR → $135B by 2030</div>
+          <div class="seg-desc">Fastest-growing segment. Hedge funds dominate 68% of spend. MKG's output competes here.</div>
+        </div>
+        <div class="seg-box gold">
+          <div class="seg-name">Market Intelligence (AI)</div>
+          <div class="seg-val">~$8B</div>
+          <div class="seg-cagr">↑ ~16% CAGR</div>
+          <div class="seg-desc">AlphaSense ($500M ARR), RavenPack. Document search, not graph traversal.</div>
+        </div>
+        <div class="seg-box blue">
+          <div class="seg-name">Knowledge Graph Tech</div>
+          <div class="seg-val">$1.1B</div>
+          <div class="seg-cagr">↑ 37% CAGR → $6.9B by 2030</div>
+          <div class="seg-desc">MKG's core architectural technology. BFSI is largest vertical. Proven at scale for fraud/compliance.</div>
+        </div>
+        <div class="seg-box teal">
+          <div class="seg-name">Supply Chain Risk Mgmt</div>
+          <div class="seg-val">$4.52B</div>
+          <div class="seg-cagr">↑ 15.3% CAGR → $9.2B by 2030</div>
+          <div class="seg-desc">Resilinc, Interos ($1B valuation), Everstream. Supply chain graphs — but for operations, not investing.</div>
+        </div>
+        <div class="seg-box green">
+          <div class="seg-name">MKG's Addressable Market</div>
+          <div class="seg-val">$15B+</div>
+          <div class="seg-cagr">↑ Intersection of all five above</div>
+          <div class="seg-desc">Relationship intelligence for alpha generation. Currently unaddressed by any commercial system.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 2: PRICING LANDSCAPE ── -->
+  <div class="section-band reveal">
+    <span class="band-num">02</span>
+    <span class="band-title">Pricing Landscape — What Institutions Already Pay</span>
+  </div>
+
+  <div class="story-wrap reveal">
+    <div class="col-3-1">
+      <div>
+        <p class="body-copy">Understanding what institutional desks already pay is critical context. A 10-person buy-side team running Bloomberg + FactSet + AlphaSense is already spending <strong>$500K–$900K per year</strong> on data infrastructure — and still lacks any relationship intelligence capability. MKG does not add another line to the budget; it fills the gap that the existing spend leaves open.</p>
+
+        <div class="price-ladder">
+          <div class="price-row">
+            <div class="price-name">Bloomberg Terminal</div>
+            <div class="price-bar-wrap">
+              <div class="price-bar" style="width:100%; background:var(--ink);">
+                <span class="price-val">$31,980/seat/yr (2025)</span>
+              </div>
+            </div>
+          </div>
+          <div class="price-row">
+            <div class="price-name">LSEG Workspace</div>
+            <div class="price-bar-wrap">
+              <div class="price-bar" style="width:68%; background:var(--ink2);">
+                <span class="price-val">$15K–$22K/seat/yr</span>
+              </div>
+            </div>
+          </div>
+          <div class="price-row">
+            <div class="price-name">S&P Capital IQ</div>
+            <div class="price-bar-wrap">
+              <div class="price-bar" style="width:62%; background:#5a5248;">
+                <span class="price-val">$15K–$25K/seat/yr</span>
+              </div>
+            </div>
+          </div>
+          <div class="price-row">
+            <div class="price-name">FactSet</div>
+            <div class="price-bar-wrap">
+              <div class="price-bar" style="width:38%; background:var(--blue);">
+                <span class="price-val">~$12K/seat/yr</span>
+              </div>
+            </div>
+          </div>
+          <div class="price-row">
+            <div class="price-name">AlphaSense</div>
+            <div class="price-bar-wrap">
+              <div class="price-bar" style="width:48%; background:var(--gold);">
+                <span class="price-val">$10K–$20K/seat/yr</span>
+              </div>
+            </div>
+          </div>
+          <div class="price-row">
+            <div class="price-name">RavenPack</div>
+            <div class="price-bar-wrap">
+              <div class="price-bar" style="width:30%; background:var(--teal);">
+                <span class="price-val">Custom / ~$50K+/yr</span>
+              </div>
+            </div>
+          </div>
+          <div class="price-row">
+            <div class="price-name">Palantir Foundry</div>
+            <div class="price-bar-wrap">
+              <div class="price-bar" style="width:85%; background:var(--red);">
+                <span class="price-val">$5M–$50M+/yr (flat)</span>
+              </div>
+            </div>
+          </div>
+          <div class="price-row">
+            <div class="price-name">MKG (Internal Build)</div>
+            <div class="price-bar-wrap">
+              <div class="price-bar" style="width:5%; background:var(--green);">
+                <span class="price-val"></span>
+              </div>
+              <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--green);margin-left:6px;">Engineering cost only. No per-seat fees.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-box">
+          <div class="sidebar-title">The Desk Budget Calculation</div>
+          <div class="sidebar-text">A 10-seat hedge fund team: Bloomberg (×10) = $280K + FactSet (×10) = $120K + AlphaSense (×5) = $75K + RavenPack = $50K+ = <strong>$525K–$900K/yr</strong> before any alternative data subscriptions. None of this buys relationship graph intelligence. MKG adds that layer at engineering cost, not per-seat cost.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="sidebar-box blue">
+          <div class="sidebar-title">Bloomberg Price History</div>
+          <div class="sidebar-text">2022: $24,000/yr → 2023: +9.6% → 2025: $31,980/yr (single terminal). Multi-terminal: $28,320/yr. Price increases tied to global inflation. 2-year mandatory lease. ~320,000 terminals globally. Each increase = captive revenue.</div>
+        </div>
+
+        <div class="sidebar-box green">
+          <div class="sidebar-title">AlphaSense Revenue Trajectory</div>
+          <div class="sidebar-text">2019: $8.6M ARR → 2022: $111.6M → 2024: $200M → 2025: $500M ARR. Valuation: $4B (Jun 2024). Total funding: $1.4B. Acquired Tegus for $930M (2024). Serves 88% of S&P 100, 75% of top hedge funds. IPO track.</div>
+        </div>
+
+        <div class="sidebar-box red">
+          <div class="sidebar-title">Key Pricing Insight</div>
+          <div class="sidebar-text">At 2025 prices, <strong>Bloomberg alone costs more than hiring a mid-level analyst</strong>. The terminal is equivalent to 37% of an average analyst's salary. Yet funds pay it — because the data is irreplaceable. MKG targets the irreplaceable layer Bloomberg doesn't cover.</div>
+        </div>
+
+        <div class="sidebar-box">
+          <div class="sidebar-title">Alternative Data Spend</div>
+          <div class="sidebar-text">Large funds average $1.6M/yr on alternative data, subscribing to 43 datasets. 95% plan to maintain or increase budgets. 62% cite price as primary barrier — yet churn is minimal. Budget is available; the right product is not.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 3: COMPETITOR PROFILES ── -->
+  <div class="section-band reveal">
+    <span class="band-num">03</span>
+    <span class="band-title">Competitor Profiles — Tier by Tier</span>
+  </div>
+
+  <div class="story-wrap reveal">
+
+    <!-- TIER 1 -->
+    <div class="byline" style="margin-bottom:16px;">Tier 1 — Incumbent Data Platforms (Existing Desk Infrastructure)</div>
+
+    <div class="col-3">
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">Bloomberg</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">Terminal</div>
+          </div>
+          <div class="comp-tier tier-1">TIER 1</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">$31,980</div>
+          <div class="comp-price-label">Per seat / year (2025)</div>
+          <div class="comp-desc">Global standard for real-time data, news, execution, and messaging. Irreplaceable network effects. ~320,000 terminals deployed globally. Zero relationship graph capability.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">Real-time data</span>
+            <span class="tag tag-has">News</span>
+            <span class="tag tag-has">Execution</span>
+            <span class="tag tag-miss">No graph</span>
+            <span class="tag tag-miss">No propagation</span>
+            <span class="tag tag-miss">Cloud only</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">LSEG</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">Workspace (Refinitiv)</div>
+          </div>
+          <div class="comp-tier tier-1">TIER 1</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">$15K–22K</div>
+          <div class="comp-price-label">Per seat / year</div>
+          <div class="comp-desc">Bloomberg's closest rival. Reuters news, StarMine analytics, CodeBook Python interface. Stronger developer API ecosystem. Better FX/fixed income depth. Same fundamental blind spot: no relationship graph.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">Reuters news</span>
+            <span class="tag tag-has">Developer API</span>
+            <span class="tag tag-part">~Entity data</span>
+            <span class="tag tag-miss">No graph</span>
+            <span class="tag tag-miss">Cloud only</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">S&P Capital IQ</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">+ FactSet</div>
+          </div>
+          <div class="comp-tier tier-1">TIER 1</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">$12K–25K</div>
+          <div class="comp-price-label">Per seat / year (combined)</div>
+          <div class="comp-desc">Capital IQ has the closest thing to a static relationship graph — executive and board network mapping. FactSet excels in fundamentals and quant data feeds. Together: deep individual company data, no dynamic weights, no propagation.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">Fundamentals</span>
+            <span class="tag tag-part">~Static graph</span>
+            <span class="tag tag-has">Board network</span>
+            <span class="tag tag-miss">No dynamic weights</span>
+            <span class="tag tag-miss">No signals</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIER 2 -->
+    <div class="byline" style="margin: 32px 0 16px;">Tier 2 — AI & News Intelligence Platforms (Closest Functional Neighbors)</div>
+
+    <div class="col-3">
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">AlphaSense</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">$4B valuation · $500M ARR</div>
+          </div>
+          <div class="comp-tier tier-2">TIER 2</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">$10K–20K</div>
+          <div class="comp-price-label">Per seat / year</div>
+          <div class="comp-desc">AI-powered document search across 500M+ docs: SEC filings, earnings calls, expert transcripts (Tegus: 240K+). Serves 88% of S&P 100, 75% of top hedge funds. Grew from $8.6M (2019) to $500M ARR (2025). Fundamentally a search engine, not a graph.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">Document search</span>
+            <span class="tag tag-has">Expert calls</span>
+            <span class="tag tag-has">Sentiment</span>
+            <span class="tag tag-miss">No graph</span>
+            <span class="tag tag-miss">No propagation</span>
+            <span class="tag tag-miss">Cloud only</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">RavenPack</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">+ Bigdata.com (2024)</div>
+          </div>
+          <div class="comp-tier tier-2">TIER 2</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">Custom</div>
+          <div class="comp-price-label">Enterprise / quant fund pricing</div>
+          <div class="comp-desc">The most sophisticated news-to-signal platform. 40K+ sources in 13 languages, 80+ fields per entity, 20+ sentiment indicators. 70% of top quant hedge funds use it. Just launched Bigdata.com agentic AI. Recently partnered with FT (Dec 2025). No graph architecture, no dynamic edge weights.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">News analytics</span>
+            <span class="tag tag-has">13 languages</span>
+            <span class="tag tag-has">Sentiment scores</span>
+            <span class="tag tag-part">~Entity mapping</span>
+            <span class="tag tag-miss">No graph weights</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">Palantir</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">Foundry / Metropolis</div>
+          </div>
+          <div class="comp-tier tier-2">TIER 2</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">$5M–50M+</div>
+          <div class="comp-price-label">Per year (flat enterprise)</div>
+          <div class="comp-desc">The general-purpose enterprise data platform. On-premise available. Ontology-based data model has conceptual similarity to a knowledge graph. Used by some large hedge funds via Metropolis product. Priced out of most institutions. Requires 20+ person engineering team to configure.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">On-premise</span>
+            <span class="tag tag-has">Data integration</span>
+            <span class="tag tag-part">~Ontology</span>
+            <span class="tag tag-miss">Not purpose-built</span>
+            <span class="tag tag-miss">Prohibitive cost</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIER 3 -->
+    <div class="byline" style="margin: 32px 0 16px;">Tier 3 — Supply Chain Intelligence (Same Graph Idea, Different Purpose)</div>
+
+    <div class="col-3">
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">Interos.ai</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">$1B valuation · $45.6M Series D (2024)</div>
+          </div>
+          <div class="comp-tier tier-3">TIER 3</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">Custom</div>
+          <div class="comp-price-label">Enterprise SaaS</div>
+          <div class="comp-desc">AI-driven multi-tier supply chain mapping and risk monitoring. Maps supplier ecosystems as a living global graph — 80,000+ risk-related datasets, continuous updates, AI risk scoring across 6 categories. Built for procurement/operations, not investing. No trading signal output.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">Multi-tier graph</span>
+            <span class="tag tag-has">AI risk scoring</span>
+            <span class="tag tag-has">Continuous updates</span>
+            <span class="tag tag-miss">Not for investors</span>
+            <span class="tag tag-miss">No alpha signals</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">Resilinc</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">Gartner Magic Quadrant Leader 2025</div>
+          </div>
+          <div class="comp-tier tier-3">TIER 3</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">Custom</div>
+          <div class="comp-price-label">Enterprise SaaS</div>
+          <div class="comp-desc">Multi-tier supply chain mapping with geocoded supplier sites, AI event monitoring (EventWatch AI), disruption simulations, and agentic AI mitigation playbooks. Gartner Leader 2025. Purpose-built for supply chain operations — not financial signal generation. No edge weight time-series.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">Multi-tier mapping</span>
+            <span class="tag tag-has">Event monitoring</span>
+            <span class="tag tag-has">Agentic AI</span>
+            <span class="tag tag-miss">Operations only</span>
+            <span class="tag tag-miss">No investor output</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-header">
+          <div>
+            <div class="comp-name">FinDKG</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;">Open source · Academic only</div>
+          </div>
+          <div class="comp-tier tier-3">TIER 3</div>
+        </div>
+        <div class="comp-body">
+          <div class="comp-price">Free</div>
+          <div class="comp-price-label">Non-commercial research only</div>
+          <div class="comp-desc">The architecturally closest system to MKG's vision. Dynamic knowledge graph from financial news, powered by KGTransformer (attention-based GNN). Temporal link prediction for trend detection. English only, no enterprise features, no scraping agent, no explainability dashboard. Proof of concept.</div>
+          <div class="tag-row">
+            <span class="tag tag-has">Dynamic KG</span>
+            <span class="tag tag-has">GNN model</span>
+            <span class="tag tag-part">~Temporal</span>
+            <span class="tag tag-miss">Non-commercial</span>
+            <span class="tag tag-miss">Not deployable</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 4: FEATURE MATRIX ── -->
+  <div class="section-band reveal">
+    <span class="band-num">04</span>
+    <span class="band-title">Head-to-Head Feature Matrix</span>
+  </div>
+
+  <div class="story-wrap reveal">
+    <p class="body-copy" style="margin-bottom:12px;">Reading the matrix: <strong>✓ full capability &nbsp; ~ partial &nbsp; ✗ absent</strong>. The final column shows MKG's target state. No single competitor delivers more than 3–4 of these capabilities simultaneously.</p>
+
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Bloomberg</th>
+            <th>LSEG</th>
+            <th>FactSet</th>
+            <th>Capital IQ</th>
+            <th>AlphaSense</th>
+            <th>RavenPack</th>
+            <th>Palantir</th>
+            <th>Interos</th>
+            <th>FinDKG</th>
+            <th class="ours-col">MKG ✦</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Real-time market data</td><td class="check">✓</td><td class="check">✓</td><td class="part">~</td><td class="cross">✗</td><td class="part">~</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross ours-col">✗</td></tr>
+          <tr><td>News ingestion (6+ languages)</td><td class="part">~</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="part">~</td><td class="part">~</td><td class="cross">✗</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Entity extraction from news</td><td class="part">~</td><td class="part">~</td><td class="cross">✗</td><td class="part">~</td><td class="check">✓</td><td class="check">✓</td><td class="part">~</td><td class="check">✓</td><td class="check">✓</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Static relationship graph</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="check">✓</td><td class="check">✓</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Dynamic edge weights</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="part">~</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Neural net weight adjustment</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Event impact propagation</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="part">~</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Impact score + direction + decay</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Temporal graph rewind</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Edge weight time-series history</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Backtest harness</td><td class="part">~</td><td class="part">~</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="part">~</td><td class="cross">✗</td><td class="check">✓</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Full signal explainability</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="cross">✗</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Source data lineage per signal</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="part">~</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="check ours-col">✓</td></tr>
+          <tr><td>On-premise deployment</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="check">✓</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Multi-horizon (1h / 1d / 1w / 1mo)</td><td class="part">~</td><td class="part">~</td><td class="part">~</td><td class="cross">✗</td><td class="part">~</td><td class="check">✓</td><td class="part">~</td><td class="cross">✗</td><td class="cross">✗</td><td class="check ours-col">✓</td></tr>
+          <tr><td>Alpha generation (purpose-built)</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="cross">✗</td><td class="part">~</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="part">~</td><td class="check ours-col">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">Feature matrix — ✓ full · ~ partial · ✗ absent — MKG target state shown in final column</p>
+  </div>
+
+  <!-- ── SECTION 5: WHERE THE POWER IS ── -->
+  <div class="section-band reveal">
+    <span class="band-num">05</span>
+    <span class="band-title">Where the Power Is — What Competitors Do Well</span>
+  </div>
+
+  <div class="story-wrap reveal">
+    <p class="body-copy" style="margin-bottom:24px;">Competitive research demands honesty about what rivals do well. Each of these platforms has real strengths that MKG must understand — not to replicate, but to position against and, where appropriate, to complement with.</p>
+
+    <div class="col-3">
+      <div class="power-box">
+        <div class="power-title">Bloomberg's Moat</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Irreplaceable network effects — being on Bloomberg means being in the network. IB messaging alone retains users.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Depth and breadth of real-time data is unmatched — every asset class, every market, every major exchange.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>~320,000 terminal lock-in. 2-year mandatory leases. 6.5% annual price increases — inflation-linked pricing power.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Decades of institutional habit. Moving off Bloomberg requires deliberate change management.</div>
+      </div>
+
+      <div class="power-box">
+        <div class="power-title">AlphaSense's Moat</div>
+        <div class="power-item"><span class="power-icon">⚡</span>500M+ proprietary documents — the corpus itself is the moat. Tegus acquisition ($930M) added 240K expert transcripts.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Network effects from 6,500+ enterprise customers including 88% of S&P 100 and 75% of top hedge funds.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Smart Synonyms + Generative Search genuinely save analyst time. Workflow integration creates daily habit.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Proprietary content = defensible training data for AI models. This compounds over time.</div>
+      </div>
+
+      <div class="power-box">
+        <div class="power-title">RavenPack's Moat</div>
+        <div class="power-item"><span class="power-icon">⚡</span>22 years of financial NLP data (founded 2003). The historical sentiment dataset is irreproducible.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>40,000+ sources in 13 languages. Breadth of news coverage is industry-leading.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>70% of top quant hedge funds use it — deeply embedded in quant model pipelines. Hard to displace.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>FT partnership (Dec 2025) adds premium licensed content + credibility for institutional AI use.</div>
+      </div>
+
+      <div class="power-box">
+        <div class="power-title">Interos / Resilinc's Moat</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Supply chain graphs that actually work at multi-tier scale — proven at Tier 3 and Tier 4 suppliers.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Supplier-verified data (Resilinc) is more accurate than scraped data. Ground truth moat.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Interos: $1B valuation, $204M total capital — scale and institutional backing for enterprise sales.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Gartner Leadership (Resilinc 2025) — regulatory and procurement decision-makers trust the brand.</div>
+      </div>
+
+      <div class="power-box">
+        <div class="power-title">FinDKG / Academic Edge</div>
+        <div class="power-item"><span class="power-icon">⚡</span>KGTransformer architecture is peer-reviewed, open-source, and demonstrably better than static graph methods for financial thematic investing.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Proves the concept is valid — temporal link prediction from financial news is a working approach.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Can be studied, adapted, and built upon for MKG's WAN — it is a blueprint, not just a competitor.</div>
+      </div>
+
+      <div class="power-box">
+        <div class="power-title">Capital IQ's Moat</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Largest database of private company data globally — irreplaceable for understanding private market relationships.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>Executive and board network mapping is the closest existing thing to a financial relationship graph — static but rich.</div>
+        <div class="power-item"><span class="power-icon">⚡</span>M&A transaction history is best-in-class — critical for understanding acquisition-driven relationship changes.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 6: CRITICAL GAPS ── -->
+  <div class="section-band reveal">
+    <span class="band-num">06</span>
+    <span class="band-title">The Gaps — What the Market Consistently Fails to Provide</span>
+  </div>
+
+  <div class="story-wrap reveal">
+    <p class="body-copy" style="margin-bottom:28px;">These are not minor omissions — they are structural blind spots shared by every commercial platform. Each gap has remained unfilled despite hundreds of millions of dollars in R&D across the industry. The reason is not capability but focus: incumbents optimise for the use cases that generated their initial revenue, not for the new use case that their data structure cannot serve.</p>
+
+    <div class="gap-item">
+      <div class="gap-num">01</div>
+      <div class="gap-content">
+        <div class="gap-title">Dynamic, Neural-Network-Adjusted Edge Weights</div>
+        <div class="gap-body">Every platform treats relationships as binary or static. Capital IQ shows you the TSMC–NVIDIA supply chain relationship. It does not tell you that the weight of that relationship — the strength of the dependency risk — changed the moment TSMC reported a 12% earnings miss. No commercial system continuously updates relationship strength from news signals through a neural network.</div>
+        <div class="gap-current">CURRENT STATE: Relationships are database entries. Either connected or not. Weight is implicit and static.</div>
+        <div class="gap-solution">MKG SOLUTION: Weight Adjustment Network (WAN) — reads signals, outputs weight deltas, continuously updates the graph in real time.</div>
+        <div class="tag-row">
+          <span class="tag tag-miss">All Tier 1</span>
+          <span class="tag tag-miss">All Tier 2</span>
+          <span class="tag tag-part">~FinDKG (academic only)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-item">
+      <div class="gap-num">02</div>
+      <div class="gap-content">
+        <div class="gap-title">Automated Multi-Hop Contagion with Quantified Output</div>
+        <div class="gap-body">AlphaSense finds documents about connected companies. That is manual and reactive. No system takes a news event and automatically traverses a weighted graph to score every reachable entity — with impact score (0–100), direction (±), confidence, and time decay curve — in under 60 seconds. This automated propagation is the core alpha mechanism, and it does not exist commercially.</div>
+        <div class="gap-current">CURRENT STATE: Analysts manually research second-order effects. Hours or days after the event.</div>
+        <div class="gap-solution">MKG SOLUTION: Event trigger → graph traversal → ranked impact list for every reachable entity in &lt;60 seconds.</div>
+        <div class="tag-row">
+          <span class="tag tag-miss">All 9 competitors</span>
+          <span class="tag tag-part">~Interos (operational, not investing)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-item">
+      <div class="gap-num">03</div>
+      <div class="gap-content">
+        <div class="gap-title">Full Temporal Graph State — Rewind to Any Timestamp</div>
+        <div class="gap-body">Bloomberg stores historical prices. AlphaSense stores historical documents. But no platform stores the full state of a relationship graph — structure and weights — at every point in time, queryable to any millisecond. Without this, backtesting is fundamentally flawed: you cannot replay what the model would have known at historical timestamp T without temporal graph state. This also makes event replay (SVB collapse, COVID crash) impossible at the graph level.</div>
+        <div class="gap-current">CURRENT STATE: Historical data exists for prices and documents. No temporal graph state history exists commercially.</div>
+        <div class="gap-solution">MKG SOLUTION: Two-speed versioning — structural migrations log + edge weight time-series append log. Full rewind in &lt;10 seconds.</div>
+        <div class="tag-row">
+          <span class="tag tag-miss">All Tier 1</span>
+          <span class="tag tag-miss">All Tier 2</span>
+          <span class="tag tag-part">~Palantir (limited)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-item">
+      <div class="gap-num">04</div>
+      <div class="gap-content">
+        <div class="gap-title">On-Premise, Air-Gapped Deployment at Reasonable Cost</div>
+        <div class="gap-body">Bloomberg, LSEG, FactSet, AlphaSense, and RavenPack are all cloud-only. For institutions with data sovereignty requirements — driven by regulation, competitive sensitivity, or security policy — this is disqualifying. Palantir offers on-premise but at $5M–$50M+/year. FinDKG and Ontotext are self-hostable but not purpose-built for investing. The gap: a purpose-built, on-premise relationship intelligence system at institutional but accessible pricing.</div>
+        <div class="gap-current">CURRENT STATE: Cloud-only (incumbents) or cloud-only (AI platforms). On-prem only at Palantir's price point ($5M+).</div>
+        <div class="gap-solution">MKG SOLUTION: Designed on-premise from day one. Full stack runs within the institution's own infrastructure. No data sovereignty compromise.</div>
+        <div class="tag-row">
+          <span class="tag tag-miss">Bloomberg</span>
+          <span class="tag tag-miss">AlphaSense</span>
+          <span class="tag tag-miss">RavenPack</span>
+          <span class="tag tag-part">~Palantir ($5M+ only)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-item">
+      <div class="gap-num">05</div>
+      <div class="gap-content">
+        <div class="gap-title">Full Signal Explainability — Source to Output</div>
+        <div class="gap-body">In a post-MiFID II world, institutional decision-makers cannot act on unexplained signals. AlphaSense provides document citations. Bloomberg provides headlines. But no platform delivers the complete chain for any given output: this signal scored NVDA at −73 because edge E1 (supply_chain, w=0.91) connects TSMC→NVDA, which was triggered by document D123 (published 09:31 UTC), which caused a weight delta of +0.23 via model v2.3.1 — click each element to see its source. Without this, compliance teams cannot audit, and PMs cannot trust.</div>
+        <div class="gap-current">CURRENT STATE: Document citations at best. Black-box scores at worst. No complete causal chain from signal to source document.</div>
+        <div class="gap-solution">MKG SOLUTION: Signal tracer — every output links back through: edges → weight deltas → news events → source documents. Fully clickable in dashboard.</div>
+        <div class="tag-row">
+          <span class="tag tag-miss">All quantitative platforms</span>
+          <span class="tag tag-part">~AlphaSense (doc-level only)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-item">
+      <div class="gap-num">06</div>
+      <div class="gap-content">
+        <div class="gap-title">Autonomous Multilingual Scraping Agent for Global Press</div>
+        <div class="gap-body">Bloomberg and LSEG have multilingual news but it is curated, expensive, and locked behind their proprietary interfaces. AlphaSense is predominantly English. RavenPack covers 13 languages but via licensed vendor feeds, not autonomous scraping. No platform autonomously and continuously scrapes, translates, and structures news from global regional newspapers (Nikkei, Caixin, Le Monde, Frankfurter Allgemeine, El País) into a proprietary knowledge graph in real time. This proprietary corpus is itself a data moat — competitors cannot replicate it without the same time investment.</div>
+        <div class="gap-current">CURRENT STATE: Expensive licensed news feeds (Bloomberg, Reuters) OR English-only coverage (most AI platforms).</div>
+        <div class="gap-solution">MKG SOLUTION: Hybrid scraping agent — continuous for breaking news, scheduled for regional press. 6+ languages. On-prem translation. Growing proprietary corpus.</div>
+        <div class="tag-row">
+          <span class="tag tag-miss">AlphaSense</span>
+          <span class="tag tag-miss">FactSet</span>
+          <span class="tag tag-part">~RavenPack (licensed, not scraped)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-item">
+      <div class="gap-num">07</div>
+      <div class="gap-content">
+        <div class="gap-title">Purpose-Built for Alpha Generation — Not Compliance or Search</div>
+        <div class="gap-body">The closest graph systems (Capital IQ networks, Interos, Ontotext) are built for compliance, AML, and sanctions screening. The closest signal systems (AlphaSense, RavenPack) are built around document search and sentiment scoring. There is no system built from the ground up with alpha generation as its singular objective — with every design decision (output schema, backtest gate, portfolio integration, multi-horizon architecture) serving that purpose. This is the meta-gap: not a missing feature, but a missing product category.</div>
+        <div class="gap-current">CURRENT STATE: Graph tools built for compliance. Signal tools built for research. Alpha generation is a secondary use case of tools built for something else.</div>
+        <div class="gap-solution">MKG SOLUTION: Every design decision serves alpha generation. The product exists for this purpose. It is not a repurposed compliance tool.</div>
+        <div class="tag-row">
+          <span class="tag tag-miss">Capital IQ (compliance)</span>
+          <span class="tag tag-miss">Interos (operations)</span>
+          <span class="tag tag-part">~RavenPack (closest, but no graph)</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 7: COMPETITIVE EVENTS ── -->
+  <div class="section-band reveal">
+    <span class="band-num">07</span>
+    <span class="band-title">Recent Competitive Events — The Market Is Moving</span>
+  </div>
+
+  <div class="story-wrap reveal">
+    <div class="col-2">
+      <div>
+        <p class="body-copy">The competitive landscape is not static. Major moves in the last 18 months signal that the market is converging toward more sophisticated intelligence — accelerating both the opportunity and the competitive pressure for MKG.</p>
+
+        <div class="timeline">
+          <div class="t-item">
+            <div class="t-date">Jul 2024</div>
+            <div class="t-event">AlphaSense acquires Tegus for <strong>$930M</strong> — the largest acquisition in market intelligence history. 240,000+ expert call transcripts now proprietary.</div>
+          </div>
+          <div class="t-item">
+            <div class="t-date">Jun 2024</div>
+            <div class="t-event">AlphaSense raises <strong>$650M Series F</strong> at $4B valuation. Viking Global, JP Morgan Asset Management, Goldman Sachs. IPO track confirmed.</div>
+          </div>
+          <div class="t-item">
+            <div class="t-date">Jul 2024</div>
+            <div class="t-event">RavenPack raises <strong>$20M</strong> and launches Bigdata.com — agentic AI platform for institutional financial research. FT partnership follows Dec 2025.</div>
+          </div>
+          <div class="t-item">
+            <div class="t-date">Oct 2024</div>
+            <div class="t-event">Interos raises <strong>$45.6M Series D</strong>, achieving $1B valuation. Supply chain graph intelligence is investor-validated at scale.</div>
+          </div>
+          <div class="t-item">
+            <div class="t-date">Oct 2024</div>
+            <div class="t-event">RavenPack launches Bigdata.com. Agentic AI for financial research — the market's first agentic intelligence platform for institutional investors.</div>
+          </div>
+          <div class="t-item">
+            <div class="t-date">Jan 2025</div>
+            <div class="t-event">Bloomberg raises 2025 prices by <strong>6.5%</strong> — multi-terminal now $28,320/yr, single terminal $31,980/yr. Lock-in continues to compound.</div>
+          </div>
+          <div class="t-item">
+            <div class="t-date">Dec 2025</div>
+            <div class="t-event">RavenPack secures <strong>FT Ventures investment</strong> and content licensing deal — FT's first GenAI distribution partnership. Premium content moat deepens.</div>
+          </div>
+          <div class="t-item">
+            <div class="t-date">Oct 2025</div>
+            <div class="t-event">AlphaSense surpasses <strong>$500M ARR</strong>, 6,500 customers, opens new HQ at Hudson Yards for 2026. Pre-IPO preparations underway.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="sidebar-box red">
+          <div class="sidebar-title">⚠ Competitive Threat Signal</div>
+          <div class="sidebar-text">AlphaSense's trajectory ($8.6M → $500M ARR in 6 years) and RavenPack's agentic AI pivot show that the market is moving toward more sophisticated, automated intelligence. Both companies have the engineering resources and customer relationships to add graph features. MKG must build and protect its graph IP before this window narrows.</div>
+        </div>
+
+        <div class="sidebar-box green">
+          <div class="sidebar-title">✓ Validation Signal</div>
+          <div class="sidebar-text">Interos achieving $1B valuation for supply chain graph intelligence — the same architectural concept applied to a different domain — validates that graph-based relationship intelligence is investable, scalable, and has institutional buyers willing to pay enterprise prices. The market has proved this concept works. MKG applies it to the right domain: investing.</div>
+        </div>
+
+        <div class="sidebar-box">
+          <div class="sidebar-title">The Consolidation Pattern</div>
+          <div class="sidebar-text">AlphaSense has acquired Stream (2021), Sentieo (2022), and Tegus (2024). The market is consolidating around content moats. Any platform that builds a large proprietary corpus of structured relationship data becomes an acquisition target. MKG's graph and weight history are potentially the most valuable such corpus if built correctly.</div>
+        </div>
+
+        <div class="sidebar-box blue">
+          <div class="sidebar-title">Regulatory Tailwind</div>
+          <div class="sidebar-text">EU Corporate Sustainability Due Diligence Directive requires multi-tier supply chain risk audits — driving demand for supply chain graph tools. MiFID II explainability requirements make black-box AI signals increasingly problematic for institutional use. Both tailwinds favor MKG's architecture: graph-based, explainable, auditable.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 8: STRATEGIC CONCLUSION ── -->
+  <div class="section-band reveal">
+    <span class="band-num">08</span>
+    <span class="band-title">Strategic Conclusion — Where MKG Wins</span>
+  </div>
+
+  <div class="story-wrap reveal">
+    <div class="headline" style="font-size: clamp(28px,3.5vw,44px);">The market gap is real,<br><em>uncontested, and time-sensitive.</em></div>
+
+    <div class="col-2" style="margin-top:28px;">
+      <div>
+        <p class="body-copy">No commercial platform combines dynamic edge weights, neural network weight adjustment, event propagation scoring, temporal graph rewind, on-premise deployment, and full signal explainability. Every competitor covers at most 2–3 of these simultaneously. This is not an incremental gap — it is a missing product category.</p>
+
+        <p class="body-copy">The window is open but narrowing. AlphaSense has $1.4B in funding and deep engineering resources. RavenPack has 22 years of news data and momentum from its FT partnership. Either could pivot toward graph-based intelligence if they chose to. The question is not whether the gap will eventually be filled — it is whether MKG fills it first and builds defensible moats before that happens.</p>
+
+        <div class="pull-quote">
+          <p>"The market prices individual entity news quickly. It prices relationship-driven second and third-order effects slowly. That lag is the alpha opportunity — and it is currently invisible without a relationship graph."</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="bar-chart">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">MKG Moat Strength (by type)</div>
+          <div class="bar-row">
+            <div class="bar-label">Technical Moat</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:80%;background:var(--ink);">
+                <span class="bar-val">WAN architecture / 80%</span>
+              </div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Data Moat</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:70%;background:var(--red);">
+                <span class="bar-val">Graph + weight history / 70%</span>
+              </div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Regulatory Moat</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:85%;background:var(--teal);">
+                <span class="bar-val">Explainability + on-prem / 85%</span>
+              </div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Institutional Moat</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:60%;background:var(--blue);">
+                <span class="bar-val">On-prem sovereignty / 60%</span>
+              </div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Workflow Moat</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:50%;background:var(--gold);">
+                <span class="bar-val">Build over time / 50%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bar-chart" style="margin-top:24px;">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Market Tailwind Strength</div>
+          <div class="bar-row">
+            <div class="bar-label">Alt Data growth</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:95%;background:var(--green);">
+                <span class="bar-val">63% CAGR</span>
+              </div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Knowledge Graph</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:70%;background:var(--green);">
+                <span class="bar-val">37% CAGR</span>
+              </div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">AI adoption (buy-side)</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:80%;background:var(--green);">
+                <span class="bar-val">87% have formal AI policy</span>
+              </div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Regulatory push</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:65%;background:var(--green);">
+                <span class="bar-val">MiFID II + CSDD</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="rule-double">
+
+    <div class="col-4">
+      <div class="stat-box">
+        <div class="stat-num green">7</div>
+        <div class="stat-unit">Uncontested Gaps</div>
+        <div class="stat-label">No competitor fills all 7 simultaneously</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num red">$900K</div>
+        <div class="stat-unit">Per Desk / Year</div>
+        <div class="stat-label">What a 10-seat team already pays — without relationship intelligence</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num blue">$135B</div>
+        <div class="stat-unit">By 2030</div>
+        <div class="stat-label">Alternative data market — MKG's primary output segment</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num gold">Now</div>
+        <div class="stat-unit">The Window</div>
+        <div class="stat-label">Before AlphaSense or RavenPack pivots toward graph-based intelligence</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    <div class="footer-l">MKG SYSTEM · MARKET RESEARCH REPORT · ISSUE 001 · CONFIDENTIAL</div>
+    <div class="footer-l">Next: Use Case Diagram →</div>
+  </div>
+
+</div>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

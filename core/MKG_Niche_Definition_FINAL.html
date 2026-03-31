@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — The Definitive Niche</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:     #f3f0e9;
+  --paper:  #faf8f3;
+  --ink:    #0f0c07;
+  --ink2:   #2a261e;
+  --muted:  #7a7260;
+  --rule:   #d8d0bc;
+  --rule2:  #eae4d6;
+
+  /* Vertical A — Financial Markets */
+  --fin:    #1a3a6e;
+  --fin-l:  rgba(26,58,110,0.07);
+
+  /* Vertical B — Supply Chain */
+  --sc:     #1e5c38;
+  --sc-l:   rgba(30,92,56,0.07);
+
+  /* MKG accent */
+  --red:    #a82c14;
+  --red-l:  rgba(168,44,20,0.07);
+  --gold:   #8a6a10;
+  --gold-l: rgba(138,106,16,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 48px 120px; }
+
+/* ─── topbar ─── */
+.topbar {
+  background: var(--ink); padding: 13px 48px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 100;
+}
+.tb-l { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:2.5px; color:#c8b89a; }
+.tb-r { display:flex; gap:24px; }
+.tb-r a { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:2px; color:#5a5044; text-decoration:none; text-transform:uppercase; transition:color .2s; }
+.tb-r a:hover { color:#c8b89a; }
+
+/* ─── cover ─── */
+.cover {
+  min-height: 88vh;
+  display: flex; flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 0 64px;
+  border-bottom: 2px solid var(--ink);
+  position: relative;
+}
+.cover-number {
+  position: absolute; top: 60px; right: 0;
+  font-family:'Cormorant Garamond',serif; font-size: clamp(160px,18vw,260px);
+  font-weight: 300; font-style: italic;
+  color: var(--rule2); line-height: 1;
+  user-select: none; pointer-events: none;
+}
+.cover-kicker {
+  font-family:'IBM Plex Mono',monospace; font-size:9px;
+  letter-spacing:3.5px; color:var(--muted); text-transform:uppercase;
+  margin-bottom: 22px;
+}
+.cover-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size: clamp(54px, 7vw, 100px);
+  font-weight: 300; line-height: 1.0;
+  color: var(--ink); letter-spacing: -2px;
+  margin-bottom: 28px;
+}
+.cover-title em { font-style: italic; color: var(--red); }
+.cover-title strong { font-weight: 600; }
+.cover-sub {
+  font-family:'Cormorant Garamond',serif; font-size:22px;
+  font-style:italic; color:var(--ink2); line-height:1.6;
+  max-width: 740px; margin-bottom: 44px;
+}
+.cover-meta {
+  display: flex; gap: 48px;
+}
+.cm-item {}
+.cm-lbl { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-bottom:4px; }
+.cm-val { font-family:'Cormorant Garamond',serif; font-size:18px; color:var(--ink); }
+
+/* ─── section headers ─── */
+.sec { padding: 72px 0 0; }
+.sk {
+  font-family:'IBM Plex Mono',monospace; font-size:8.5px;
+  letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-bottom:14px;
+}
+.sh {
+  font-family:'Cormorant Garamond',serif;
+  font-size: clamp(32px, 4vw, 54px);
+  font-weight:400; color:var(--ink); line-height:1.08; margin-bottom:10px;
+}
+.sh em { font-style:italic; color:var(--red); }
+.sh strong { font-weight:600; }
+.ss {
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:18px; color:var(--muted); max-width:680px;
+  line-height:1.65; margin-bottom:44px;
+}
+
+/* ─── prose ─── */
+.prose { font-family:'Cormorant Garamond',serif; font-size:18px; line-height:1.85; color:var(--ink2); margin-bottom:16px; }
+.prose strong { font-weight:600; color:var(--ink); }
+.prose em { font-style:italic; color:var(--red); }
+
+/* ─── the one-liner box ─── */
+.one-liner {
+  border: 1px solid var(--ink); padding: 48px 52px;
+  margin: 40px 0; background: var(--paper);
+  position: relative;
+}
+.ol-label {
+  position: absolute; top: -1px; left: 40px;
+  background: var(--ink); color: #f0ede6;
+  font-family:'IBM Plex Mono',monospace; font-size:8px;
+  letter-spacing:2px; padding: 4px 12px; text-transform:uppercase;
+}
+.ol-text {
+  font-family:'Cormorant Garamond',serif;
+  font-size: clamp(22px,3vw,36px); font-weight:400;
+  line-height:1.4; color:var(--ink);
+}
+.ol-text em { font-style:italic; color:var(--red); }
+.ol-text strong { font-weight:600; }
+
+/* ─── vertical split ─── */
+.vert-split {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 2px; background: var(--rule); border: 1px solid var(--rule);
+  margin: 40px 0;
+}
+.vs-col { background: var(--paper); padding: 32px 28px; position: relative; overflow: hidden; }
+.vs-col::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; }
+.vs-col.fin::before { background:var(--fin); }
+.vs-col.sc::before { background:var(--sc); }
+.vs-badge {
+  font-family:'IBM Plex Mono',monospace; font-size:8px;
+  letter-spacing:2px; text-transform:uppercase; margin-bottom:10px;
+}
+.vs-title {
+  font-family:'Cormorant Garamond',serif; font-size:28px;
+  font-weight:600; line-height:1.15; margin-bottom:14px;
+}
+.vs-body {
+  font-family:'Cormorant Garamond',serif; font-size:16px;
+  line-height:1.7; color:var(--ink2);
+}
+.vs-body strong { font-weight:600; color:var(--ink); }
+
+/* ─── three-column grid ─── */
+.col3 { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; background:var(--rule); border:1px solid var(--rule); margin:32px 0; }
+.col2 { display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--rule); border:1px solid var(--rule); margin:32px 0; }
+
+/* ─── info card ─── */
+.icard { background:var(--paper); padding:24px 22px; }
+.ic-tag { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.ic-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; color:var(--ink); margin-bottom:10px; line-height:1.2; }
+.ic-body { font-family:'Cormorant Garamond',serif; font-size:15px; color:var(--ink2); line-height:1.65; }
+.ic-body strong { font-weight:600; color:var(--ink); }
+.ic-quote {
+  border-left:2px solid var(--rule); padding:8px 12px; margin:10px 0;
+  font-family:'Cormorant Garamond',serif; font-size:14px; font-style:italic;
+  color:var(--muted); line-height:1.55;
+}
+.ic-bridge {
+  background:var(--red-l); border:1px solid rgba(168,44,20,0.18);
+  padding:10px 12px; margin-top:12px;
+}
+.icb-lbl { font-family:'IBM Plex Mono',monospace; font-size:7.5px; letter-spacing:2px; color:var(--red); text-transform:uppercase; margin-bottom:4px; }
+.icb-text { font-family:'IBM Plex Sans',sans-serif; font-size:12px; color:var(--ink2); line-height:1.5; }
+
+/* ─── stat row ─── */
+.stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); margin:32px 0; }
+.sr-cell { background:var(--paper); padding:20px 18px; }
+.sr-num { font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:300; color:var(--red); line-height:1; margin-bottom:5px; }
+.sr-lbl { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); line-height:1.45; }
+.sr-src { font-family:'IBM Plex Mono',monospace; font-size:7.5px; color:var(--rule); margin-top:4px; }
+
+/* ─── buyer card ─── */
+.buyer-card {
+  background:var(--paper); padding:22px 20px;
+  border-top:3px solid;
+}
+.bc-domain { font-family:'IBM Plex Mono',monospace; font-size:7.5px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+.bc-title { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:600; color:var(--ink); margin-bottom:10px; line-height:1.2; }
+.bc-pain { font-family:'Cormorant Garamond',serif; font-size:14px; color:var(--ink2); line-height:1.6; margin-bottom:12px; }
+.bc-mkg { background:var(--red-l); border:1px solid rgba(168,44,20,0.18); padding:9px 11px; }
+.bc-mkg-lbl { font-family:'IBM Plex Mono',monospace; font-size:7px; letter-spacing:2px; color:var(--red); text-transform:uppercase; margin-bottom:3px; }
+.bc-mkg-text { font-family:'IBM Plex Sans',sans-serif; font-size:11.5px; color:var(--ink2); line-height:1.45; }
+
+/* ─── pull quote ─── */
+.pq { border-top:2px solid var(--ink); border-bottom:1px solid var(--rule); padding:22px 0; margin:36px 0; }
+.pq-text { font-family:'Cormorant Garamond',serif; font-size:24px; font-style:italic; font-weight:300; color:var(--ink); line-height:1.4; }
+.pq-attr { font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:1px; color:var(--muted); margin-top:10px; text-transform:uppercase; }
+
+/* ─── divider line ─── */
+.divider { border:none; border-top:1px solid var(--rule); margin:44px 0; }
+
+/* ─── tag ─── */
+.tag { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:8px; padding:2px 7px; border-radius:2px; margin:2px; letter-spacing:0.5px; }
+.tg { background:rgba(30,92,56,0.1); color:var(--sc); }
+.tr { background:rgba(168,44,20,0.09); color:var(--red); }
+.tb { background:rgba(26,58,110,0.09); color:var(--fin); }
+.ty { background:var(--gold-l); color:var(--gold); }
+
+/* ─── boundary table ─── */
+.bounds { border:1px solid var(--rule); overflow:hidden; margin:32px 0; }
+.bt-row { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--rule2); }
+.bt-row:last-child { border-bottom:none; }
+.bt-cell { padding:16px 20px; }
+.bt-cell:first-child { border-right:1px solid var(--rule2); background:var(--rule2); }
+.bt-header { background:var(--ink) !important; }
+.bt-header .bt-cell { font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:2px; text-transform:uppercase; color:#c8b89a !important; }
+.bt-cell-text { font-family:'Cormorant Garamond',serif; font-size:15px; color:var(--ink2); line-height:1.55; }
+.bt-cell-text strong { font-weight:600; color:var(--ink); }
+
+/* ─── gap table ─── */
+.gap-tbl { overflow-x:auto; margin:28px 0; }
+table.gt { width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:9px; }
+.gt thead th { background:var(--ink); color:#f0ede6; padding:9px 10px; text-align:center; font-weight:400; letter-spacing:0.8px; white-space:nowrap; border:1px solid var(--ink); }
+.gt thead th:first-child { text-align:left; min-width:190px; background:#2a2218; }
+.gt thead th.mc { background:var(--red); font-weight:600; }
+.gt tbody tr:nth-child(even) td { background:#eae4d4; }
+.gt tbody tr:nth-child(odd) td { background:var(--paper); }
+.gt tbody td { padding:8px 10px; border:1px solid var(--rule); text-align:center; color:var(--ink2); vertical-align:middle; }
+.gt tbody td:first-child { text-align:left; font-family:'IBM Plex Sans',sans-serif; font-size:12px; font-weight:500; color:var(--ink); background:#e2dcd0!important; }
+.gt tbody td.mc { background:rgba(168,44,20,0.06)!important; }
+.gt tbody tr.cat td { background:var(--ink2)!important; color:#f0ede6; font-family:'IBM Plex Mono',monospace; font-size:7.5px; letter-spacing:2px; text-transform:uppercase; font-weight:500; text-align:left!important; }
+.ck { color:#1e5c38; font-size:13px; font-weight:700; }
+.cx { color:#a82c14; font-size:13px; font-weight:700; }
+.cp { color:#8a6a10; font-size:12px; font-weight:700; }
+.cn { color:var(--red); font-size:8.5px; font-weight:700; letter-spacing:0.5px; }
+
+/* ─── dark closing ─── */
+.closing { background:var(--ink); padding:56px 52px; margin-top:60px; }
+.cl-kicker { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:3px; color:#c8b89a; text-transform:uppercase; margin-bottom:20px; }
+.cl-text { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:300; color:#f0ede6; line-height:1.75; max-width:900px; }
+.cl-text em { color:#c8b89a; font-style:italic; }
+.cl-text strong { color:white; font-weight:600; }
+.cl-line { border:none; border-top:1px solid rgba(255,255,255,0.12); margin:28px 0; }
+
+/* ─── footer ─── */
+.footer { border-top:2px solid var(--ink); padding:22px 0; display:flex; justify-content:space-between; margin-top:56px; }
+.ft { font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:1.5px; color:var(--muted); }
+
+/* ─── reveal ─── */
+.reveal { opacity:0; transform:translateY(14px); transition:opacity .5s ease,transform .5s ease; }
+.reveal.on { opacity:1; transform:none; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="tb-l">MKG · THE DEFINITIVE NICHE · FEBRUARY 2026</div>
+  <nav class="tb-r">
+    <a href="#niche">The Niche</a>
+    <a href="#verticals">Two Verticals</a>
+    <a href="#buyers">All Buyers</a>
+    <a href="#tribal">Tribal Knowledge</a>
+    <a href="#gap">The Gap</a>
+    <a href="#boundaries">Boundaries</a>
+  </nav>
+</div>
+
+<div class="wrap">
+
+<!-- ══ COVER ══ -->
+<div class="cover reveal">
+  <div class="cover-number">MKG</div>
+  <div class="cover-kicker">Definitive Niche Definition · Version 1.0 · February 2026 · Confidential</div>
+  <div class="cover-title">
+    The world runs<br>
+    on <strong>relationships.</strong><br>
+    <em>No tool maps them.</em>
+  </div>
+  <div class="cover-sub">
+    Markets price direct events in milliseconds. Supply chains respond to tier-1 shocks in hours. But the shock that began three hops away — the signal no tool reads, through the relationship no database tracks, with the weight no system has computed — arrives weeks later, completely invisible, entirely preventable. That is MKG's niche.
+  </div>
+  <div class="cover-meta">
+    <div class="cm-item"><div class="cm-lbl">Primary Vertical</div><div class="cm-val">Financial Markets — Investment Intelligence</div></div>
+    <div class="cm-item"><div class="cm-lbl">Secondary Vertical</div><div class="cm-val">Supply Chain — Disruption Intelligence</div></div>
+    <div class="cm-item"><div class="cm-lbl">Core Architecture</div><div class="cm-val">Dynamic Weighted Knowledge Graph + WAN</div></div>
+    <div class="cm-item"><div class="cm-lbl">Signal-to-Output Latency</div><div class="cm-val">60 seconds · Any event · Any network depth</div></div>
+  </div>
+</div>
+
+<!-- ══ SECTION 1: THE ONE-LINE NICHE ══ -->
+<div id="niche" class="sec reveal">
+  <div class="sk">Section 01 · The Niche — Defined in One Statement</div>
+  <div class="sh">What MKG is. Precisely. <em>No more, no less.</em></div>
+  <div class="ss">After six research documents, three use case analyses, nine competitor deep-dives, and two vertical applications — this is the niche, compressed to its irreducible core.</div>
+
+  <div class="one-liner">
+    <div class="ol-label">The MKG Niche</div>
+    <div class="ol-text">
+      MKG is the first commercial system that <strong>reads live signals across 13 languages, continuously adjusts the weights of company-to-company relationships in a dynamic knowledge graph, traverses that graph when any node is affected by a news event, and delivers a ranked impact list — with direction, confidence, and full causal explanation — in 60 seconds.</strong>
+      <br><br>
+      It serves two types of institutions who suffer from the same structural problem: <em>the shock that propagates through a network they cannot see.</em> For financial market participants, that network is company relationships — and the propagation is an unexploited alpha signal. For supply chain operators, that network is a supplier ecosystem — and the propagation is a disruption that hits production lines weeks before it was detectable.
+      <br><br>
+      <strong>No commercial platform does this. No Bloomberg function, no AlphaSense query, no Interos dashboard, no Palantir Ontology deployment provides this output automatically, in 60 seconds, for both financial and operational relationship networks simultaneously.</strong>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="sr-cell">
+      <div class="sr-num">55+</div>
+      <div class="sr-lbl">Years of PEAD anomaly documentation. The alpha gap has existed since 1968 and remains commercially unaddressed.</div>
+      <div class="sr-src">Ball & Brown 1968 → Bernard & Thomas 1990 → Active literature 2025</div>
+    </div>
+    <div class="sr-cell">
+      <div class="sr-num">6%</div>
+      <div class="sr-lbl">Companies with full supply chain visibility. 94% are flying blind beyond Tier 1.</div>
+      <div class="sr-src">Gartner 2025</div>
+    </div>
+    <div class="sr-cell">
+      <div class="sr-num">$0</div>
+      <div class="sr-lbl">Commercial revenue of any platform providing dynamic weighted graph traversal with 60-second propagation scoring. The market is empty.</div>
+      <div class="sr-src">MKG competitive analysis · Feb 2026</div>
+    </div>
+    <div class="sr-cell">
+      <div class="sr-num">42%</div>
+      <div class="sr-lbl">Of institutional knowledge unique to individual employees and never documented. The tribal knowledge destruction problem.</div>
+      <div class="sr-src">Panopto Research · Applied to investment management</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 2: THE TWO VERTICALS ══ -->
+<div id="verticals" class="sec reveal">
+  <div class="sk">Section 02 · Two Verticals · One Architecture</div>
+  <div class="sh">Same graph technology.<br><em>Two completely different</em> problems solved.</div>
+  <div class="ss">The same dynamic knowledge graph architecture — weighted edges, temporal state, WAN-driven updates, propagation traversal — solves two market problems that have never been addressed by the same product before. The technology is identical. The output, the buyer, and the value metric are different.</div>
+
+  <div class="vert-split">
+    <div class="vs-col fin">
+      <div class="vs-badge" style="color:var(--fin);">Vertical A · Financial Markets</div>
+      <div class="vs-title" style="color:var(--fin);">Investment Intelligence<br>for Alpha Generation</div>
+      <div class="vs-body">
+        <strong>The problem:</strong> Markets price direct earnings events in milliseconds (Speed 1). They price intra-industry spillovers in hours (Speed 2). But shock propagation through supply chains, board networks, joint ventures, and regulatory co-exposures — confirmed by peer-reviewed research to take 1–14 weeks (Speed 3) — is completely invisible to every commercial financial data platform.
+        <br><br>
+        <strong>The mechanism:</strong> When TSMC reports earnings, every sell-side analyst updates their NVIDIA model within 3 hours. But the 800+ companies in NVIDIA's downstream ecosystem — the GPU-dependent software vendors, the data center cooling suppliers, the Korean PCB makers, the electrical grid operators near AI campuses — are not re-priced for days to weeks. The relationship graph exists. The signals exist. The product to connect them does not.
+        <br><br>
+        <strong>Why the delay is permanent:</strong> Human cognitive limits cannot be removed by faster news delivery. Getting TSMC's earnings faster does not help a PM know which of 58,000 listed companies has an undiscovered second-order dependency on TSMC capacity. Even with AlphaSense surfacing every related document, mapping documents to relationship weights, traversing the network, and scoring downstream impact takes hours to days — market moves while they work. MKG reduces this to 60 seconds. The window does not close for days. That is the exploitable edge.
+        <br><br>
+        <strong>Academic proof:</strong> PEAD (Post-Earnings Announcement Drift) has been documented since 1968. DellaVigna &amp; Pollett demonstrated that on Fridays, 60% of total stock price response to earnings news is delayed — structural investor inattention. The Supply Chain Contagion literature (POM 2024) documents 1–2 week delay for customer→supplier crash risk transmission. The alpha opportunity is not a theory. It is the oldest and most persistent anomaly in capital markets.
+        <br><br>
+        <strong>Value metric:</strong> Alpha generated (basis points). Directional signal accuracy. Signal-to-market latency advantage. Risk-adjusted return improvement.
+      </div>
+      <div style="margin-top:14px;">
+        <span class="tag tb">Speed 3 alpha</span><span class="tag tb">PEAD exploitation</span><span class="tag tb">Supply chain contagion</span><span class="tag tb">Board network signals</span><span class="tag tb">Regulatory co-exposure</span>
+      </div>
+    </div>
+    <div class="vs-col sc">
+      <div class="vs-badge" style="color:var(--sc);">Vertical B · Supply Chain</div>
+      <div class="vs-title" style="color:var(--sc);">Disruption Intelligence<br>for Operational Resilience</div>
+      <div class="vs-body">
+        <strong>The problem:</strong> Supply chain disruptions cost an average of 8% of annual revenue and occur every 3.7 years on average (McKinsey). 94% of companies report revenue impact. But only 6% have full supply chain visibility — and nearly all visibility stops at Tier 1. Disruptions almost always originate in Tier 2, 3, or beyond: the 2021 automotive chip shortage began at a single Japanese semiconductor plant 3 hops from the automotive OEMs whose production collapsed.
+        <br><br>
+        <strong>The mechanism:</strong> A factory fire in Japan, a regulatory change in China, a Houthi attack in the Red Sea — all are news events that appear in structured and unstructured sources hours to weeks before they reach production lines. But no system reads those signals across a dynamic, multi-tier supplier graph and delivers a ranked impact assessment with affected production platforms, delay estimates, and alternative sourcing options. Companies discover Tier-3 disruptions only when Tier-1 suppliers begin failing — and by then it is too late to mitigate.
+        <br><br>
+        <strong>Why the delay is permanent:</strong> Tier-2 and Tier-3 supplier relationships are not in ERP systems. They are not in SAP Ariba or Coupa. They are in the heads of experienced procurement managers who built their mental maps over 15–20 years — and take those maps with them when they leave. When China published yttrium export restrictions in Chinese-language regulatory filings in April 2025, companies without multilingual monitoring missed 11 days of warning. MKG reads Chinese regulatory filings in real time. There is no language gap.
+        <br><br>
+        <strong>Regulatory tailwind:</strong> EU CSDD (Corporate Sustainability Due Diligence Directive), UK Modern Slavery Act, US CHIPS Act supply chain disclosure, and SEC climate disclosure rules all require continuous multi-tier supply chain monitoring. Regulatory compliance is accelerating the demand for exactly what MKG provides.
+        <br><br>
+        <strong>Value metric:</strong> Cost of disruptions avoided. Days of early warning. Spot freight avoided. Force majeures prevented. EU CSDD compliance documentation generated automatically.
+      </div>
+      <div style="margin-top:14px;">
+        <span class="tag tg">Tier 2/3 visibility</span><span class="tag tg">Multi-hop contagion</span><span class="tag tg">13-language monitoring</span><span class="tag tg">Disruption early warning</span><span class="tag tg">EU CSDD compliance</span>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ══ SECTION 3: ALL BUYERS ══ -->
+<div id="buyers" class="sec reveal">
+  <div class="sk">Section 03 · The Complete Buyer Map — Both Verticals</div>
+  <div class="sh">Every person who buys this.<br><em>Why. What they pay today. What MKG replaces.</em></div>
+  <div class="ss">Twelve buyer profiles across two verticals. Each carries a specific version of the same pain: a relationship network they cannot see, producing a shock they cannot anticipate, arriving at a cost they could have avoided. Ranked by severity of pain and willingness to pay.</div>
+
+  <!-- Financial Markets Buyers -->
+  <div style="margin-bottom:2px;">
+    <div style="background:var(--fin);padding:10px 20px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:2.5px;color:white;text-transform:uppercase;">VERTICAL A · FINANCIAL MARKETS · SIX BUYER PROFILES</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--rule);border:1px solid var(--rule);margin-bottom:32px;">
+
+    <div class="buyer-card" style="border-top-color:var(--fin);">
+      <div class="bc-domain">Primary Buyer · Finance · Severity 95/100</div>
+      <div class="bc-title">Long/Short Equity Portfolio Manager</div>
+      <div class="bc-pain">Runs concentrated positions. Monitors direct positions obsessively — but blind to second-order beneficiaries and victims sitting in the rest of the book. TSMC beats → NVIDIA moves as expected → but 3 companies in the short book are undiscovered sub-tier beneficiaries of the same TSMC result. They move against the position 10 days later. The loss came not from bad NVIDIA analysis but from an invisible relationship network. This happens every earnings cycle. Bloomberg, AlphaSense, and FactSet Revere do not prevent it. Current tool spend: $50K–$200K/seat/yr with the gap still open.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">T+60s alert: ranked list of 23 entities affected by TSMC result. Direction, confidence, 4-horizon decay curve. Full causal chain: TSMC earnings → CoWoS edge weight Δ+0.23 → 7 entities scored. Every short position cross-checked against the propagation map automatically.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--fin);">
+      <div class="bc-domain">Primary Buyer · Finance · Severity 88/100</div>
+      <div class="bc-title">Multi-PM Platform Risk Desk</div>
+      <div class="bc-pain">Pod shops (Citadel, Millennium, Balyasny) run 30–80 pods with overlapping supply chain exposure they don't know they share. When TSMC announces a capacity disruption, 12 pods simultaneously face correlated risk through relationships none of them individually tracked. Re-correlation risk drives $350B+ in quant investment strategy notional. The risk desk cannot identify shared relationship exposure until correlated losses appear. With $342B AUM and $2T gross exposures, a 1% re-correlation event is a $20B problem.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Firm-wide relationship exposure dashboard: all pod positions cross-referenced against the graph. Shared edges identified and aggregated. Re-correlation risk scored before it materialises. Risk desk acts 10 days before the correlated P&L appears.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--fin);">
+      <div class="bc-domain">Primary Buyer · Finance · Severity 80/100</div>
+      <div class="bc-title">Thematic / AI Infrastructure PM</div>
+      <div class="bc-pain">Building AI infrastructure thematic position. Bloomberg finds obvious names. AlphaSense surfaces tier-1 beneficiaries. But third-ring companies — specialized software vendors, electrical grid operators near data centers, industrial gas suppliers for cooling systems, fiber providers for AI campuses — require relationship graph traversal no tool provides. The thematic position is always incomplete, always late to less-obvious beneficiaries. The PM who gets the full picture wins the theme. The PM with the obvious names gets crowded out.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Full theme traversal: given "AI infrastructure buildout" as an event, graph traversal maps all n-hop beneficiaries ranked by relationship weight × impact score. The complete universe — not just the obvious names — delivered before consensus forms.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--fin);">
+      <div class="bc-domain">Secondary Buyer · Finance · Severity 74/100</div>
+      <div class="bc-title">Quant Signal Developer</div>
+      <div class="bc-pain">Modelling which events at which firms propagate to which others with what magnitude and timing. Without a dynamic relationship graph, forced to estimate from historical price correlations — backward-looking, capturing spurious correlations, failing to reflect current relationship states. The FinDKG paper proves dynamic knowledge graphs with neural link prediction outperform static correlations for thematic investing. The academic proof exists. The commercial tool does not. Every backtest using static relationships is structurally biased.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Time-versioned graph state for backtesting: "What were the relationship weights on September 1, 2023?" is answerable. Edge weight time-series enables relationship-informed signal construction and true point-in-time backtesting without look-ahead bias on relationship data.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--fin);">
+      <div class="bc-domain">Secondary Buyer · Finance · Severity 68/100</div>
+      <div class="bc-title">Event-Driven / Activist Fund</div>
+      <div class="bc-pain">Tracks corporate events — leadership changes, M&A, regulatory actions, proxy fights — and their propagation to related entities. Board interlocks, shared executives, JV partners, licensing relationships are all potential contagion vectors. Manual tracking of these relationships for 50+ thesis positions is humanly impossible. Missing a key board interlock between a target and a regulatory body that just changed commissioner has cost activists positions worth hundreds of millions.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Corporate event → full board/executive network traversal in 60 seconds. Regulatory co-exposure edges surface hidden relationships between target and regulator. Every proxy fight, leadership change, and M&A announcement propagated through the full corporate relationship graph automatically.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--fin);">
+      <div class="bc-domain">Tertiary Buyer · Finance · Severity 60/100</div>
+      <div class="bc-title">Macro / Global Asset Allocator</div>
+      <div class="bc-pain">Identifying which markets, sectors, and companies are most exposed to macroeconomic shocks via trade network, currency dependencies, and geopolitical relationships. The Federal Reserve's research (Jan 2025) documents that a quarter of GDP and inflation effects after 2020 came from shocks outside the US that propagated through input-output networks. A macro PM without a relationship graph is flying blind through the single most important transmission mechanism in global markets.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Geopolitical event → full cross-border relationship traversal. Trade network exposure by country pair. Currency dependency edges. Input-output transmission scoring. The macro shock's propagation path made visible before it reaches price.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Supply Chain Buyers -->
+  <div style="margin-bottom:2px;">
+    <div style="background:var(--sc);padding:10px 20px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:2.5px;color:white;text-transform:uppercase;">VERTICAL B · SUPPLY CHAIN · SIX BUYER PROFILES</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--rule);border:1px solid var(--rule);">
+
+    <div class="buyer-card" style="border-top-color:var(--sc);">
+      <div class="bc-domain">Primary Buyer · Operations · Severity 96/100</div>
+      <div class="bc-title">Chief Procurement Officer (CPO)</div>
+      <div class="bc-pain">Accountable for supply continuity across the enterprise at board level. Post-COVID, "supply chain resilience" is the #1 or #2 board priority for 80%+ of CPOs (Hackett Group 2025). Personally blamed when production halts. Current tools: SAP Ariba (Tier 1 only), Interos (Tier 1–2 partial), D&B (Tier 1 financial). Spend on risk tools: $100K–$2M/yr. Yet disruptions still originate in Tier 3+ where no tool reaches. The 2021 automotive chip shortage hit CPOs who had spent millions on supplier risk management that didn't map 3 hops deep.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Board-level multi-tier risk dashboard. Automatic 14–45 day early warning before production impact. EU CSDD compliance documentation auto-generated from graph trace. Institutional memory encoded — survives complete team turnover.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--sc);">
+      <div class="bc-domain">Primary Buyer · Risk · Severity 88/100</div>
+      <div class="bc-title">Head of Supply Chain Risk Management</div>
+      <div class="bc-pain">Tasked with mapping and monitoring the entire supplier ecosystem. Current method: static supplier databases updated quarterly, periodic on-site audits (covers &lt;2% of Tier 2+), D&B financial alerts for Tier 1. 80% of time is reactive (responding to disruptions already in progress) not proactive (detecting signals). The Red Sea crisis took most risk teams 3–14 days to fully map exposure. MKG would have done it in 60 seconds. That gap is measured in production line shutdowns and emergency freight premiums of 200–400%.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Continuous multi-tier monitoring across all six disruption types (geopolitical, climate, cyber, financial, regulatory, operational). Every disruption alert includes a full graph-path causal chain for audit documentation. Risk team time shifts from reactive firefighting to proactive signal review.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--sc);">
+      <div class="bc-domain">Primary Buyer · Operations · Severity 84/100</div>
+      <div class="bc-title">VP Supply Chain / COO</div>
+      <div class="bc-pain">Responsible for production continuity. Sits between CPO's risk strategy and the factory floor's operational reality. When a line goes down, this person is scrambling for alternate sources, authorising premium freight, and explaining to the CEO why they didn't see it coming. Needs disruption intelligence in operational format — affected production platforms, delay estimates, available alternates — not a risk report. The Renesas factory fire hit COOs who had no system connecting a fire in Japan to their semiconductor supply 3 hops away.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Operational-format alert: affected production lines ranked, estimated delay per platform, pre-computed alternate sources with current availability scores and lead time deltas. From news signal to recommended procurement action in 60 seconds — not a risk report, an action plan.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--sc);">
+      <div class="bc-domain">Secondary Buyer · IT/Security · Severity 76/100</div>
+      <div class="bc-title">CISO / Supply Chain Cybersecurity Lead</div>
+      <div class="bc-pain">Responsible for third-party cyber risk across the supplier ecosystem. 35.5% of data breaches now involve third parties (2024, up from 29%). Software supply chain attacks +68% in 2025. Industrial breach average: $5.56M. Cannot monitor 5,000+ suppliers manually for cyber exposure. The critical gap: companies sharing the same ERP/MES/WMS providers are co-exposed to the same software supply chain attacks — but no tool maps these software dependency edges across the supplier network.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Software vendor co-dependency edges in the graph: suppliers sharing a critical software stack are connected by cyber co-exposure edges. A breach at a shared software vendor automatically triggers traversal to all co-exposed supplier nodes. The cyber supply chain attack surface becomes a graphable, monitorable map.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--sc);">
+      <div class="bc-domain">Secondary Buyer · Compliance · Severity 72/100</div>
+      <div class="bc-title">Chief Compliance Officer</div>
+      <div class="bc-pain">Accountable for EU CSDD, UK Modern Slavery Act, US CHIPS Act, SEC climate disclosure — all requiring documented multi-tier supply chain due diligence. Current process: annual supplier surveys, periodic audits — static point-in-time snapshots. Regulators increasingly expect continuous monitoring, not annual documentation. The EU CSDD fines for non-compliance can reach 5% of global annual turnover. No existing tool auto-generates the continuous monitoring evidence trail that regulators expect.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Regulatory body nodes + governed entity edges. New regulations automatically mapped to all affected suppliers. Continuous monitoring generates timestamped compliance evidence. Audit documentation auto-generated from graph trace — no manual assembly. Temporal graph enables point-in-time historical proof for regulatory inquiries.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top-color:var(--sc);">
+      <div class="bc-domain">Tertiary Buyer · Finance · Severity 64/100</div>
+      <div class="bc-title">CFO / Supply Chain Finance Lead</div>
+      <div class="bc-pain">Responsible for working capital, supply chain finance programs, and the financial risk of supplier concentration. Current challenge: Tier-3 supplier bankruptcies — up 200% in H1 2024 — create inventory write-downs that appear as complete surprises because the dependency was invisible. The Hanjin Shipping bankruptcy (2016) stranded billions of cargo held by companies who had no system showing their Tier-2/3 logistics dependency on Hanjin.</div>
+      <div class="bc-mkg">
+        <div class="bc-mkg-lbl">MKG Output</div>
+        <div class="bc-mkg-text">Financial health signals (credit ratings, D&B, filing anomalies, news sentiment) mapped to supplier graph nodes — continuously updated. When a Tier-3 supplier shows financial distress, graph traversal computes which production lines are at risk and the revenue exposure. The CFO sees the supply chain financial risk before it becomes a P&L event.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ══ SECTION 4: TRIBAL KNOWLEDGE — BOTH VERTICALS ══ -->
+<div id="tribal" class="sec reveal">
+  <div class="sk">Section 04 · The Tribal Knowledge Problem — Both Verticals</div>
+  <div class="sh">What lives in heads.<br><em>What leaves when they do.</em></div>
+  <div class="ss">The deepest dimension of MKG's niche is not the data gap — it is the knowledge gap. Every veteran PM and every senior procurement leader carries a relationship map, a set of calibrations, a library of patterns that took 10–20 years to build. No tool captures it. No system encodes it. When they leave, it evaporates. MKG is the first system designed to make this knowledge permanent.</div>
+
+  <div class="pq">
+    <div class="pq-text">"42% of institutional knowledge is unique to individual employees and isn't documented anywhere else in the organisation. In investment management and supply chain operations — where the 'institution' is the accumulated relationship map — this figure is almost certainly higher."</div>
+    <div class="pq-attr">Panopto Research · Knowledge Retention Study · Applied to both verticals</div>
+  </div>
+
+  <!-- Fin tribal -->
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--fin);text-transform:uppercase;margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--rule);">VERTICAL A · FINANCIAL MARKETS — WHAT LEAVES WITH THE SENIOR ANALYST</div>
+
+  <div class="col2" style="margin-bottom:4px;">
+    <div class="icard">
+      <div class="ic-tag" style="color:var(--fin);">Tribal Type F-01 · Relationship</div>
+      <div class="ic-title">The Secret Relationship Map — 200 edges no database has</div>
+      <div class="ic-body">Every veteran sector analyst carries a mental map of undisclosed or under-covered relationship edges — AMAT follows ASML by 3 weeks, this substrate supplier is the canary for TSMC packaging, that JV is operational in name only. Not in Capital IQ. Not in Bloomberg. Emerged from 15 years of reading footnotes, noticing co-movement patterns, attending industry conferences.
+      <div class="ic-quote">"AMAT always moves 2–3 weeks after ASML results. It's not in any database. You just know it after two cycles. When she left, that pattern left with her."</div>
+      </div>
+      <div class="ic-bridge"><div class="icb-lbl">MKG Encodes This As</div><div class="icb-text">Lead-lag edge metadata: temporal precedence relationships detected from co-movement analysis across all historical events. The 200-edge mental map becomes a queryable graph that survives analyst turnover. New analysts access it on day one.</div></div>
+    </div>
+    <div class="icard">
+      <div class="ic-tag" style="color:var(--fin);">Tribal Type F-02 · Calibration</div>
+      <div class="ic-title">CEO/CFO Guidance Calibration — "This one always sandbagged Q3 by 12%"</div>
+      <div class="ic-body">Experienced analysts develop precise, company-specific calibration adjustments never written in any research note. Which CEOs systematically underpromise and by how much. Which quarters of the year a company consistently surprises in one direction. Which management teams get nervous under pressure from specific analysts and what that nervousness signals. Priceless information — entirely verbal, lost on departure.
+      <div class="ic-quote">"This CFO guides down 8–12% from what they actually expect in Q3. Every year, for 8 years. Never written in any note. Just what everyone on the desk knows."</div>
+      </div>
+      <div class="ic-bridge"><div class="icb-lbl">MKG Encodes This As</div><div class="icb-text">Entity-level guidance bias model: historical guidance vs. actual delta per executive per quarter. Systematic over/under-guidance becomes a computable calibration factor. New analysts inherit the institutional calibration on day one — the pattern survives complete team turnover.</div></div>
+    </div>
+  </div>
+  <div class="col2" style="margin-bottom:4px;">
+    <div class="icard">
+      <div class="ic-tag" style="color:var(--fin);">Tribal Type F-03 · Leading Indicator</div>
+      <div class="ic-title">The Canary Companies — "Watch this one, nobody else does"</div>
+      <div class="ic-body">In every sector, small, under-covered companies whose results lead larger, better-covered companies by weeks. Small substrate suppliers before semiconductors. Obscure chemicals distributors before energy. A tiny Korean PCB maker whose order intake changes before TSMC's packaging capacity does. Veterans know these canaries intimately and watch them obsessively. The Shanghai Lockdown research confirms it: tier-1 suppliers showed significant abnormal returns before focal firms — the canaries exist.
+      <div class="ic-quote">"There's a substrate supplier in Taiwan — 10 analysts globally. When their lead times go from 4 to 10 weeks, TSMC's advanced packaging revenue misses 6 weeks later. Four cycles, every time."</div>
+      </div>
+      <div class="ic-bridge"><div class="icb-lbl">MKG Encodes This As</div><div class="icb-text">Lead-lag relationship detection: edges with consistent temporal precedence validated across N historical events are auto-encoded as "canary" edge types with lead-time metadata. Discoverable by any analyst — not just the veteran who spent years finding them.</div></div>
+    </div>
+    <div class="icard">
+      <div class="ic-tag" style="color:var(--fin);">Tribal Type F-04 · Cycle Memory</div>
+      <div class="ic-title">Cycle Sequence Memory — "We're at week 6 of a 14-week pattern"</div>
+      <div class="ic-body">Experienced sector analysts develop precise mental models of cycle dynamics built from witnessing 3–5 full cycles — typically 10–15 years of sector experience. They know which companies announce first, how the market initially misreads the announcement, which second-order companies reprice with what typical delay, how long the cycle lasts. This pattern recognition drives faster, more accurate positioning — and is entirely unencoded in any commercial system.
+      <div class="ic-quote">"I've seen four semiconductor upcycles. They all follow the same sequence. We're at week 6 of a 14-week propagation. TSMC has reported, ASML confirmed, now we wait for memory players. We're 40% through this cycle."</div>
+      </div>
+      <div class="ic-bridge"><div class="icb-lbl">MKG Encodes This As</div><div class="icb-text">Temporal graph rewind: historical disruption/cycle events stored as graph state snapshots. "Compare current state to Q2 2023 at T+6 weeks." Cycle positioning becomes a graph query. New analysts access institutional cycle memory from day one.</div></div>
+    </div>
+  </div>
+
+  <!-- SC tribal -->
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--sc);text-transform:uppercase;margin:36px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--rule);">VERTICAL B · SUPPLY CHAIN — WHAT LEAVES WITH THE SENIOR PROCUREMENT LEADER</div>
+
+  <div class="col2" style="margin-bottom:4px;">
+    <div class="icard">
+      <div class="ic-tag" style="color:var(--sc);">Tribal Type S-01 · Single-Source</div>
+      <div class="ic-title">Hidden Single-Source Dependencies — "The alternate doesn't actually qualify"</div>
+      <div class="ic-body">Every experienced SCM leader knows 10–20 "silent single-source" dependencies — components that look like they have alternates in the system but in practice cannot be switched without 18 months of requalification. Built from failed substitution attempts, quality incidents, and institutional memory of what doesn't work. Never captured in ERP or sourcing systems. Completely lost when the person leaves.
+      <div class="ic-quote">"We have three listed alternates for that gasket material. But anyone who's been here 5 years knows none of them qualify for the chemical resistance spec. The system says we have alternates. We don't."</div>
+      </div>
+      <div class="ic-bridge"><div class="icb-lbl">MKG Encodes This As</div><div class="icb-text">Qualification constraint metadata on alternate edges: "alternate exists but unqualified" is a distinct edge type from "certified alternate." Graph traversal scores single-source risk correctly — based on what is actually substitutable, not what the system claims.</div></div>
+    </div>
+    <div class="icard">
+      <div class="ic-tag" style="color:var(--sc);">Tribal Type S-02 · Supplier Calibration</div>
+      <div class="ic-title">Supplier Recovery Bias — "When they say 4 weeks, plan for 8"</div>
+      <div class="ic-body">Experienced procurement managers know exactly which suppliers systematically overstate or understate recovery timelines during disruptions. Some understate severity to protect the relationship. Others are transparent and accurate. Some recover 30% faster than their initial estimate. Others chronically miss dates. This calibration is never in the supplier scorecard system — it lives in the relationship manager's judgment and leaves with them.
+      <div class="ic-quote">"When that supplier says '4-week recovery,' we plan for 8. Every time, for 12 years. New account managers always get burned the first time."</div>
+      </div>
+      <div class="ic-bridge"><div class="icb-lbl">MKG Encodes This As</div><div class="icb-text">Historical stated recovery vs. actual recovery per supplier across all disruption events. Systematic over/under-promise bias becomes a computable correction factor. New procurement managers inherit the institutional calibration — the pattern survives complete team turnover.</div></div>
+    </div>
+  </div>
+  <div class="col2">
+    <div class="icard">
+      <div class="ic-tag" style="color:var(--sc);">Tribal Type S-03 · Canary Suppliers</div>
+      <div class="ic-title">The Canary Suppliers — "This tiny firm always signals 6 weeks ahead"</div>
+      <div class="ic-body">In every industry, small, under-monitored suppliers whose operational changes systematically lead the entire sector. A specialty chemical company whose order book changes always precede semiconductor lead time shifts by 6 weeks. A specialized logistics provider whose capacity utilisation signals broader logistics tightening before it appears in published rates. Veterans watch these canaries obsessively — no ERP or SCRM system tracks them as leading indicators.
+      <div class="ic-quote">"There's a specialty substrate supplier in Taiwan — 8 companies make what they make. When their lead times go from 4 to 10 weeks, every automotive OEM's tier-1 chips follow within 6 weeks. I've seen it four times."</div>
+      </div>
+      <div class="ic-bridge"><div class="icb-lbl">MKG Encodes This As</div><div class="icb-text">Canary edge type: edges with consistent temporal precedence validated across historical disruption events. The canary relationships become graph queries — discoverable by any analyst on any team, not just the veteran who spent years mapping the pattern manually.</div></div>
+    </div>
+    <div class="icard">
+      <div class="ic-tag" style="color:var(--sc);">Tribal Type S-04 · Disruption Pattern Library</div>
+      <div class="ic-title">Historical Disruption Pattern Memory — "This is exactly like 2011"</div>
+      <div class="ic-body">Experienced supply chain leaders carry a mental library of historical disruption patterns — which suppliers failed first, which alternatives were available, what the recovery sequence was, how long it took. This pattern recognition enables faster, more accurate response when a new disruption resembles a past one. Entirely unencoded, completely lost when leaders retire.
+      <div class="ic-quote">"This is almost identical to the Japan earthquake in 2011. Same substrate issue, same supplier concentration. In 2011: 14 weeks to recover, sequence was X then Y then Z. Let me call Y now before they get overwhelmed."</div>
+      </div>
+      <div class="ic-bridge"><div class="icb-lbl">MKG Encodes This As</div><div class="icb-text">Temporal graph rewind: historical disruptions stored as graph state snapshots. "Compare current state to March 2011 Japan earthquake." Historical propagation sequence, recovery timeline, and which alternatives activated — queryable baseline for any new disruption response.</div></div>
+    </div>
+  </div>
+</div>
+<!-- ══ SECTION 5: THE MASTER GAP TABLE ══ -->
+<div id="gap" class="sec reveal">
+  <div class="sk">Section 05 · The Master Gap Matrix — Both Verticals Combined</div>
+  <div class="sh">What every tool does.<br><em>What none of them do. What only MKG does.</em></div>
+  <div class="ss">Seventeen platforms — financial data, AI intelligence, graph-adjacent, supply chain risk — mapped against 38 capabilities. Every row marked NEW ✦ is a capability that exists in zero commercial products today across both verticals.</div>
+
+  <div class="gap-tbl">
+    <table class="gt">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th style="background:var(--fin);">Bloomberg</th>
+          <th style="background:var(--fin);">LSEG</th>
+          <th style="background:var(--fin);">FactSet</th>
+          <th style="background:var(--fin);">Capital IQ</th>
+          <th style="background:#4a2d8a;">AlphaSense</th>
+          <th style="background:#c89020;color:#1a1208;">RavenPack</th>
+          <th style="background:var(--sc);">SAP Ariba</th>
+          <th style="background:var(--sc);">Resilinc</th>
+          <th style="background:var(--sc);">Interos</th>
+          <th style="background:#1a1a2e;">Palantir</th>
+          <th class="mc">MKG ✦</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="cat"><td colspan="12">DATA FOUNDATION</td></tr>
+        <tr><td>Real-time market data (equities, FI, FX)</td><td class="ck">✓</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+        <tr><td>Multilingual news (13+ languages)</td><td class="cp">~</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>Financial fundamentals &amp; estimates</td><td class="cp">~</td><td class="cp">~</td><td class="ck">✓</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+        <tr><td>Document corpus (500M+ docs)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cp">~</td></tr>
+        <tr><td>Tier 1 supplier database</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>Tier 2 supplier visibility</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="ck">✓</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>Tier 3+ deep chain mapping</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>22-year historical signal data</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cx">✗</td></tr>
+
+        <tr class="cat"><td colspan="12">RELATIONSHIP GRAPH LAYER</td></tr>
+        <tr><td>Static supply chain graph (filing-sourced)</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>Executive / board network graph (static)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>Ontology / semantic graph infrastructure</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="mc ck">✓</td></tr>
+        <tr><td><strong>Dynamic edge weights (WAN-adjusted, real-time)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Lead-lag temporal edge metadata</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Regulatory co-exposure edges</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Relationship decay detection (automatic)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Qualification-aware alternate edge types</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+
+        <tr class="cat"><td colspan="12">PROPAGATION ENGINE — THE CORE DIFFERENTIATOR</td></tr>
+        <tr><td><strong>Automated event → graph traversal (60 sec)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Multi-hop contagion scoring (3+ tiers)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Impact score + direction + confidence interval</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Multi-horizon decay curve (4 horizons)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Both financial + SC propagation in one system</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+
+        <tr class="cat"><td colspan="12">TRIBAL KNOWLEDGE ENCODING</td></tr>
+        <tr><td><strong>CEO/CFO guidance bias model (per executive)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Supplier recovery calibration (over/under-promise)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Canary company / supplier identification</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Institutional disruption pattern library (both verticals)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+
+        <tr class="cat"><td colspan="12">TEMPORAL INFRASTRUCTURE</td></tr>
+        <tr><td><strong>Full temporal graph state (rewind to any timestamp)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Edge weight time-series (backtest without look-ahead bias)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Historical cycle / disruption pattern replay</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+
+        <tr class="cat"><td colspan="12">EXPLAINABILITY &amp; COMPLIANCE</td></tr>
+        <tr><td><strong>Full causal chain: event → edge → score → source</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>MiFID II / fiduciary audit trail (financial)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>EU CSDD auto-documentation (supply chain)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cp">~</td><td class="ck">✓</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+
+        <tr class="cat"><td colspan="12">DEPLOYMENT &amp; INFRASTRUCTURE</td></tr>
+        <tr><td>On-premise / air-gapped deployment</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="mc ck">✓</td></tr>
+        <tr><td>API / programmatic access</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="mc ck">✓</td></tr>
+        <tr><td>Cross-vertical unified graph (fin + SC in one system)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);margin-top:6px;letter-spacing:0.5px;">
+    ✓ Full &nbsp;|&nbsp; ~ Partial &nbsp;|&nbsp; ✗ None &nbsp;|&nbsp; ✦ NEW = First commercial encoding of this capability across both verticals &nbsp;|&nbsp; Bold = MKG-exclusive or near-exclusive
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;background:var(--rule);border:1px solid var(--rule);margin:28px 0;">
+    <div style="background:var(--paper);padding:20px 18px;border-top:3px solid var(--red);">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">MKG-Exclusive Capabilities</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:var(--red);line-height:1;">20</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink2);margin-top:4px;">capabilities marked NEW ✦ exist in zero commercial platforms across both verticals today. This is the exact size of the white space MKG occupies.</div>
+    </div>
+    <div style="background:var(--paper);padding:20px 18px;border-top:3px solid var(--fin);">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Financial Markets Tool Gap</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:var(--fin);line-height:1;">$900K</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink2);margin-top:4px;">per year spent by a 10-seat institutional desk on Bloomberg + FactSet + AlphaSense + Capital IQ + RavenPack — with the graph propagation gap still open.</div>
+    </div>
+    <div style="background:var(--paper);padding:20px 18px;border-top:3px solid var(--sc);">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Supply Chain Disruption Cost</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:var(--sc);line-height:1;">8%</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink2);margin-top:4px;">of annual revenue lost per major disruption event on average. For a $10B revenue company, that is $800M per event — occurring on average every 3.7 years.</div>
+    </div>
+  </div>
+</div>
+<!-- ══ SECTION 6: NICHE BOUNDARIES ══ -->
+<div id="boundaries" class="sec reveal">
+  <div class="sk">Section 06 · Niche Boundaries — What MKG Is and Is Not</div>
+  <div class="sh">Equally important:<br><em>what MKG will never try to be.</em></div>
+  <div class="ss">Niche discipline requires knowing where to stop. Every listed item below is a deliberate choice to not compete — a boundary that keeps MKG focused on the white space it owns rather than diluting into crowded, expensive battles it cannot win.</div>
+
+  <div class="bounds">
+    <div class="bt-row bt-header">
+      <div class="bt-cell">MKG IS — The Niche It Owns</div>
+      <div class="bt-cell">MKG IS NOT — Deliberate Boundaries</div>
+    </div>
+    <div class="bt-row">
+      <div class="bt-cell"><div class="bt-cell-text"><strong>The relationship intelligence layer</strong> — dynamic, weighted, time-versioned edges between entities in both financial and supply chain networks</div></div>
+      <div class="bt-cell"><div class="bt-cell-text"><strong>Not a Bloomberg replacement.</strong> MKG does not provide real-time prices, bond yields, FX rates, news wires, or IB messaging. It sits on top of Bloomberg, adding what Bloomberg cannot compute.</div></div>
+    </div>
+    <div class="bt-row">
+      <div class="bt-cell"><div class="bt-cell-text"><strong>The propagation engine</strong> — traversal of the relationship graph from a trigger event to a ranked impact list with direction, confidence, and causal explanation in 60 seconds</div></div>
+      <div class="bt-cell"><div class="bt-cell-text"><strong>Not a document search engine.</strong> MKG does not replace AlphaSense, Tegus, or Wall Street research. It reads documents as signals — it does not compete to surface the documents themselves.</div></div>
+    </div>
+    <div class="bt-row">
+      <div class="bt-cell"><div class="bt-cell-text"><strong>The tribal knowledge encoder</strong> — transforming unwritten institutional relationship maps, calibrations, and pattern libraries into permanent, queryable graph structures</div></div>
+      <div class="bt-cell"><div class="bt-cell-text"><strong>Not an ERP or procurement workflow tool.</strong> MKG does not replace SAP Ariba, Coupa, or Oracle SCM. It does not process purchase orders or manage supplier contracts. It provides the intelligence layer that informs those systems — it does not replace them.</div></div>
+    </div>
+    <div class="bt-row">
+      <div class="bt-cell"><div class="bt-cell-text"><strong>The temporal memory</strong> — a time-versioned graph state that allows any historical timestamp to be queried, enabling cycle pattern comparison and true point-in-time backtesting</div></div>
+      <div class="bt-cell"><div class="bt-cell-text"><strong>Not an execution platform.</strong> MKG does not connect to OMS, routing algorithms, or trading infrastructure. The signal MKG produces is an input to the PM's decision — not an automated execution trigger.</div></div>
+    </div>
+    <div class="bt-row">
+      <div class="bt-cell"><div class="bt-cell-text"><strong>The on-premise option</strong> — deployable inside an institution's air-gapped infrastructure, making MKG usable by institutions with the strictest data sovereignty requirements</div></div>
+      <div class="bt-cell"><div class="bt-cell-text"><strong>Not a general-purpose knowledge graph platform.</strong> MKG does not compete with Neo4j, TigerGraph, or Amazon Neptune as a graph database infrastructure layer. It is a purpose-built financial and supply chain intelligence application, not a developer tool.</div></div>
+    </div>
+    <div class="bt-row">
+      <div class="bt-cell"><div class="bt-cell-text"><strong>The multilingual signal reader</strong> — a scraping agent that reads 13 languages, including Chinese and Japanese regulatory press, eliminating the language gap that costs companies days of warning time</div></div>
+      <div class="bt-cell"><div class="bt-cell-text"><strong>Not a compliance workflow tool.</strong> MKG generates the evidence trail for EU CSDD and MiFID II as a by-product of its graph operation — it does not attempt to compete with dedicated RegTech compliance orchestration platforms like Comply Advantage or Finastra.</div></div>
+    </div>
+    <div class="bt-row">
+      <div class="bt-cell"><div class="bt-cell-text"><strong>The cross-vertical unified graph</strong> — the only commercial system applying the same dynamic graph architecture to both investment intelligence and supply chain disruption intelligence simultaneously, in one deployable product</div></div>
+      <div class="bt-cell"><div class="bt-cell-text"><strong>Not a Palantir for everyone.</strong> MKG does not offer a general-purpose data operating system requiring 12–18 month implementations and $5M+ annual contracts. MKG is purpose-built, deployable in weeks, and priced for $1–50B AUM funds and Global 2000 supply chain operations — not just the largest institutions.</div></div>
+    </div>
+  </div>
+
+  <div class="pq">
+    <div class="pq-text">"The discipline of niche definition is knowing not just what to build — but what to refuse to build. MKG's competitive advantage requires it to remain the best at one thing: reading signals, updating relationship weights, traversing the graph, and delivering ranked propagation intelligence in 60 seconds. Everything else is a distraction."</div>
+    <div class="pq-attr">MKG Product Philosophy · Niche Definition v1.0</div>
+  </div>
+</div>
+
+<!-- ══ SECTION 7: COMPETITIVE POSITIONING ══ -->
+<div class="sec reveal">
+  <div class="sk">Section 07 · Competitive Position — The Landscape in One View</div>
+  <div class="sh">Where every competitor sits.<br><em>Where the white space is.</em></div>
+  <div class="ss">Each competitor and adjacent platform is positioned against two axes: relationship graph depth (x-axis: from static/none to dynamic/weighted) and output speed (y-axis: from manual research days to automated 60-second delivery). MKG occupies the only position combining maximum graph depth with maximum output speed in either vertical.</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--rule);border:1px solid var(--rule);margin:32px 0;">
+    <div style="background:var(--paper);padding:0;">
+      <div style="background:var(--fin);padding:12px 20px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:2px;color:white;text-transform:uppercase;">VERTICAL A — FINANCIAL MARKETS</div>
+      <div style="padding:20px;">
+        <div style="margin-bottom:14px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--fin);text-transform:uppercase;margin-bottom:6px;">Right Answer / Slow (Hours to Days)</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--ink2);line-height:1.6;padding-left:12px;border-left:2px solid var(--rule);">AlphaSense Deep Research, FactSet Revere analysis, Capital IQ board network research. Produces accurate relationship intelligence — but manually, in hours to days. The alpha window closes before the output arrives. A senior analyst doing what MKG automates.</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--fin);text-transform:uppercase;margin-bottom:6px;">Wrong Answer / Fast (Seconds)</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--ink2);line-height:1.6;padding-left:12px;border-left:2px solid var(--rule);">Bloomberg news alert, RavenPack entity sentiment. Arrives in seconds — but tells you what happened to the directly affected entity only. No second-order, no graph traversal, no relationship weight. Speed without relationship depth.</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--fin);text-transform:uppercase;margin-bottom:6px;">No Answer / Any Speed</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--ink2);line-height:1.6;padding-left:12px;border-left:2px solid var(--rule);">Canary company signals, relationship decay, cycle sequence memory, CEO calibration, tribal knowledge — no tool at any price or speed provides this. The senior analyst carries it in their head. MKG encodes it permanently.</div>
+        </div>
+        <div style="background:var(--red-l);border:1px solid rgba(168,44,20,0.2);padding:12px 14px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;margin-bottom:4px;">MKG Position — Finance</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--ink2);line-height:1.55;"><strong>Right answer. 60 seconds.</strong> Dynamic weighted graph traversal with full tribal knowledge encoding. The only position combining graph depth with signal speed. Empty quadrant — zero commercial competitors as of February 2026.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--paper);padding:0;">
+      <div style="background:var(--sc);padding:12px 20px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:2px;color:white;text-transform:uppercase;">VERTICAL B — SUPPLY CHAIN</div>
+      <div style="padding:20px;">
+        <div style="margin-bottom:14px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sc);text-transform:uppercase;margin-bottom:6px;">Partial Answer / Slow (Days to Weeks)</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--ink2);line-height:1.6;padding-left:12px;border-left:2px solid var(--rule);">Interos Tier 1–2 monitoring, Resilinc event alerts, Z2Data component risk scoring. Covers Tier 1 and partial Tier 2. Alerts are entity-level (this supplier is at risk) not propagation-level (this supplier's risk reaches these of your production lines through these paths). No Tier 3+ visibility.</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sc);text-transform:uppercase;margin-bottom:6px;">No Supplier Graph / Fast</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--ink2);line-height:1.6;padding-left:12px;border-left:2px solid var(--rule);">SAP Ariba, Coupa: fast procurement workflow tools with Tier 1 databases. No relationship graph. No disruption propagation. No Tier 2/3 visibility. Fast at managing known contracts — blind to unknown network effects.</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sc);text-transform:uppercase;margin-bottom:6px;">No Answer / Any Speed</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--ink2);line-height:1.6;padding-left:12px;border-left:2px solid var(--rule);">Canary supplier detection, supplier recovery calibration, historical disruption pattern library, qualification-aware alternate edges — no SCRM tool at any price provides this. The 20-year SCM veteran carries it. When they retire, it evaporates.</div>
+        </div>
+        <div style="background:var(--red-l);border:1px solid rgba(168,44,20,0.2);padding:12px 14px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;margin-bottom:4px;">MKG Position — Supply Chain</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--ink2);line-height:1.55;"><strong>Full Tier 1–3+ graph traversal. 60 seconds. 13 languages.</strong> Dynamic weighted SC graph with tribal knowledge encoding. No SCRM tool currently matches this combination of depth, speed, and multilingual monitoring. Empty quadrant — zero commercial competitors as of February 2026.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CLOSING ══ -->
+<div class="closing reveal">
+  <div class="cl-kicker">The Definitive Statement · MKG Niche v1.0 · February 2026</div>
+  <div class="cl-text">
+    Bloomberg tells you what happened. AlphaSense tells you what was said about it. RavenPack tells you how the market felt. FactSet Revere tells you who is statically connected. Interos tells you that your Tier 1 and partial Tier 2 suppliers are at risk. Palantir, if you have $5M and 18 months, will build you a graph.
+  </div>
+  <div class="cl-line"></div>
+  <div class="cl-text">
+    <em>None of them can answer the question that matters:</em>
+    <br><br>
+    "A news event just hit this entity. Which other entities — across all of their supply chain relationships, board interlocks, joint ventures, regulatory co-exposures, customer dependencies, and licensing agreements — are affected, in what direction, with what weight, through what path, at what confidence, over what time horizon?"
+    <br><br>
+    And deliver that answer <em>in 60 seconds,</em> automatically, in both financial and supply chain contexts, with a full causal chain for audit, on-premise if required, across 13 languages, with the tribal knowledge of the most experienced analyst on the desk encoded into the graph weights, available to every junior analyst from their first day.
+  </div>
+  <div class="cl-line"></div>
+  <div class="cl-text">
+    <strong>That answer has lived in experienced humans' heads for 50 years in financial markets and for the entire history of modern supply chains.</strong>
+    <br><br>
+    The 15-year semiconductor analyst who knows AMAT lags ASML by 3 weeks. The 20-year CPO who knows the specialist substrate supplier in Taiwan that signals the whole sector 6 weeks ahead. The senior trader who knows this CEO always sandbags Q3 by 12%. The procurement director who knows when the supplier says "4 weeks," plan for 8.
+    <br><br>
+    When they leave, the knowledge leaves. The next disruption, you start over.
+    <br><br>
+    <strong>MKG is the first commercial system designed to make that knowledge permanent — to encode it in a graph that updates continuously, traverses automatically, explains completely, and never retires.</strong>
+    <br><br>
+    <em>That is the niche. Precisely. No more. No less.</em>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="ft">MKG · DEFINITIVE NICHE DEFINITION · VERSION 1.0 · FEBRUARY 2026 · CONFIDENTIAL</div>
+  <div class="ft">2 Verticals · 12 Buyer Profiles · 8 Tribal Types · 20 New Capabilities · 11 Platforms Mapped</div>
+</div>
+
+</div><!-- /wrap -->
+<script>
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');obs.unobserve(e.target);}});
+},{threshold:0.03});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

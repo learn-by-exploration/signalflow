@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — Applied to Supply Chain Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:     #f2efe8;
+  --paper:  #faf8f3;
+  --ink:    #16120c;
+  --ink2:   #2e2a20;
+  --muted:  #7a7060;
+  --rule:   #d8d0be;
+  --rule2:  #e8e2d4;
+
+  /* Chain colors */
+  --t1: #1a4a8a;  /* Tier 1 — visible */
+  --t2: #5a3a8a;  /* Tier 2 — partially visible */
+  --t3: #8a1a1a;  /* Tier 3 — invisible */
+  --t1l: rgba(26,74,138,0.08);
+  --t2l: rgba(90,58,138,0.08);
+  --t3l: rgba(138,26,26,0.08);
+
+  /* Domain signals */
+  --geo:    #b5341c;  /* Geopolitical */
+  --climate:#1a5c35;  /* Climate */
+  --cyber:  #2a4a8a;  /* Cyber */
+  --fin:    #8a6010;  /* Financial */
+  --reg:    #5a2a8a;  /* Regulatory */
+
+  --accent: #b5341c;
+  --gold:   #9a7520;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* ── Layout ── */
+.wrap { max-width: 1320px; margin: 0 auto; padding: 0 44px 120px; }
+
+/* ── Topbar ── */
+.topbar {
+  background: var(--ink); padding: 13px 44px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 100;
+}
+.tb-l { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; color: #c8b89a; }
+.tb-r { display: flex; gap: 28px; }
+.tb-r a {
+  font-family: 'JetBrains Mono', monospace; font-size: 8.5px;
+  letter-spacing: 1.5px; color: #5a5044; text-decoration: none;
+  text-transform: uppercase; transition: color 0.2s;
+}
+.tb-r a:hover { color: #c8b89a; }
+
+/* ── Hero ── */
+.hero {
+  padding: 72px 0 56px;
+  display: grid; grid-template-columns: 1fr 420px; gap: 64px;
+  border-bottom: 2px solid var(--ink); align-items: end;
+}
+.hero-kicker {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: 3px; color: var(--muted); text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.hero-h {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(42px, 5vw, 68px); font-weight: 400;
+  line-height: 1.05; color: var(--ink); letter-spacing: -0.5px;
+  margin-bottom: 20px;
+}
+.hero-h em { font-style: italic; color: var(--accent); }
+.hero-body {
+  font-family: 'DM Serif Display', serif; font-style: italic;
+  font-size: 18px; color: var(--ink2); line-height: 1.7; max-width: 600px;
+}
+
+/* Stat grid */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.sg-cell { background: var(--paper); padding: 18px 16px; }
+.sg-num { font-family: 'DM Serif Display', serif; font-size: 36px; font-weight: 400; line-height: 1; color: var(--accent); margin-bottom: 5px; }
+.sg-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1px; color: var(--muted); line-height: 1.4; text-transform: uppercase; }
+.sg-source { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--rule); margin-top: 4px; letter-spacing: 0.5px; }
+
+/* ── Sections ── */
+.sec { padding: 60px 0 0; }
+.sec-kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+.sec-title { font-family: 'DM Serif Display', serif; font-size: clamp(28px, 3.5vw, 46px); color: var(--ink); line-height: 1.1; margin-bottom: 10px; }
+.sec-title em { font-style: italic; color: var(--accent); }
+.sec-sub { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 17px; color: var(--muted); max-width: 680px; line-height: 1.65; margin-bottom: 40px; }
+
+/* ── Body text ── */
+.prose { font-family: 'DM Serif Display', serif; font-size: 16px; line-height: 1.8; color: var(--ink2); margin-bottom: 14px; }
+.prose strong { color: var(--ink); font-weight: 400; }
+
+/* ── Visibility map ── */
+.vis-map { margin: 32px 0; border: 1px solid var(--rule); overflow: hidden; }
+.vm-row { display: grid; grid-template-columns: 160px 1fr 180px; border-bottom: 1px solid var(--rule); }
+.vm-row:last-child { border-bottom: none; }
+.vm-tier { padding: 20px 18px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.vm-tier-text { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: white; line-height: 1.4; }
+.vm-content { padding: 20px 20px; border-left: 1px solid var(--rule); border-right: 1px solid var(--rule); }
+.vm-title { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.vm-desc { font-family: 'DM Serif Display', serif; font-size: 13px; color: var(--ink2); line-height: 1.55; }
+.vm-examples { margin-top: 8px; }
+.vm-ex { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); display: block; margin-top: 3px; }
+.vm-gap { padding: 20px 16px; display: flex; flex-direction: column; justify-content: center; }
+.gap-pill { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 1px; padding: 4px 8px; border-radius: 2px; text-align: center; margin-bottom: 4px; font-weight: 500; }
+
+/* ── Disruption types ── */
+.dis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--rule); border: 1px solid var(--rule); margin: 32px 0; }
+.dis-card { background: var(--paper); padding: 22px 20px; position: relative; overflow: hidden; }
+.dis-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.dis-card.geo::before { background: var(--geo); }
+.dis-card.climate::before { background: var(--climate); }
+.dis-card.cyber::before { background: var(--cyber); }
+.dis-card.fin::before { background: var(--fin); }
+.dis-card.reg::before { background: var(--reg); }
+.dis-card.sc::before { background: var(--t2); }
+.dis-icon { font-size: 26px; margin-bottom: 10px; }
+.dis-type { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+.dis-name { font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+.dis-body { font-family: 'DM Serif Display', serif; font-size: 13px; color: var(--ink2); line-height: 1.55; margin-bottom: 10px; }
+.dis-stat { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--accent); font-weight: 600; line-height: 1.4; }
+.dis-lag { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── Use case scenario ── */
+.scenario { background: var(--paper); border: 1px solid var(--rule); border-top: 3px solid var(--gold); padding: 0; margin: 32px 0; overflow: hidden; }
+.sc-header { padding: 22px 24px 18px; background: var(--rule2); border-bottom: 1px solid var(--rule); }
+.sc-tag { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; }
+.sc-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--ink); line-height: 1.3; }
+.sc-meta { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 4px; letter-spacing: 0.5px; }
+.sc-body { padding: 24px; }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--rule); }
+.tl-item { position: relative; margin-bottom: 16px; }
+.tl-item::before { content: ''; position: absolute; left: -20px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--rule); border: 2px solid var(--bg); }
+.tl-item.mkg::before { background: var(--accent); }
+.tl-item.before::before { background: var(--t3); }
+.tl-time { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
+.tl-head { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.tl-text { font-family: 'DM Serif Display', serif; font-size: 13px; color: var(--ink2); line-height: 1.55; }
+.tl-mkg-badge { display: inline-block; background: var(--accent); color: white; font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 1px; padding: 2px 7px; border-radius: 2px; margin-bottom: 4px; text-transform: uppercase; }
+
+/* ── Buyer profiles ── */
+.buyer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--rule); border: 1px solid var(--rule); margin: 32px 0; }
+.buyer-card { background: var(--paper); padding: 22px 20px; }
+.bc-role { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+.bc-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--ink); margin-bottom: 10px; line-height: 1.2; }
+.bc-pain { font-family: 'DM Sans', sans-serif; font-size: 12.5px; color: var(--ink2); line-height: 1.5; margin-bottom: 12px; }
+.bc-gain { background: rgba(181,52,28,0.06); border-left: 3px solid var(--accent); padding: 10px 12px; }
+.bc-gain-lbl { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
+.bc-gain-text { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--ink2); line-height: 1.5; }
+
+/* ── Tribal knowledge ── */
+.tribal-row { display: grid; grid-template-columns: 52px 1fr 1fr; gap: 0; border-bottom: 1px solid var(--rule2); padding: 20px 0; }
+.tribal-row:last-child { border-bottom: none; }
+.tr-num { font-family: 'DM Serif Display', serif; font-size: 52px; color: var(--rule); line-height: 1; text-align: right; padding-right: 16px; transition: color 0.2s; }
+.tribal-row:hover .tr-num { color: var(--t2); }
+.tr-left { padding-right: 32px; }
+.tr-title { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.tr-type { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 1px; padding: 2px 7px; border-radius: 2px; margin-bottom: 8px; }
+.tr-body { font-family: 'DM Serif Display', serif; font-size: 13px; color: var(--ink2); line-height: 1.6; }
+.tr-quote { border-left: 2px solid var(--rule); padding: 6px 12px; margin: 8px 0; font-family: 'DM Serif Display', serif; font-size: 12px; font-style: italic; color: var(--muted); }
+.tr-right {}
+.tr-bridge { background: rgba(181,52,28,0.05); border: 1px solid rgba(181,52,28,0.18); padding: 12px 14px; height: 100%; }
+.trb-lbl { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+.trb-text { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--ink2); line-height: 1.55; }
+
+/* ── Comparison table ── */
+.comp-wrap { overflow-x: auto; margin: 28px 0; }
+table.comp { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+.comp thead th { background: var(--ink); color: #f0ede6; padding: 10px 10px; text-align: center; font-weight: 400; letter-spacing: 0.8px; white-space: nowrap; border: 1px solid var(--ink); }
+.comp thead th:first-child { text-align: left; min-width: 200px; background: #2a2218; }
+.comp thead th.mc { background: var(--accent); font-weight: 600; }
+.comp thead th.ex { background: #1a4a1a; }
+.comp tbody tr:nth-child(even) td { background: #ede8df; }
+.comp tbody tr:nth-child(odd) td { background: var(--paper); }
+.comp tbody td { padding: 8px 10px; border: 1px solid var(--rule); text-align: center; color: var(--ink2); vertical-align: middle; }
+.comp tbody td:first-child { text-align: left; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--ink); background: #e8e2d6 !important; }
+.comp tbody td.mc { background: rgba(181,52,28,0.06) !important; }
+.comp tbody tr.cat td { background: var(--ink2) !important; color: #f0ede6; font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; text-align: left !important; }
+.ck { color: #1a5c35; font-size: 13px; font-weight: 700; }
+.cx { color: #b5341c; font-size: 13px; font-weight: 700; }
+.cp { color: #7a5a10; font-size: 12px; font-weight: 700; }
+.cn { color: var(--accent); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; }
+
+/* ── Ibox ── */
+.ibox { padding: 16px 18px; margin-bottom: 12px; border-left: 3px solid; }
+.ibox.r { background: var(--t3l); border-color: var(--accent); }
+.ibox.g { background: rgba(26,92,53,0.07); border-color: var(--climate); }
+.ibox.b { background: var(--t1l); border-color: var(--t1); }
+.ib-lbl { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+.ib-text { font-family: 'DM Serif Display', serif; font-size: 14px; color: var(--ink2); line-height: 1.6; }
+.ib-text strong { color: var(--ink); }
+
+/* Pull quote */
+.pq { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); padding: 20px 0; margin: 32px 0; }
+.pq-text { font-family: 'DM Serif Display', serif; font-size: 22px; font-style: italic; color: var(--ink); line-height: 1.4; }
+.pq-attr { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1px; color: var(--muted); margin-top: 10px; text-transform: uppercase; }
+
+/* Tag */
+.tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 8px; padding: 2px 7px; border-radius: 2px; margin: 2px; letter-spacing: 0.5px; }
+.tg { background: rgba(26,92,53,0.1); color: #1a5c35; }
+.tr2 { background: rgba(181,52,28,0.09); color: #b5341c; }
+.ty { background: rgba(154,117,32,0.1); color: #7a5a10; }
+.tb { background: rgba(26,74,138,0.09); color: var(--t1); }
+
+/* Closing dark box */
+.dark-box { background: var(--ink); padding: 48px 44px; margin-top: 56px; }
+.db-kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 3px; color: #c8b89a; text-transform: uppercase; margin-bottom: 18px; }
+.db-text { font-family: 'DM Serif Display', serif; font-size: 22px; color: #f0ede6; line-height: 1.7; max-width: 900px; }
+.db-text em { color: #c8b89a; font-style: italic; }
+.db-text strong { color: white; }
+
+/* Reveal */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.45s ease, transform 0.45s ease; }
+.reveal.on { opacity: 1; transform: none; }
+
+/* Footer */
+.footer { border-top: 2px solid var(--ink); padding: 22px 0; display: flex; justify-content: space-between; margin-top: 60px; }
+.ft { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: var(--muted); }
+
+hr.rule { border: none; border-top: 1px solid var(--rule); margin: 36px 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-l">MKG · SUPPLY CHAIN APPLICATION · FEBRUARY 2026</div>
+  <nav class="tb-r">
+    <a href="#problem">The Problem</a>
+    <a href="#disruptions">Disruption Types</a>
+    <a href="#scenarios">Live Scenarios</a>
+    <a href="#tribal">Tribal Knowledge</a>
+    <a href="#buyers">Buyers</a>
+    <a href="#bridge">MKG Bridge</a>
+  </nav>
+</div>
+
+<div class="wrap">
+
+<!-- ── HERO ── -->
+<div class="hero reveal">
+  <div>
+    <div class="hero-kicker">MKG Applied to Supply Chain Industry · February 2026</div>
+    <div class="hero-h">
+      The supply chain<br>
+      sees <em>disruptions coming.</em><br>
+      Too late, always.
+    </div>
+    <div class="hero-body">
+      Supply chain disruptions cost companies an average of 8% of annual revenue and occur every 3.7 years on average — each lasting over a month. The problem is not that the signals don't exist. They do. The problem is that no system reads them across the full relationship network before the disruption reaches your tier-1 suppliers. MKG changes that.
+    </div>
+  </div>
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">The Scale of the Gap — 2025 Data</div>
+    <div class="stat-grid">
+      <div class="sg-cell">
+        <div class="sg-num">8%</div>
+        <div class="sg-label">Average revenue lost per disruption event · 2024</div>
+        <div class="sg-source">Procurement Tactics / Gartner</div>
+      </div>
+      <div class="sg-cell">
+        <div class="sg-num">3.7yr</div>
+        <div class="sg-label">Average time between major disruptions lasting &gt;1 month</div>
+        <div class="sg-source">McKinsey & Company</div>
+      </div>
+      <div class="sg-cell">
+        <div class="sg-num">94%</div>
+        <div class="sg-label">Companies report revenue impact from disruptions</div>
+        <div class="sg-source">Procurement Tactics 2025</div>
+      </div>
+      <div class="sg-cell">
+        <div class="sg-num">6%</div>
+        <div class="sg-label">Companies with full supply chain visibility — only 6%</div>
+        <div class="sg-source">Gartner 2025</div>
+      </div>
+      <div class="sg-cell">
+        <div class="sg-num">40%+</div>
+        <div class="sg-label">Organizations with limited or no Tier 1 supplier visibility</div>
+        <div class="sg-source">McKinsey / WEF 2025</div>
+      </div>
+      <div class="sg-cell">
+        <div class="sg-num">45%</div>
+        <div class="sg-label">Of a decade's profits can be lost to disruptions (McKinsey)</div>
+        <div class="sg-source">McKinsey Global Institute</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 1: THE VISIBILITY PROBLEM ── -->
+<div id="problem" class="sec reveal">
+  <div class="sec-kicker">Section 01 · The Visibility Problem</div>
+  <div class="sec-title">Three-tier visibility.<br><em>Only one tier is actually visible.</em></div>
+  <div class="sec-sub">The exact same structural gap that exists in financial markets — Speed 1 vs Speed 2 vs Speed 3 — exists in supply chains. Tier-1 suppliers are well-monitored. Tier-2 suppliers are barely visible. Tier-3 and beyond are completely dark. But disruptions almost always originate there.</div>
+
+  <div class="vis-map">
+    <!-- Header -->
+    <div class="vm-row" style="background:var(--ink);">
+      <div class="vm-tier" style="background:transparent;">
+        <div class="vm-tier-text" style="color:#c8b89a;">TIER</div>
+      </div>
+      <div class="vm-content" style="border-left:1px solid rgba(255,255,255,0.1);border-right:1px solid rgba(255,255,255,0.1);">
+        <div class="vm-title" style="color:#f0ede6;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;">What it covers</div>
+      </div>
+      <div class="vm-gap">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:#c8b89a;text-transform:uppercase;text-align:center;">Visibility & tools</div>
+      </div>
+    </div>
+
+    <!-- TIER 1 -->
+    <div class="vm-row">
+      <div class="vm-tier" style="background:var(--t1);">
+        <div class="vm-tier-text">TIER 1<br><br>Direct Suppliers</div>
+      </div>
+      <div class="vm-content">
+        <div class="vm-title">Your direct, named suppliers — the ones on your contracts</div>
+        <div class="vm-desc">Companies you buy directly from. Performance monitored via SLAs, QBRs, ERP data, supplier portals. Financial health tracked via D&B, Moody's. Lead times measured. Usually 50–200 suppliers. Well-understood but still incomplete — <strong>40%+ of companies lack even full Tier 1 visibility.</strong></div>
+        <div class="vm-examples">
+          <span class="vm-ex">▸ Example: Apple → TSMC (direct wafer order), Toyota → Denso (direct parts), Nike → Yue Yuen (direct manufacturing)</span>
+          <span class="vm-ex">▸ Disruption warning time: Days to weeks — usually caught via supplier portal, financial alerts, news</span>
+        </div>
+      </div>
+      <div class="vm-gap">
+        <div class="gap-pill" style="background:rgba(26,74,138,0.12);color:var(--t1);">WELL MONITORED</div>
+        <div class="gap-pill" style="background:rgba(26,74,138,0.06);color:var(--t1);">ERP / SRM tools</div>
+        <div class="gap-pill" style="background:rgba(26,74,138,0.06);color:var(--t1);">SAP Ariba, Coupa</div>
+        <div class="gap-pill" style="background:rgba(26,74,138,0.06);color:var(--t1);">D&B / Moody's alerts</div>
+        <div class="gap-pill" style="background:rgba(26,74,138,0.06);color:var(--t1);">Resilinc tier-1</div>
+      </div>
+    </div>
+
+    <!-- TIER 2 -->
+    <div class="vm-row">
+      <div class="vm-tier" style="background:var(--t2);">
+        <div class="vm-tier-text">TIER 2<br><br>Sub-suppliers</div>
+      </div>
+      <div class="vm-content">
+        <div class="vm-title">Your suppliers' suppliers — the companies you don't contract with but depend on</div>
+        <div class="vm-desc">Companies that supply materials, components, or services to your Tier 1 suppliers. Rarely in your ERP. Often unknown to you by name. Only 43% of companies have visibility into Tier 2 at all. Yet Tier 2 disruptions cascade into Tier 1 failures 70–80% of the time. <strong>The most undermonitored, highest-impact tier.</strong></div>
+        <div class="vm-examples">
+          <span class="vm-ex">▸ Example: TSMC → ASML (EUV machines), Denso → Renesas (chips), Yue Yuen → fabric mills (raw materials)</span>
+          <span class="vm-ex">▸ Disruption warning time: Weeks to months — usually discovered only AFTER the Tier 1 begins failing</span>
+        </div>
+      </div>
+      <div class="vm-gap">
+        <div class="gap-pill" style="background:rgba(90,58,138,0.12);color:var(--t2);">PARTIALLY VISIBLE</div>
+        <div class="gap-pill" style="background:rgba(90,58,138,0.06);color:var(--t2);">Interos (partial)</div>
+        <div class="gap-pill" style="background:rgba(90,58,138,0.06);color:var(--t2);">Resilinc (partial)</div>
+        <div class="gap-pill" style="background:rgba(154,117,32,0.1);color:var(--fin);">43% of firms only</div>
+      </div>
+    </div>
+
+    <!-- TIER 3+ -->
+    <div class="vm-row">
+      <div class="vm-tier" style="background:var(--t3);">
+        <div class="vm-tier-text">TIER 3+<br><br>Deep Chain</div>
+      </div>
+      <div class="vm-content">
+        <div class="vm-title">Sub-sub-suppliers and beyond — the true origin of most major disruptions</div>
+        <div class="vm-desc">Raw material producers, specialized chemical suppliers, rare earth miners, single-source component makers. Almost completely invisible to most companies. COVID-19 exposed how deeply companies depend on Tier 3+ suppliers they didn't even know they had. <strong>This is where the 2021 automotive chip shortage actually originated — Tier 3 chemical plant fire in Japan.</strong></div>
+        <div class="vm-examples">
+          <span class="vm-ex">▸ Example: Renesas ← Shin-Etsu Chemical (silicon wafers) ← quartz mining operations in Brazil — 3 hops from Toyota</span>
+          <span class="vm-ex">▸ Disruption warning time: Months — by the time you know, your Tier 1 is already shutting lines</span>
+        </div>
+      </div>
+      <div class="vm-gap">
+        <div class="gap-pill" style="background:rgba(138,26,26,0.12);color:var(--t3);">INVISIBLE</div>
+        <div class="gap-pill" style="background:rgba(138,26,26,0.06);color:var(--t3);">No tool covers this</div>
+        <div class="gap-pill" style="background:rgba(138,26,26,0.06);color:var(--t3);">100% dark</div>
+        <div class="gap-pill" style="background:rgba(181,52,28,0.1);color:var(--accent);">MKG target zone</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pq">
+    <div class="pq-text">"About half of a disruption's total effect may come from amplification through the supply chain network. A quarter of GDP and inflation effects after 2020 are attributed to shocks outside the U.S. that propagated through input-output networks."</div>
+    <div class="pq-attr">Federal Reserve Bank of Richmond · Economic Brief · January 2025</div>
+  </div>
+</div>
+
+<!-- ── SECTION 2: DISRUPTION TAXONOMY ── -->
+<div id="disruptions" class="sec reveal">
+  <div class="sec-kicker">Section 02 · Disruption Taxonomy</div>
+  <div class="sec-title">Six types of supply chain shock.<br><em>All transmit through the graph.</em></div>
+  <div class="sec-sub">Every major supply chain disruption follows the same pattern: a signal appears in the news — a typhoon path, a factory fire, a bankruptcy filing, a regulatory change — days or weeks before the disruption reaches your supply chain. MKG reads those signals in real time across all six disruption types.</div>
+
+  <div class="dis-grid">
+    <div class="dis-card geo">
+      <div class="dis-icon">🌐</div>
+      <div class="dis-type">Disruption Type 01</div>
+      <div class="dis-name">Geopolitical Shock</div>
+      <div class="dis-body">Trade wars, sanctions, tariffs, export controls, port closures due to conflict. Red Sea crisis (2023–24): $6B/week in trade disrupted. Russia-Ukraine: 35% decline in Ukrainian agricultural output. US-China tariffs: 17% drop in Chinese imports to US in 2025.</div>
+      <div class="dis-stat">38% rise in disruptions from geopolitical causes (2024 vs 2023)</div>
+      <div class="dis-lag">⏱ Signal-to-impact window: 2–8 weeks · Detectable in news 14–30 days before supply chain effect</div>
+      <div style="margin-top:10px;">
+        <span class="tag tb">News detectable</span><span class="tag tg">Graph-traversable</span><span class="tag tr2">Tier 3 originating</span>
+      </div>
+    </div>
+
+    <div class="dis-card climate">
+      <div class="dis-icon">🌪</div>
+      <div class="dis-type">Disruption Type 02</div>
+      <div class="dis-name">Climate & Weather Event</div>
+      <div class="dis-body">Hurricanes, droughts, flooding, wildfires. Panama Canal drought: 32% reduction in transit capacity, 21-day delays. Hurricane Helene (2024): semiconductor-grade quartz supply impacted. 41% of organisations investing in weather resilience (2024).</div>
+      <div class="dis-stat">Aerospace & defense: $184M/yr disruption cost (Gartner 2025)</div>
+      <div class="dis-lag">⏱ Signal-to-impact window: 5–21 days · Weather tracking detectable 7–14 days in advance</div>
+      <div style="margin-top:10px;">
+        <span class="tag tb">Predictable signals</span><span class="tag tg">Route graph mapping</span><span class="tag tr2">Cascades deep</span>
+      </div>
+    </div>
+
+    <div class="dis-card cyber">
+      <div class="dis-icon">💻</div>
+      <div class="dis-type">Disruption Type 03</div>
+      <div class="dis-name">Cyber & Technology Failure</div>
+      <div class="dis-body">Third-party software attacks, ERP failures, ransomware. Jaguar Land Rover: £72M/day production halt from cyber attack. 35.5% of all data breaches involve third parties (2024, up from 29%). Software supply chain attacks +68% in 2025. Industrial breach avg: $5.56M.</div>
+      <div class="dis-stat">$138B predicted annual cost of SC cyber attacks by 2031</div>
+      <div class="dis-lag">⏱ Signal-to-impact window: Hours to days · Software vendor alerts often precede cascades</div>
+      <div style="margin-top:10px;">
+        <span class="tag tr2">Fast-moving</span><span class="tag tg">Vendor graph critical</span><span class="tag tb">Shared software nodes</span>
+      </div>
+    </div>
+
+    <div class="dis-card fin">
+      <div class="dis-icon">📉</div>
+      <div class="dis-type">Disruption Type 04</div>
+      <div class="dis-name">Financial Instability</div>
+      <div class="dis-body">Supplier bankruptcies, credit stress, force majeure declarations. Bankruptcies up 200% in H1 2024 vs H1 2023. Force majeures up 128%. Hanjin Shipping bankruptcy (2016): billions of cargo stranded. Financial distress signals appear in filings 60–90 days before collapse.</div>
+      <div class="dis-stat">200% increase in supplier bankruptcies · H1 2024 vs H1 2023</div>
+      <div class="dis-lag">⏱ Signal-to-impact window: 60–120 days · Detectable via financial news and filing monitoring</div>
+      <div style="margin-top:10px;">
+        <span class="tag tg">Long signal window</span><span class="tag tb">Filing-detectable</span><span class="tag tr2">Cascades to tier-2/3</span>
+      </div>
+    </div>
+
+    <div class="dis-card reg">
+      <div class="dis-icon">⚖️</div>
+      <div class="dis-type">Disruption Type 05</div>
+      <div class="dis-name">Regulatory & Trade Change</div>
+      <div class="dis-body">Export controls, compliance mandates, tariffs, environmental regulations. EU CSDD, UK Modern Slavery Act, US CHIPS Act, SEC climate disclosure. Regulatory change disruptions up 185% in H1 2024. China REE export restrictions on yttrium (April 2025): immediate semiconductor cascade.</div>
+      <div class="dis-stat">185% increase in regulatory-driven disruptions · H1 2024</div>
+      <div class="dis-lag">⏱ Signal-to-impact window: Weeks to months · Policy text published before effective date</div>
+      <div style="margin-top:10px;">
+        <span class="tag tg">Long lead time</span><span class="tag tb">Regulatory entity graph</span><span class="tag ty">~Partially covered</span>
+      </div>
+    </div>
+
+    <div class="dis-card sc">
+      <div class="dis-icon">🏭</div>
+      <div class="dis-type">Disruption Type 06</div>
+      <div class="dis-name">Operational Failure</div>
+      <div class="dis-body">Factory fires, equipment failures, labor strikes, leadership transitions. Factory fires down 21% in 2024 but still major cause. Labor unrest: 3,000+ strikes tracked globally. Leadership transitions up 92% in H1 2024 — each creates supply chain uncertainty. Single-source component failures.</div>
+      <div class="dis-stat">Leadership transitions up 92% · H1 2024 vs H1 2023 · High single-source risk</div>
+      <div class="dis-lag">⏱ Signal-to-impact window: Days to weeks · Factory incident news precedes supply impact by 5–14 days</div>
+      <div style="margin-top:10px;">
+        <span class="tag tb">News-detectable</span><span class="tag tr2">Concentrated risk</span><span class="tag tg">Single-source mapping</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 3: LIVE SCENARIOS ── -->
+<div id="scenarios" class="sec reveal">
+  <div class="sec-kicker">Section 03 · Live Use Case Scenarios</div>
+  <div class="sec-title">Real disruptions. Real signals.<br><em>How MKG would have seen them first.</em></div>
+  <div class="sec-sub">Three of 2024–2025's most damaging supply chain events, re-examined through MKG's graph architecture. In each case, the signals existed days to weeks before the impact. No company had a system to connect them.</div>
+
+  <!-- Scenario 1: Red Sea -->
+  <div class="scenario">
+    <div class="sc-header">
+      <div class="sc-tag">Scenario 01 · Geopolitical / Maritime</div>
+      <div class="sc-title">Red Sea Crisis — Houthi Attacks on Shipping Lanes · Late 2023 → 2024</div>
+      <div class="sc-meta">$6B/week trade disrupted · 35% increase in lead times · Shipping costs +15–20% · 30,000+ vessels rerouted</div>
+    </div>
+    <div class="sc-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Without MKG — What Companies Experienced</div>
+          <div class="timeline">
+            <div class="tl-item before">
+              <div class="tl-time">T-30 DAYS</div>
+              <div class="tl-head">Houthi attacks on shipping begin. International news.</div>
+              <div class="tl-text">News reported. Most supply chain teams monitoring but no systematic mapping of which of their Tier-2/3 suppliers' components transit the Red Sea regularly.</div>
+            </div>
+            <div class="tl-item before">
+              <div class="tl-time">T-14 DAYS</div>
+              <div class="tl-head">Major shipping lines announce Red Sea avoidance.</div>
+              <div class="tl-text">Maersk, MSC, CMA CGM divert vessels. Most companies learn this from general logistics news, not from a supplier-specific alert. No automated mapping of which specific purchase orders are on affected vessels.</div>
+            </div>
+            <div class="tl-item before">
+              <div class="tl-time">T-3 DAYS</div>
+              <div class="tl-head">Procurement begins frantic supplier calls.</div>
+              <div class="tl-text">Teams manually calling Tier-1 suppliers to identify exposure. No Tier-2/3 mapping. Partial picture only. Spot market scramble begins — at 200–400% premium freight rates.</div>
+            </div>
+            <div class="tl-item before">
+              <div class="tl-time">T+0 WEEKS</div>
+              <div class="tl-head">Production lines begin slowing. Inventory runs out.</div>
+              <div class="tl-text">First material shortages hit assembly lines. Companies discover they had Tier-3 sub-suppliers in Asia whose sole routing was via the Red Sea — completely unknown before the crisis.</div>
+            </div>
+            <div class="tl-item before">
+              <div class="tl-time">T+4 WEEKS</div>
+              <div class="tl-head">Full impact: 35% lead time increase. Avg 10–14 day delays.</div>
+              <div class="tl-text">Total exposure finally understood. Far too late to mitigate. Stock procurement costs surge. Customer SLA breaches begin. Force majeures triggered downstream.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">With MKG — Graph-Driven Early Warning</div>
+          <div class="timeline">
+            <div class="tl-item mkg">
+              <div class="tl-time">T-45 DAYS — SIGNAL DETECTED</div>
+              <div class="tl-mkg-badge">MKG TRIGGER</div>
+              <div class="tl-head">Escalation news in regional Arabic and English press.</div>
+              <div class="tl-text">WAN reads news signals: Houthi escalation + shipping lane threat. Graph traversal begins: which of your suppliers (all tiers) source components routed via Red Sea? Scans vessel routing data + supplier geography edges. Alert generated in 60 seconds.</div>
+            </div>
+            <div class="tl-item mkg">
+              <div class="tl-time">T-38 DAYS</div>
+              <div class="tl-mkg-badge">MKG OUTPUT</div>
+              <div class="tl-head">Ranked exposure list delivered to CPO dashboard.</div>
+              <div class="tl-text">Impact score per supplier (all tiers). Red: 12 Tier-2/3 suppliers with &gt;60% Red Sea dependency. Amber: 8 Tier-1 suppliers with partial exposure. Green: 23 suppliers re-routable via Cape. Alternative routing options pre-computed. Freight cost delta modelled.</div>
+            </div>
+            <div class="tl-item mkg">
+              <div class="tl-time">T-30 DAYS</div>
+              <div class="tl-head">Procurement begins targeted mitigation.</div>
+              <div class="tl-text">High-exposure suppliers contacted directly. Air freight pre-booked at pre-crisis rates for critical components. Buffer stock orders placed. 3 weeks before the market scramble — at 60–70% cost saving vs. spot.</div>
+            </div>
+            <div class="tl-item mkg">
+              <div class="tl-time">T+0</div>
+              <div class="tl-head">Disruption hits — company is pre-positioned.</div>
+              <div class="tl-text">Most critical components already in warehouse. Spot freight avoided. Competitor lines slowing while your lines continue. Customer commitments maintained. Insurance claim documentation automatically generated from MKG's graph trace.</div>
+            </div>
+          </div>
+          <div class="ibox r" style="margin-top:16px;">
+            <div class="ib-lbl">Value Generated</div>
+            <div class="ib-text"><strong>38 days of early warning vs. 3 days.</strong> Pre-booked freight at pre-crisis rates. Tier-3 exposure mapped automatically — which took competitors 4+ weeks of manual research. Force majeures avoided. Customer SLAs maintained. Conservative estimate: <strong>$2–15M in avoided costs per major disruption event</strong> for a Global 500 manufacturer.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenario 2: Automotive chip shortage -->
+  <div class="scenario">
+    <div class="sc-header">
+      <div class="sc-tag">Scenario 02 · Single-Source / Operational Failure</div>
+      <div class="sc-title">Renesas Factory Fire → Global Automotive Chip Shortage · March 2021 (Repeat Pattern 2024)</div>
+      <div class="sc-meta">Single Tier-3 plant fire → Ford, GM, Toyota production halts · $210B in automotive revenue lost globally · Months to recover</div>
+    </div>
+    <div class="sc-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">The Hidden Chain That Destroyed Production</div>
+          <div class="prose">The 2021 Renesas factory fire is the canonical Tier-3 blind spot case. Renesas supplied automotive MCUs. But automotive OEMs didn't buy directly from Renesas — they bought from Tier-1 suppliers (Bosch, Denso, Continental) who incorporated Renesas chips. The chain was:</div>
+          <div style="margin:16px 0;padding:14px;background:var(--rule2);border:1px solid var(--rule);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink);line-height:2;">
+              Toyota / GM / Ford<br>
+              <span style="color:var(--muted);">↓ buys from (Tier 1)</span><br>
+              Bosch / Denso / Continental<br>
+              <span style="color:var(--muted);">↓ buys from (Tier 2)</span><br>
+              Renesas Electronics<br>
+              <span style="color:var(--muted);">↓ buys from (Tier 3)</span><br>
+              Shin-Etsu Chemical (silicon wafers)<br>
+              <span style="color:var(--accent);font-weight:600;">🔥 Fire at Naka fab → entire chain collapses</span>
+            </div>
+          </div>
+          <div class="prose">No automotive OEM had Renesas mapped as a critical Tier-3 dependency. None had Shin-Etsu in their supply chain monitoring system at all. The signal — a fire at a single Japanese factory — was visible globally within hours. But no system connected that fire to Toyota's production lines 3 hops away.</div>
+          <div class="ibox r">
+            <div class="ib-lbl">The Tribal Knowledge That Was Lost</div>
+            <div class="ib-text">The one person at Ford who knew Renesas was a critical Tier-3 sub-supplier had left the company 18 months earlier. Their mental map of the dependency left with them. <strong>This is the tribal knowledge destruction problem — exactly what MKG's temporal graph prevents.</strong></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">How MKG Would Have Seen It</div>
+          <div class="timeline">
+            <div class="tl-item mkg">
+              <div class="tl-time">T+0 HOURS — FIRE REPORTED</div>
+              <div class="tl-mkg-badge">MKG TRIGGER</div>
+              <div class="tl-head">Factory fire news published globally.</div>
+              <div class="tl-text">WAN reads news: "Renesas Naka fab fire." Entity extraction: Renesas Electronics, Naka facility, Japan, semiconductor fabrication. Graph traversal begins immediately across all supplier edges where Renesas appears — including Tier-2 and Tier-3 edges.</div>
+            </div>
+            <div class="tl-item mkg">
+              <div class="tl-time">T+60 SECONDS</div>
+              <div class="tl-mkg-badge">MKG OUTPUT</div>
+              <div class="tl-head">Full 3-hop impact assessment delivered.</div>
+              <div class="tl-text">Alert delivered to CPO dashboard: "Renesas Naka fire affects 47 entities in your supply network across 3 tiers. Criticality score 91/100 (single-source, no substitution). Tier-1 affected: Bosch (4 product lines), Denso (3 product lines). Production impact estimate: 14–21 day delay per platform."</div>
+            </div>
+            <div class="tl-item mkg">
+              <div class="tl-time">T+6 HOURS</div>
+              <div class="tl-head">Competitor analysis begins automatically.</div>
+              <div class="tl-text">Graph traversal extended: which competitors use same Renesas MCUs? Texas Instruments and Infineon alternatives identified with current availability scores. Secondary suppliers who could ramp production scored by capacity and qualification status.</div>
+            </div>
+            <div class="tl-item mkg">
+              <div class="tl-time">T+1 DAY</div>
+              <div class="tl-head">Procurement acts before market tightens.</div>
+              <div class="tl-text">Alternate source orders placed before industry-wide panic buying begins. 3 weeks before competitors know they have a problem. Price locks secured. The company that moved first captures remaining spot inventory at pre-shortage prices.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenario 3: China REE restriction -->
+  <div class="scenario">
+    <div class="sc-header">
+      <div class="sc-tag">Scenario 03 · Regulatory / Geopolitical · 2025</div>
+      <div class="sc-title">China Rare Earth Element Export Restrictions · April 2025</div>
+      <div class="sc-meta">China restricts yttrium exports → catalytic converters, TV screens, semiconductor manufacturing → cascading global manufacturing impact</div>
+    </div>
+    <div class="sc-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+        <div>
+          <div class="prose"><strong>China controls 60–80% of rare earth mining and 85–90% of rare earth refining globally.</strong> When China imposed export restrictions on yttrium in April 2025, companies using yttrium-based materials — catalytic converters, semiconductor phosphors, TV displays, fuel cells — faced an immediate upstream supply shock.</div>
+          <div class="prose" style="margin-top:12px;">The problem: most companies using yttrium don't buy it directly. They buy finished components from Tier-1 suppliers who incorporate yttrium-based materials from Chinese refiners they've never heard of. The regulatory change was published in Chinese government press releases — available in Chinese before English translation.</div>
+          <div class="ibox g" style="margin-top:16px;">
+            <div class="ib-lbl">The Language Gap</div>
+            <div class="ib-text"><strong>The yttrium export restriction announcement appeared in Chinese-language regulatory publications 11 days before English-language trade press coverage.</strong> Companies without multilingual news monitoring missed 11 days of warning time. MKG's 13-language scraping agent has no language gap — Chinese regulatory filings are read in real time.</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">MKG Regulatory Graph — How It Works</div>
+          <div class="prose">MKG treats regulatory bodies as first-class graph nodes. China's Ministry of Commerce (MOFCOM) is a node. The export restriction is an edge event. All companies with yttrium-dependent supply chains are reachable from that node via the regulatory co-exposure graph.</div>
+          <div style="margin:14px 0;padding:14px;background:var(--rule2);border:1px solid var(--rule);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink);line-height:2;">
+              MOFCOM Export Restriction (node)<br>
+              <span style="color:var(--muted);">→ governs (regulatory edge)</span><br>
+              Chinese REE refiners (6 companies)<br>
+              <span style="color:var(--muted);">→ supplies (SC edge, w=0.94)</span><br>
+              Yttrium phosphor manufacturers (12 co.)<br>
+              <span style="color:var(--muted);">→ supplies (SC edge, w=0.71)</span><br>
+              Automotive/Semis/Display Tier-1 suppliers<br>
+              <span style="color:var(--muted);">→ supplies (SC edge)</span><br>
+              <span style="color:var(--accent);font-weight:600;">YOUR COMPANY ← alert here, T+60 seconds</span>
+            </div>
+          </div>
+          <div class="timeline">
+            <div class="tl-item mkg">
+              <div class="tl-time">DAY 1 — CHINESE PRESS RELEASE</div>
+              <div class="tl-mkg-badge">MKG READS IN CHINESE</div>
+              <div class="tl-head">MOFCOM restriction published. WAN triggers immediately.</div>
+              <div class="tl-text">11 days before English-language coverage. Graph traversal identifies all companies co-exposed through yttrium dependency. Impact ranked by yttrium content per unit, substitutability, inventory days on hand.</div>
+            </div>
+            <div class="tl-item mkg">
+              <div class="tl-time">DAY 2</div>
+              <div class="tl-head">Procurement secures strategic stockpile ahead of the market.</div>
+              <div class="tl-text">Order placed with non-Chinese yttrium refiners (Australia, Canada, Brazil) before panic buying. Long-term supply contracts locked at pre-restriction prices. Engineering begins qualification of yttrium-reduced formulations.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 4: TRIBAL KNOWLEDGE ── -->
+<div id="tribal" class="sec reveal">
+  <div class="sec-kicker">Section 04 · Supply Chain Tribal Knowledge</div>
+  <div class="sec-title">What a 20-year supply chain veteran<br><em>knows that no tool captures</em></div>
+  <div class="sec-sub">The same tribal knowledge problem that exists in financial markets lives inside every corporate supply chain function. Senior SCM leaders carry relationship maps, supplier calibrations, and disruption patterns in their heads. When they leave, so does the institutional memory — and the company's resilience.</div>
+
+  <div class="tribal-row">
+    <div class="tr-num">01</div>
+    <div class="tr-left">
+      <span class="tr-type" style="background:var(--t3l);color:var(--t3);">Single-Source Knowledge</span>
+      <div class="tr-title">The Hidden Single-Source Dependencies Nobody Documented</div>
+      <div class="tr-body">Every experienced SCM leader knows 10–20 "silent single-source" dependencies — components that look like they have alternates in the system but in practice cannot be switched without 18 months of requalification. This knowledge is built from requalification failures, quality incidents, and institutional memory of past substitution attempts. It is never systematically captured in ERP or sourcing systems.</div>
+      <div class="tr-quote">"We have three listed alternates for that gasket material. But anyone who's been here 5 years knows none of them qualify for the chemical resistance spec. We're effectively single-sourced and the system doesn't know it."</div>
+    </div>
+    <div class="tr-right">
+      <div class="tr-bridge">
+        <div class="trb-lbl">MKG Bridge</div>
+        <div class="trb-text">MKG's graph encodes qualification constraints as edge metadata. "Alternate exists but unqualified" becomes a graph property — a distinct edge type from "certified alternate." Graph traversal scores single-source risk correctly, not based on what the system says exists but on what is actually substitutable. Survives leadership departure.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tribal-row">
+    <div class="tr-num">02</div>
+    <div class="tr-left">
+      <span class="tr-type" style="background:var(--t1l);color:var(--t1);">Supplier Calibration</span>
+      <div class="tr-title">Supplier-Specific Behavioral Calibration — "This one always overpromises recovery"</div>
+      <div class="tr-body">Experienced procurement managers develop precise, company-specific calibration for how suppliers communicate during disruptions. Some suppliers always understate severity to protect the relationship. Others are transparent and accurate. Some consistently recover 30% faster than their initial estimate. Others chronically miss recovery dates. This calibration is never in the supplier scorecard system — it lives in the relationship manager's judgment.</div>
+      <div class="tr-quote">"When that supplier says '4-week recovery,' we plan for 8. Every time, for 12 years. It's not in their scorecard — it's just what everyone on the desk knows. When we get new account managers they always get burned by it the first time."</div>
+    </div>
+    <div class="tr-right">
+      <div class="tr-bridge">
+        <div class="trb-lbl">MKG Bridge</div>
+        <div class="trb-text">Historical disruption event data per supplier: stated recovery date vs. actual recovery date across all recorded events. Systematic over/under-promise bias becomes a computable calibration factor per supplier entity. New procurement managers inherit the institutional calibration on day one — the pattern survives even complete team turnover.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tribal-row">
+    <div class="tr-num">03</div>
+    <div class="tr-left">
+      <span class="tr-type" style="background:var(--t2l);color:var(--t2);">Canary Suppliers</span>
+      <div class="tr-title">The Canary Suppliers — "This one always signals what's coming for the whole sector"</div>
+      <div class="tr-body">In every industry, there are small, under-monitored suppliers whose operational changes systematically lead the entire sector. A small specialty chemical company whose order book changes always precede semiconductor lead time shifts by 6 weeks. A specialized logistics provider in a single region whose capacity utilisation signals broader logistics tightening before it becomes visible in rates. Veterans know these canaries. They watch them obsessively. No ERP or SCRM system tracks them as leading indicators.</div>
+      <div class="tr-quote">"There's a specialty substrate supplier in Taiwan — 8 companies in the world make what they make. When their lead times go from 4 weeks to 10 weeks, every automotive OEM's tier-1 chips follow within 6 weeks. I've seen it happen four times."</div>
+    </div>
+    <div class="tr-right">
+      <div class="tr-bridge">
+        <div class="trb-lbl">MKG Bridge</div>
+        <div class="trb-text">Lead-lag edge detection: edges with consistent temporal precedence (Supplier A's signals precede industry-wide disruptions by N weeks, validated across historical events) are encoded as "canary" edge types with lead-time metadata. The canary relationships become graph queries, discoverable by any analyst — not just the veteran who spent years figuring it out.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tribal-row">
+    <div class="tr-num">04</div>
+    <div class="tr-left">
+      <span class="tr-type" style="background:rgba(154,117,32,0.1);color:var(--fin);">Relationship Strength</span>
+      <div class="tr-title">Real Relationship Weight vs. Contracted Volume — What the Relationship Actually Is</div>
+      <div class="tr-body">In supply chain databases, relationships are binary (supplier or not) or measured by contracted volume. But the real weight of a relationship — the willingness to prioritise your order in a shortage, the goodwill built over 20 years of collaboration, the personal relationship between your CPO and their CEO — is nowhere in any system. During a shortage, this informal relationship strength determines whose orders get filled first. Veterans know exactly which suppliers will "take care of" them when capacity is constrained.</div>
+      <div class="tr-quote">"On paper we're their 8th largest customer. In practice their CEO calls our CPO personally before allocating scarce capacity. That relationship is worth $50M in a shortage. It's not in any database."</div>
+    </div>
+    <div class="tr-right">
+      <div class="tr-bridge">
+        <div class="trb-lbl">MKG Bridge</div>
+        <div class="trb-text">Multi-dimensional edge weights: contracted volume weight (from procurement systems) + relationship quality signals (from news co-mentions, press release joint references, executive relationship signals from LinkedIn/filings) + historical allocation behavior during past shortages. A composite relationship strength score that captures more than pure volume. Encoded, not just remembered.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tribal-row">
+    <div class="tr-num">05</div>
+    <div class="tr-left">
+      <span class="tr-type" style="background:var(--t3l);color:var(--t3);">Disruption Pattern Memory</span>
+      <div class="tr-title">Historical Disruption Pattern Library — "This exact pattern happened in 2011"</div>
+      <div class="tr-body">Experienced supply chain leaders carry a mental library of historical disruption patterns. They immediately recognize when a current situation matches a past pattern — and they know exactly how it played out: which suppliers failed first, which alternatives were available, how long recovery took, what the sequence of events was. This pattern recognition drives faster, more accurate response. It is entirely unencoded in any system and completely lost when leaders retire.</div>
+      <div class="tr-quote">"This is almost identical to the Japan earthquake in 2011. Same semiconductor substrate issue, same supplier concentration. In 2011 it took 14 weeks to recover. The recovery sequence went: X first, then Y, then Z. Let me call our Y supplier now before they get overwhelmed."</div>
+    </div>
+    <div class="tr-right">
+      <div class="tr-bridge">
+        <div class="trb-lbl">MKG Bridge</div>
+        <div class="trb-text">Temporal graph rewind: historical disruption events stored as graph state snapshots. "Compare current situation to March 2011 Japan earthquake event." MKG surfaces historical propagation sequence, recovery timeline, and which alternative sources activated in sequence. The institutional memory of every past disruption becomes a queryable baseline for current event response — available to the most junior analyst on their first day.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 5: BUYER PROFILES ── -->
+<div id="buyers" class="sec reveal">
+  <div class="sec-kicker">Section 05 · Supply Chain Buyer Profiles</div>
+  <div class="sec-title">Who feels this pain most.<br><em>Precisely.</em></div>
+  <div class="sec-sub">Six distinct buyer profiles within the supply chain function — each with specific pain points that MKG's graph architecture directly addresses. Unlike financial markets where the primary buyer is the PM, supply chain has multiple decision makers who each face the same underlying problem from a different angle.</div>
+
+  <div class="buyer-grid">
+    <div class="buyer-card" style="border-top:3px solid var(--geo);">
+      <div class="bc-role">Primary Buyer · C-Suite</div>
+      <div class="bc-title">Chief Procurement Officer (CPO)</div>
+      <div class="bc-pain">Accountable for supply continuity across the enterprise. Board-level pressure since COVID. "Supply chain resilience" now the #1 or #2 priority for 80%+ of CPOs (Hackett Group 2025). Personally blamed when production halts. Spends enormous budget on risk tools that only cover Tier 1 — while most disruptions originate in Tier 2/3.</div>
+      <div class="bc-gain">
+        <div class="bc-gain-lbl">MKG Value</div>
+        <div class="bc-gain-text">Board-level supply chain risk visibility across all tiers. Automatic disruption early warning 14–45 days before production impact. Regulatory compliance documentation for EU CSDD automatically generated from graph trace. Institutional memory that survives team turnover.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top:3px solid var(--t2);">
+      <div class="bc-role">Primary Buyer · Risk Function</div>
+      <div class="bc-title">Head of Supply Chain Risk</div>
+      <div class="bc-pain">Tasked with mapping and monitoring supplier ecosystem risk. Current tools: static supplier databases, periodic audits, D&B alerts for Tier-1. Cannot monitor Tier-2/3 systematically — too many suppliers, too few analysts. 80% of their time is reactive (responding to disruptions that have already hit) rather than proactive (detecting signals before impact).</div>
+      <div class="bc-gain">
+        <div class="bc-gain-lbl">MKG Value</div>
+        <div class="bc-gain-text">Continuous, automated multi-tier monitoring across all six disruption types. Analyst time shifts from reactive firefighting to proactive signal review. Every disruption comes with a full causal chain — graph path from news signal to affected entities — for audit documentation.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top:3px solid var(--climate);">
+      <div class="bc-role">Primary Buyer · Operations</div>
+      <div class="bc-title">VP Supply Chain / COO</div>
+      <div class="bc-pain">Responsible for production continuity. Sits between the CPO's risk strategy and the factory floor's operational reality. When a line goes down, this person is the one scrambling to find alternate sources, authorize premium freight, and explain to the CEO why they didn't see it coming. Needs disruption intelligence in operational, actionable form — not academic risk reports.</div>
+      <div class="bc-gain">
+        <div class="bc-gain-lbl">MKG Value</div>
+        <div class="bc-gain-text">Operational-format alerts: ranked impact list with affected production platforms, estimated delay per line, pre-computed alternate sourcing options with current availability scores. From signal to recommended action in one dashboard view. Not a risk report — an action plan.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top:3px solid var(--cyber);">
+      <div class="bc-role">Secondary Buyer · IT/Security</div>
+      <div class="bc-title">CISO / Supply Chain Cybersecurity Lead</div>
+      <div class="bc-pain">Responsible for third-party cyber risk across the supplier ecosystem. Cannot monitor 5,000+ suppliers manually. Needs automated detection of software supply chain vulnerabilities that could cascade through their vendor network. 35.5% of breaches now involve third parties — and the chain propagates exactly like a supply chain network.</div>
+      <div class="bc-gain">
+        <div class="bc-gain-lbl">MKG Value</div>
+        <div class="bc-gain-text">Software vendor co-dependency edges in the graph: companies sharing the same critical software stack (ERP, MES, WMS providers) are connected by "cyber co-exposure" edges. A breach at a shared software vendor triggers automatic traversal to all co-exposed supplier nodes. The cyber attack vector becomes graphable and monitorable.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top:3px solid var(--reg);">
+      <div class="bc-role">Secondary Buyer · Legal/Compliance</div>
+      <div class="bc-title">Chief Compliance Officer</div>
+      <div class="bc-pain">Accountable for EU CSDD, UK Modern Slavery Act, US CHIPS Act, SEC climate disclosure — all of which require documented supply chain due diligence. Cannot do this without a multi-tier supplier map. Current process: annual surveys, periodic audits — static snapshots. Regulators increasingly expect continuous monitoring, not point-in-time documentation.</div>
+      <div class="bc-gain">
+        <div class="bc-gain-lbl">MKG Value</div>
+        <div class="bc-gain-text">Regulatory compliance graph: regulatory body nodes + governed entity edges. Every new regulation maps automatically to all affected suppliers. Continuous monitoring generates timestamped compliance evidence. Audit documentation auto-generated from graph trace — no manual assembly. Temporal graph enables point-in-time historical proof for regulatory inquiries.</div>
+      </div>
+    </div>
+
+    <div class="buyer-card" style="border-top:3px solid var(--fin);">
+      <div class="bc-role">Tertiary Buyer · Finance</div>
+      <div class="bc-title">CFO / Supply Chain Finance Lead</div>
+      <div class="bc-pain">Responsible for working capital optimization, supply chain finance programs, and the financial risk of supplier concentrations. Current challenge: cannot see financial stress signals in Tier-2/3 suppliers before they cascade to production failures and balance sheet write-downs. Bankruptcies of key Tier-3 suppliers create inventory write-downs they never expected because the dependency was invisible.</div>
+      <div class="bc-gain">
+        <div class="bc-gain-lbl">MKG Value</div>
+        <div class="bc-gain-text">Financial health signals mapped to supplier graph nodes — credit ratings, D&B signals, filing anomalies, news sentiment — continuously updated. When a Tier-3 supplier shows financial distress signals, graph traversal computes which production lines are at risk and the revenue exposure. The CFO sees financial supply chain risk before it becomes a P&L event.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 6: MKG BRIDGE ── -->
+<div id="bridge" class="sec reveal">
+  <div class="sec-kicker">Section 06 · What Existing Tools Don't Cover</div>
+  <div class="sec-title">The supply chain tool stack.<br><em>What's missing from every one of them.</em></div>
+  <div class="sec-sub">Supply chain teams spend $50K–$500K+ per year on SCRM tools. Here is exactly what those tools cover and where MKG's graph adds what none of them provide.</div>
+
+  <div class="comp-wrap">
+    <table class="comp">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>SAP Ariba</th>
+          <th>Resilinc</th>
+          <th>Interos</th>
+          <th>Z2Data</th>
+          <th>Coupa</th>
+          <th>D&B / Moody's</th>
+          <th class="mc">MKG ✦</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="cat"><td colspan="8">TIER VISIBILITY</td></tr>
+        <tr><td>Tier 1 supplier database</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="mc ck">✓</td></tr>
+        <tr><td>Tier 2 supplier visibility</td><td class="cx">✗</td><td class="cp">~</td><td class="ck">✓</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>Tier 3+ deep chain mapping</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>Single-source concentration scoring</td><td class="cx">✗</td><td class="cp">~</td><td class="ck">✓</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr class="cat"><td colspan="8">DISRUPTION INTELLIGENCE</td></tr>
+        <tr><td>Real-time disruption news monitoring</td><td class="cx">✗</td><td class="ck">✓</td><td class="ck">✓</td><td class="cp">~</td><td class="cx">✗</td><td class="cp">~</td><td class="mc ck">✓</td></tr>
+        <tr><td>Multilingual monitoring (6+ languages)</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td>Automated disruption → SC impact mapping</td><td class="cx">✗</td><td class="cp">~</td><td class="ck">✓</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td><strong>Multi-hop contagion traversal (3+ tiers)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>60-second signal-to-alert latency</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr class="cat"><td colspan="8">GRAPH & RELATIONSHIP INTELLIGENCE</td></tr>
+        <tr><td>Dynamic edge weights (auto-updated)</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Canary supplier lead-lag detection</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Relationship decay detection (auto)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Supplier calibration (recovery bias model)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td>Regulatory co-exposure graph</td><td class="cx">✗</td><td class="cx">✗</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr class="cat"><td colspan="8">TEMPORAL & HISTORICAL INTELLIGENCE</td></tr>
+        <tr><td><strong>Historical disruption pattern replay</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Temporal graph state (full rewind)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td><strong>Institutional tribal knowledge encoding</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr class="cat"><td colspan="8">COMPLIANCE & EXPLAINABILITY</td></tr>
+        <tr><td>EU CSDD compliance documentation</td><td class="cp">~</td><td class="cp">~</td><td class="ck">✓</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr><td><strong>Auto-generated audit trail (graph trace)</strong></td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+        <tr><td>On-premise / air-gapped deployment</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc ck">✓</td></tr>
+        <tr class="cat"><td colspan="8">FINANCIAL & ERP INTEGRATION</td></tr>
+        <tr><td>ERP procurement workflow integration</td><td class="ck">✓</td><td class="cp">~</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="mc cp">~</td></tr>
+        <tr><td>Supplier financial health monitoring</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="mc ck">✓</td></tr>
+        <tr><td>Revenue-at-risk quantification</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="mc cn">NEW ✦</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--muted);margin-top:6px;letter-spacing:0.5px;">
+    ✓ = Full capability &nbsp;|&nbsp; ~ = Partial &nbsp;|&nbsp; ✗ = Not available &nbsp;|&nbsp; ✦ NEW = First commercial encoding &nbsp;|&nbsp; Bold rows = MKG-exclusive
+  </div>
+</div>
+
+<!-- ── CLOSING ── -->
+<div class="dark-box reveal">
+  <div class="db-kicker">The Core Insight — Supply Chain Edition</div>
+  <div class="db-text">
+    SAP Ariba tells you who your suppliers are. Resilinc tells you when a disruption has been reported. Interos scores your Tier-1 and Tier-2 risk. D&B monitors your suppliers' financial health.
+    <br><br>
+    <em>But no tool in the market can answer: "A fire just hit a semiconductor substrate plant in Kyushu, Japan — which of my production lines are affected, in what sequence, with what expected delay, through which suppliers, with what alternates available — in the next 60 seconds?"</em>
+    <br><br>
+    That answer has required a 20-year veteran to sit at a desk and manually piece together a relationship map that exists only in their head. When they retire, the map goes with them. Every new disruption, you start over.
+    <br><br>
+    <strong>MKG encodes the map. Keeps it current. Reads signals in 13 languages the moment they appear. Traverses the network automatically. Delivers the answer in 60 seconds — to every analyst, on day one, regardless of experience.</strong>
+    <br><br>
+    The disruption doesn't change. The preparation does.
+  </div>
+</div>
+
+<div class="footer">
+  <div class="ft">MKG · SUPPLY CHAIN APPLICATION ANALYSIS · FEBRUARY 2026 · CONFIDENTIAL</div>
+  <div class="ft">3 Live Scenarios · 6 Disruption Types · 5 Tribal Knowledge Types · 6 Buyer Profiles</div>
+</div>
+
+</div><!-- /wrap -->
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('on');obs.unobserve(e.target);} });
+},{threshold:0.04});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

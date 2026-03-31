@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — Problem Definition</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=IBM+Plex+Mono:wght@300;400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg:       #08090c;
+  --surface:  #0f1117;
+  --border:   #1c1f2b;
+  --border2:  #252836;
+  --gold:     #c9a84c;
+  --gold-l:   #e8c97a;
+  --gold-dim: #6b5820;
+  --red:      #c0392b;
+  --red-l:    #e74c3c;
+  --red-dim:  #5c1a14;
+  --teal:     #1abc9c;
+  --teal-dim: #0d5c49;
+  --blue:     #4a9eff;
+  --blue-dim: #1a3d6b;
+  --text:     #dce3f0;
+  --muted:    #5a6280;
+  --muted2:   #3a3f55;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Grain overlay ── */
+body::before {
+  content:'';
+  position: fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.4;
+}
+
+/* ── Top bar ── */
+#topbar {
+  position: fixed; top:0; left:0; right:0;
+  height: 52px;
+  background: rgba(8,9,12,0.95);
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 24px;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.topbar-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.topbar-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+}
+
+.topbar-sep { flex:1; }
+
+.status-dot {
+  width:6px; height:6px; border-radius:50%;
+  background: var(--teal);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100%{opacity:1;} 50%{opacity:0.3;}
+}
+
+/* ── Main layout ── */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 32px 80px;
+}
+
+/* ── Section header ── */
+.section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.section-title em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.section-sub {
+  font-size: 15px;
+  font-weight: 300;
+  color: var(--muted);
+  max-width: 600px;
+  line-height: 1.7;
+  margin-bottom: 64px;
+}
+
+/* ── Divider line ── */
+.rule {
+  border: none;
+  border-top: 1px solid var(--border2);
+  margin: 56px 0;
+}
+
+.rule-gold {
+  border: none;
+  border-top: 2px solid var(--gold-dim);
+  margin: 56px 0;
+}
+
+/* ── Layer: THE WORLD TODAY ── */
+.world-today {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.today-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.today-card::before {
+  content:'';
+  position: absolute;
+  top:0; left:0; right:0;
+  height: 3px;
+}
+
+.today-card.existing::before { background: var(--blue); }
+.today-card.missing::before  { background: var(--red); }
+.today-card.cost::before     { background: var(--gold); }
+
+.today-card:hover {
+  border-color: var(--border2);
+  background: #13151e;
+}
+
+.card-icon {
+  font-size: 28px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.card-body {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* ── THE GAP — centre hero ── */
+.gap-hero {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-left: 4px solid var(--gold);
+  padding: 40px 48px;
+  position: relative;
+  margin-bottom: 2px;
+  overflow: hidden;
+}
+
+.gap-hero::after {
+  content: '"';
+  font-family: 'Playfair Display', serif;
+  font-size: 320px;
+  font-weight: 900;
+  color: var(--gold-dim);
+  opacity: 0.08;
+  position: absolute;
+  right: -20px;
+  top: -80px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.gap-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.gap-statement {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text);
+  max-width: 800px;
+  margin-bottom: 24px;
+}
+
+.gap-statement strong {
+  color: var(--gold);
+}
+
+.gap-sub {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 680px;
+}
+
+/* ── Problem breakdown grid ── */
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.problem-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 28px 28px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+
+.problem-item:hover { border-color: var(--border2); }
+
+.problem-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--border2);
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.2s;
+  width: 52px;
+}
+
+.problem-item:hover .problem-num { color: var(--gold-dim); }
+
+.problem-content { flex: 1; }
+
+.problem-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.problem-desc {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+
+.problem-tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.tag-red   { background: var(--red-dim);  color: var(--red-l);  }
+.tag-gold  { background: var(--gold-dim); color: var(--gold-l); }
+.tag-blue  { background: var(--blue-dim); color: var(--blue);   }
+.tag-teal  { background: var(--teal-dim); color: var(--teal);   }
+
+/* ── Propagation diagram ── */
+.propagation-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 40px;
+  margin-bottom: 2px;
+}
+
+.prop-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+
+.prop-diagram {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.prop-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.prop-circle {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+  transition: transform 0.2s;
+  cursor: default;
+  position: relative;
+}
+
+.prop-circle:hover { transform: scale(1.08); }
+
+.prop-circle.trigger {
+  background: var(--red-dim);
+  border: 2px solid var(--red);
+  color: var(--red-l);
+}
+
+.prop-circle.company {
+  background: #131b2e;
+  border: 2px solid var(--blue);
+  color: var(--blue);
+}
+
+.prop-circle.person {
+  background: #1a1706;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+}
+
+.prop-circle.sector {
+  background: var(--teal-dim);
+  border: 2px solid var(--teal);
+  color: var(--teal);
+}
+
+.prop-circle.unknown {
+  background: #1a1a1a;
+  border: 2px dashed var(--muted2);
+  color: var(--muted);
+}
+
+.prop-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 80px;
+  line-height: 1.4;
+}
+
+.prop-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.prop-line {
+  height: 2px;
+  width: 40px;
+  position: relative;
+}
+
+.prop-line.solid   { background: var(--border2); }
+.prop-line.dashed  { background: repeating-linear-gradient(90deg, var(--border2) 0, var(--border2) 6px, transparent 6px, transparent 12px); }
+.prop-line.unknown { background: repeating-linear-gradient(90deg, var(--red-dim) 0, var(--red-dim) 4px, transparent 4px, transparent 8px); }
+
+.prop-edge-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  color: var(--muted2);
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.prop-arrowhead {
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid var(--border2);
+  margin-left: -1px;
+}
+
+.prop-arrowhead.unknown { border-left-color: var(--red-dim); }
+
+.prop-impact {
+  position: absolute;
+  top: -20px; right: -8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* ── The blind spot panel ── */
+.blindspot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.blindspot-exist {
+  background: #0a110a;
+  border: 1px solid #1a2e1a;
+  border-top: 3px solid var(--teal);
+  padding: 32px;
+}
+
+.blindspot-miss {
+  background: #120a0a;
+  border: 1px solid #2e1a1a;
+  border-top: 3px solid var(--red);
+  padding: 32px;
+}
+
+.bs-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.bs-title.green { color: var(--teal); }
+.bs-title.red   { color: var(--red-l); }
+
+.bs-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.bs-icon { flex-shrink:0; font-size:14px; margin-top:1px; }
+
+/* ── Opportunity block ── */
+.opportunity {
+  background: linear-gradient(135deg, #0c1a14 0%, #080c0a 100%);
+  border: 1px solid #1e3a28;
+  border-left: 4px solid var(--teal);
+  padding: 40px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.opportunity::before {
+  content: 'ALPHA';
+  font-family: 'Playfair Display', serif;
+  font-size: 180px;
+  font-weight: 900;
+  color: var(--teal);
+  opacity: 0.04;
+  position: absolute;
+  right: -20px;
+  top: -30px;
+  line-height: 1;
+  pointer-events: none;
+  letter-spacing: -10px;
+}
+
+.opp-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--teal);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.opp-statement {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(20px, 2.5vw, 30px);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text);
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+
+.opp-statement strong { color: var(--teal); }
+
+.opp-metrics {
+  display: flex;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+
+.opp-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.opp-metric-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--teal);
+  line-height: 1;
+}
+
+.opp-metric-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* ── Seven gaps ── */
+.gaps-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.gap-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px 22px;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.gap-card:hover {
+  background: #12141e;
+  border-color: var(--gold-dim);
+}
+
+.gap-card-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 64px;
+  font-weight: 900;
+  color: var(--muted2);
+  line-height: 1;
+  margin-bottom: 8px;
+  transition: color 0.2s;
+}
+
+.gap-card:hover .gap-card-num { color: var(--gold-dim); }
+
+.gap-card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+}
+
+.gap-card-desc {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.gap-card-tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* ── Solution preview ── */
+.solution-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 2px;
+}
+
+.sol-layer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px 20px;
+  position: relative;
+}
+
+.sol-layer::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.sol-layer:nth-child(1)::before { background: var(--red); }
+.sol-layer:nth-child(2)::before { background: var(--gold); }
+.sol-layer:nth-child(3)::before { background: var(--blue); }
+.sol-layer:nth-child(4)::before { background: var(--teal); }
+
+.sol-n {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.sol-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.sol-desc {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ── Footer ── */
+footer {
+  margin-top: 80px;
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted2);
+  letter-spacing: 1px;
+}
+
+/* ── Animations ── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.6s ease forwards;
+}
+
+@keyframes fadeUp {
+  to { opacity:1; transform:translateY(0); }
+}
+
+.fade-in:nth-child(1){ animation-delay:0.05s; }
+.fade-in:nth-child(2){ animation-delay:0.12s; }
+.fade-in:nth-child(3){ animation-delay:0.19s; }
+.fade-in:nth-child(4){ animation-delay:0.26s; }
+.fade-in:nth-child(5){ animation-delay:0.33s; }
+.fade-in:nth-child(6){ animation-delay:0.40s; }
+.fade-in:nth-child(7){ animation-delay:0.47s; }
+
+/* tooltip */
+[data-tip] { position: relative; }
+[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1c1f2b;
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 50;
+  pointer-events: none;
+}
+
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="topbar-label">MKG SYSTEM</div>
+  <div class="topbar-title">Problem Definition Diagram</div>
+  <div class="topbar-sep"></div>
+  <div class="status-dot"></div>
+  <div class="topbar-label">v1.0 — Pre-Implementation</div>
+</div>
+
+<main>
+
+  <!-- HERO -->
+  <div class="fade-in">
+    <div class="section-label">Problem Definition</div>
+    <h1 class="section-title">Markets are a network.<br><em>No one is treating them as one.</em></h1>
+    <p class="section-sub">Institutional investors spend $400K–$900K per year per desk on Bloomberg, FactSet, and AlphaSense — and still cannot answer the most important question in finance: when something happens to Company X, which companies are affected, by how much, and why?</p>
+  </div>
+
+  <!-- WORLD TODAY — 3 cards -->
+  <div class="world-today fade-in">
+    <div class="today-card existing">
+      <span class="card-icon">📊</span>
+      <div class="card-label">What Exists Today</div>
+      <div class="card-title">Individual Entity Intelligence</div>
+      <div class="card-body">Bloomberg, FactSet, LSEG, and AlphaSense provide deep real-time data, news, and analytics on individual companies — prices, fundamentals, sentiment, filings, earnings transcripts.</div>
+    </div>
+    <div class="today-card missing">
+      <span class="card-icon">🕳️</span>
+      <div class="card-label">What Is Missing</div>
+      <div class="card-title">Relationship Intelligence</div>
+      <div class="card-body">No commercial platform models how companies are connected, how those connections change over time, or how a shock to one entity propagates through its network of dependencies to affect others.</div>
+    </div>
+    <div class="today-card cost">
+      <span class="card-icon">⏱️</span>
+      <div class="card-label">The Cost of the Gap</div>
+      <div class="card-title">Delayed Second-Order Reactions</div>
+      <div class="card-body">Second and third-order effects — supply chain contagion, leadership network exposure, macro sensitivity chains — are discovered manually, hours or days after the market has already moved.</div>
+    </div>
+  </div>
+
+  <!-- CENTRAL GAP STATEMENT -->
+  <div class="gap-hero fade-in">
+    <div class="gap-label">Core Problem Statement</div>
+    <div class="gap-statement">The market prices <strong>individual entity news quickly.</strong> It prices <strong>relationship-driven second and third-order effects slowly.</strong> That lag is the alpha opportunity — and it is invisible without a relationship graph.</div>
+    <div class="gap-sub">Capital IQ has a static executive network. AlphaSense has documents. Bloomberg has prices. None of them have a dynamic, weighted, queryable graph of 5,000+ global market entities with a neural network that adjusts relationship strengths in real time from incoming news signals.</div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- PROPAGATION DIAGRAM -->
+  <div class="propagation-wrap fade-in">
+    <div class="prop-title">The Propagation Problem — How a Shock Travels Through the Network</div>
+    <div class="prop-diagram">
+
+      <!-- Event -->
+      <div class="prop-node">
+        <div class="prop-circle trigger" data-tip="The triggering event">NEWS<br>EVENT</div>
+        <div class="prop-label">TSMC earnings<br>miss — 12%</div>
+      </div>
+
+      <div class="prop-arrow">
+        <div style="display:flex;align-items:center">
+          <div class="prop-line solid"></div>
+          <div class="prop-arrowhead"></div>
+        </div>
+        <div class="prop-edge-label">supply_chain<br>w=0.91</div>
+      </div>
+
+      <!-- NVIDIA -->
+      <div class="prop-node">
+        <div class="prop-circle company" data-tip="Impact: −73% confidence">
+          <span class="prop-impact tag-red">−73</span>
+          NVIDIA
+        </div>
+        <div class="prop-label">Chip supply<br>at risk</div>
+      </div>
+
+      <div class="prop-arrow">
+        <div style="display:flex;align-items:center">
+          <div class="prop-line solid"></div>
+          <div class="prop-arrowhead"></div>
+        </div>
+        <div class="prop-edge-label">partnership<br>w=0.78</div>
+      </div>
+
+      <!-- OpenAI -->
+      <div class="prop-node">
+        <div class="prop-circle company" data-tip="Impact: −61% confidence">
+          <span class="prop-impact tag-red">−61</span>
+          OpenAI
+        </div>
+        <div class="prop-label">GPU allocation<br>constrained</div>
+      </div>
+
+      <div class="prop-arrow">
+        <div style="display:flex;align-items:center">
+          <div class="prop-line dashed"></div>
+          <div class="prop-arrowhead"></div>
+        </div>
+        <div class="prop-edge-label">price_corr<br>w=0.65</div>
+      </div>
+
+      <!-- Jensen Huang -->
+      <div class="prop-node">
+        <div class="prop-circle person" data-tip="Board network exposure">
+          <span class="prop-impact tag-gold">?</span>
+          J.Huang
+        </div>
+        <div class="prop-label">Leadership<br>response signal</div>
+      </div>
+
+      <div class="prop-arrow">
+        <div style="display:flex;align-items:center">
+          <div class="prop-line unknown"></div>
+          <div class="prop-arrowhead unknown"></div>
+        </div>
+        <div class="prop-edge-label">board link<br>w=0.44</div>
+      </div>
+
+      <!-- Unknown company -->
+      <div class="prop-node">
+        <div class="prop-circle unknown" data-tip="Unknown — not in Bloomberg">
+          <span class="prop-impact tag-gold">?</span>
+          ???
+        </div>
+        <div class="prop-label">Unknown 2nd-<br>order exposure</div>
+      </div>
+
+      <div class="prop-arrow">
+        <div style="display:flex;align-items:center">
+          <div class="prop-line solid"></div>
+          <div class="prop-arrowhead"></div>
+        </div>
+        <div class="prop-edge-label">Tech Sector<br>membership</div>
+      </div>
+
+      <!-- Tech Sector -->
+      <div class="prop-node">
+        <div class="prop-circle sector" data-tip="Sector-wide signal">
+          TECH<br>SECTOR
+        </div>
+        <div class="prop-label">Rotation<br>signal fires</div>
+      </div>
+
+    </div>
+    <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border); display:flex; gap:32px; flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">
+        <div style="width:24px;height:2px;background:var(--border2)"></div> Known edge
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">
+        <div style="width:24px;height:2px;background:repeating-linear-gradient(90deg,var(--border2) 0,var(--border2) 5px,transparent 5px,transparent 10px)"></div> Correlation edge
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">
+        <div style="width:24px;height:2px;background:repeating-linear-gradient(90deg,var(--red-dim) 0,var(--red-dim) 4px,transparent 4px,transparent 8px)"></div> Blind spot (no current system shows this)
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">
+        <div class="tag-red" style="font-size:9px;padding:2px 5px;border-radius:2px">−73</div> Impact score (0–100)
+      </div>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- 4 CORE PROBLEMS -->
+  <div class="fade-in">
+    <div class="section-label">The Four Core Problems</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--text);margin-bottom:32px">What the market fails to provide</h2>
+  </div>
+
+  <div class="problem-grid fade-in">
+    <div class="problem-item">
+      <div class="problem-num">01</div>
+      <div class="problem-content">
+        <div class="problem-title">STATIC RELATIONSHIPS</div>
+        <div class="problem-desc">Every existing system treats company relationships as binary and unchanging. A supply chain link between TSMC and NVIDIA exists or it doesn't. But in reality, that link's strength changes every time TSMC reports earnings, every time geopolitical tension rises, every time a new fab is announced.</div>
+        <span class="problem-tag tag-red">NO DYNAMIC WEIGHTS</span>
+      </div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-num">02</div>
+      <div class="problem-content">
+        <div class="problem-title">NO PROPAGATION ENGINE</div>
+        <div class="problem-desc">Capital IQ shows you that Person A sits on Board B. But it doesn't tell you: given that news event N just hit Company C, traverse the graph and score every entity that is reachable within 3 hops, weighted by edge strength and time decay.</div>
+        <span class="problem-tag tag-red">NO SIGNAL PROPAGATION</span>
+      </div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-num">03</div>
+      <div class="problem-content">
+        <div class="problem-title">NO TEMPORAL MEMORY</div>
+        <div class="problem-desc">No platform lets you ask: "What did the relationship graph look like the day before SVB collapsed? Which edges were strengthening? Which were anomalously quiet?" Without temporal graph state, backtesting is impossible to do correctly.</div>
+        <span class="problem-tag tag-gold">NO TIME-TRAVEL</span>
+      </div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-num">04</div>
+      <div class="problem-content">
+        <div class="problem-title">BLACK-BOX OR MANUAL</div>
+        <div class="problem-desc">Quant signals exist (momentum, factor models) but have no explainability. Human research exists but cannot scale to 5,000+ companies globally. There is no middle ground: a scalable, automated system that still shows its full reasoning chain per output.</div>
+        <span class="problem-tag tag-blue">NO EXPLAINABILITY</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLIND SPOT COMPARISON -->
+  <div class="blindspot fade-in">
+    <div class="blindspot-exist">
+      <div class="bs-title green">✓ — What existing systems DO well</div>
+      <div class="bs-item"><span class="bs-icon">✅</span> Real-time price and volume data (Bloomberg, LSEG)</div>
+      <div class="bs-item"><span class="bs-icon">✅</span> Deep fundamental company data (FactSet, Capital IQ)</div>
+      <div class="bs-item"><span class="bs-icon">✅</span> AI document search across millions of filings (AlphaSense)</div>
+      <div class="bs-item"><span class="bs-icon">✅</span> Static executive and board network mapping (Capital IQ)</div>
+      <div class="bs-item"><span class="bs-icon">✅</span> Traditional quant factor signals (momentum, value, quality)</div>
+      <div class="bs-item"><span class="bs-icon">✅</span> Portfolio risk models (Barra, Axioma via FactSet)</div>
+    </div>
+    <div class="blindspot-miss">
+      <div class="bs-title red">✗ — What NO existing system does</div>
+      <div class="bs-item"><span class="bs-icon">❌</span> Dynamic edge weights adjusted by neural network from live news</div>
+      <div class="bs-item"><span class="bs-icon">❌</span> Automated event propagation: impact score + direction + time decay</div>
+      <div class="bs-item"><span class="bs-icon">❌</span> Full temporal graph rewind to any past timestamp</div>
+      <div class="bs-item"><span class="bs-icon">❌</span> On-premise, air-gapped deployment with data sovereignty</div>
+      <div class="bs-item"><span class="bs-icon">❌</span> Full explainability chain: signal → edges → news → source doc</div>
+      <div class="bs-item"><span class="bs-icon">❌</span> Autonomous multilingual scraping agent (EN/ZH/JA/DE/FR)</div>
+    </div>
+  </div>
+
+  <hr class="rule-gold">
+
+  <!-- OPPORTUNITY STATEMENT -->
+  <div class="opportunity fade-in">
+    <div class="opp-label">The Alpha Opportunity</div>
+    <div class="opp-statement">The relationship-driven second and third-order effects of news events are consistently <strong>underpriced by the market</strong> — because no systematic tool exists to score and surface them at institutional speed. <strong>That is the gap MKG fills.</strong></div>
+    <div class="opp-metrics">
+      <div class="opp-metric">
+        <div class="opp-metric-val">$35B</div>
+        <div class="opp-metric-label">Spent annually on financial data — without this layer</div>
+      </div>
+      <div class="opp-metric">
+        <div class="opp-metric-val">5,000+</div>
+        <div class="opp-metric-label">Companies in production universe</div>
+      </div>
+      <div class="opp-metric">
+        <div class="opp-metric-val">7 gaps</div>
+        <div class="opp-metric-label">No competitor fills more than 2–3 simultaneously</div>
+      </div>
+      <div class="opp-metric">
+        <div class="opp-metric-val">&lt; 60s</div>
+        <div class="opp-metric-label">Target latency from news to signal delivery</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- 7 GAPS -->
+  <div class="fade-in">
+    <div class="section-label">Seven Critical Gaps</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--text);margin-bottom:32px">What MKG is built to fill</h2>
+  </div>
+
+  <div class="gaps-grid fade-in">
+    <div class="gap-card">
+      <div class="gap-card-num">01</div>
+      <div class="gap-card-title">Dynamic Neural-Network-Adjusted Edge Weights</div>
+      <div class="gap-card-desc">Edge weights update in real time from news signals. TSMC–NVIDIA supply edge strengthens the moment TSMC misses earnings. No existing system does this.</div>
+      <span class="gap-card-tag tag-red">CORE IP</span>
+    </div>
+    <div class="gap-card">
+      <div class="gap-card-num">02</div>
+      <div class="gap-card-title">Event Impact Propagation with Quantified Output</div>
+      <div class="gap-card-desc">Impact score (0–100) + direction (±) + confidence + time decay curve per affected company. Automated graph traversal, not manual research.</div>
+      <span class="gap-card-tag tag-red">CORE IP</span>
+    </div>
+    <div class="gap-card">
+      <div class="gap-card-num">03</div>
+      <div class="gap-card-title">Full Temporal Graph State History & Rewind</div>
+      <div class="gap-card-desc">Inspect graph at any past timestamp. Diff between T1 and T2. Replay any historical event frame by frame. Critical for valid backtesting.</div>
+      <span class="gap-card-tag tag-gold">DATA MOAT</span>
+    </div>
+    <div class="gap-card">
+      <div class="gap-card-num">04</div>
+      <div class="gap-card-title">On-Premise, Air-Gapped Deployment</div>
+      <div class="gap-card-desc">Bloomberg, LSEG, AlphaSense are cloud-only. For data sovereignty, this disqualifies them. MKG runs entirely within the institution's own infrastructure.</div>
+      <span class="gap-card-tag tag-blue">INST. MOAT</span>
+    </div>
+    <div class="gap-card">
+      <div class="gap-card-num">05</div>
+      <div class="gap-card-title">Full Signal Explainability Chain</div>
+      <div class="gap-card-desc">Every signal traces back: output → graph edges → weight delta → news event → source document. Compliant with institutional fiduciary and regulatory review.</div>
+      <span class="gap-card-tag tag-teal">REG. MOAT</span>
+    </div>
+    <div class="gap-card">
+      <div class="gap-card-num">06</div>
+      <div class="gap-card-title">Autonomous Multilingual Scraping Agent</div>
+      <div class="gap-card-desc">Continuously scrapes global news in EN, ZH, JA, DE, FR, ES. No dependency on a single news vendor. Builds a proprietary corpus over time that competitors cannot replicate.</div>
+      <span class="gap-card-tag tag-gold">DATA MOAT</span>
+    </div>
+    <div class="gap-card" style="grid-column: 1 / -1; border-left:3px solid var(--teal);">
+      <div class="gap-card-num" style="font-size:40px;">07</div>
+      <div class="gap-card-title">Purpose-Built for Alpha Generation — Not Compliance, Not Search</div>
+      <div class="gap-card-desc">The only system designed from the ground up with alpha generation as its north star. Every design decision — the output schema, the backtest gate, the multi-horizon architecture, the portfolio layer — exists to generate returns, not manage data.</div>
+      <span class="gap-card-tag tag-teal">NORTH STAR</span>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- SOLUTION PREVIEW -->
+  <div class="fade-in">
+    <div class="section-label">The MKG Solution — Architecture Preview</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--text);margin-bottom:32px">Four layers that solve the problem end-to-end</h2>
+  </div>
+
+  <div class="solution-preview fade-in">
+    <div class="sol-layer">
+      <div class="sol-n">LAYER 01</div>
+      <div class="sol-title">Intelligence Agent</div>
+      <div class="sol-desc">Hybrid scraping agent. Continuous for breaking news, scheduled for regional press. Multilingual NLP pipeline. Entity extraction → event classification → impact hypothesis.</div>
+    </div>
+    <div class="sol-layer">
+      <div class="sol-n">LAYER 02</div>
+      <div class="sol-title">Knowledge Graph</div>
+      <div class="sol-desc">Versioned heterogeneous graph. 6 node types, 7 edge types, multi-relational. Two-speed versioning: slow structural + fast weight time-series with full history.</div>
+    </div>
+    <div class="sol-layer">
+      <div class="sol-n">LAYER 03</div>
+      <div class="sol-title">Weight Adjustment Network</div>
+      <div class="sol-desc">GAT-based neural network. Trained on historical events first. Adjusts edge weights from incoming signals. Multi-horizon output: 1h / 1d / 1w / macro. Backtest-gated before live.</div>
+    </div>
+    <div class="sol-layer">
+      <div class="sol-n">LAYER 04</div>
+      <div class="sol-title">Output & Debug Layer</div>
+      <div class="sol-desc">Dashboard + push alerts + REST/WebSocket API. Full signal explainability. Temporal replay UI. Model health monitor. Complete audit trail per signal.</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-text">MKG SYSTEM — PROBLEM DEFINITION — v1.0 — CONFIDENTIAL</div>
+    <div class="footer-text">Next: Use Case Diagram →</div>
+  </footer>
+
+</main>
+
+</body>
+</html>
