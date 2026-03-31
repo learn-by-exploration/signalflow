@@ -71,3 +71,33 @@ class TestBackpressureManager:
     def test_dequeue_empty_returns_none(self, manager):
         result = manager.dequeue()
         assert result is None
+
+    def test_invalid_max_queue_depth_zero(self):
+        from mkg.domain.services.backpressure import BackpressureManager
+        with pytest.raises(ValueError, match="max_queue_depth must be > 0"):
+            BackpressureManager(max_queue_depth=0)
+
+    def test_invalid_max_queue_depth_negative(self):
+        from mkg.domain.services.backpressure import BackpressureManager
+        with pytest.raises(ValueError, match="max_queue_depth must be > 0"):
+            BackpressureManager(max_queue_depth=-5)
+
+    def test_invalid_throttle_threshold_above_one(self):
+        from mkg.domain.services.backpressure import BackpressureManager
+        with pytest.raises(ValueError, match="throttle_threshold must be in"):
+            BackpressureManager(throttle_threshold=1.5)
+
+    def test_invalid_throttle_threshold_negative(self):
+        from mkg.domain.services.backpressure import BackpressureManager
+        with pytest.raises(ValueError, match="throttle_threshold must be in"):
+            BackpressureManager(throttle_threshold=-0.1)
+
+    def test_valid_boundary_threshold_zero(self):
+        from mkg.domain.services.backpressure import BackpressureManager
+        m = BackpressureManager(max_queue_depth=1, throttle_threshold=0.0)
+        assert m.throttle_threshold == 0.0
+
+    def test_valid_boundary_threshold_one(self):
+        from mkg.domain.services.backpressure import BackpressureManager
+        m = BackpressureManager(max_queue_depth=1, throttle_threshold=1.0)
+        assert m.throttle_threshold == 1.0

@@ -529,3 +529,23 @@ class TestBackupAndHealth:
         health = await store.health_check()
         assert health["entity_count"] == 2
         assert health["edge_count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_unicode_entity_name(self, store):
+        result = await store.create_entity("Company", {"name": "三星電子", "canonical_name": "Samsung"})
+        assert result["name"] == "三星電子"
+        fetched = await store.get_entity(result["id"])
+        assert fetched["name"] == "三星電子"
+
+    @pytest.mark.asyncio
+    async def test_unicode_edge_properties(self, store):
+        e1 = await store.create_entity("Company", {"name": "A"})
+        e2 = await store.create_entity("Company", {"name": "B"})
+        edge = await store.create_edge(e1["id"], e2["id"], "SUPPLIES_TO",
+                                       {"notes": "供應商關係"})
+        assert edge["notes"] == "供應商關係"
+
+    @pytest.mark.asyncio
+    async def test_create_entity_with_special_characters(self, store):
+        result = await store.create_entity("Company", {"name": "AT&T Inc."})
+        assert result["name"] == "AT&T Inc."

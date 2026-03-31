@@ -88,3 +88,75 @@ class TestWeightAdjustmentService:
         edge = await store.get_edge("edge-1")
         days = svc.get_edge_age_days(edge)
         assert days >= 0
+
+    def test_weight_floor_validation_negative(self):
+        from mkg.infrastructure.in_memory.graph_storage import InMemoryGraphStorage
+        from mkg.domain.services.weight_adjustment import WeightAdjustmentService
+        with pytest.raises(ValueError, match="weight_floor must be in"):
+            WeightAdjustmentService(InMemoryGraphStorage(), weight_floor=-0.1)
+
+    def test_weight_floor_validation_one(self):
+        from mkg.infrastructure.in_memory.graph_storage import InMemoryGraphStorage
+        from mkg.domain.services.weight_adjustment import WeightAdjustmentService
+        with pytest.raises(ValueError, match="weight_floor must be in"):
+            WeightAdjustmentService(InMemoryGraphStorage(), weight_floor=1.0)
+
+    def test_weight_floor_validation_above_one(self):
+        from mkg.infrastructure.in_memory.graph_storage import InMemoryGraphStorage
+        from mkg.domain.services.weight_adjustment import WeightAdjustmentService
+        with pytest.raises(ValueError, match="weight_floor must be in"):
+            WeightAdjustmentService(InMemoryGraphStorage(), weight_floor=2.5)
+
+    def test_weight_floor_zero_is_valid(self):
+        from mkg.infrastructure.in_memory.graph_storage import InMemoryGraphStorage
+        from mkg.domain.services.weight_adjustment import WeightAdjustmentService
+        svc = WeightAdjustmentService(InMemoryGraphStorage(), weight_floor=0.0)
+        assert svc.weight_floor == 0.0
+
+    @pytest.mark.asyncio
+    async def test_edge_age_with_z_suffix_timestamp(self, service):
+        svc, store = service
+        edge = {"created_at": "2020-01-01T00:00:00Z"}
+        days = svc.get_edge_age_days(edge)
+        assert days > 365  # Should be several years old
+
+    @pytest.mark.asyncio
+    async def test_edge_age_with_offset_timestamp(self, service):
+        svc, store = service
+        edge = {"created_at": "2020-01-01T00:00:00+05:30"}
+        days = svc.get_edge_age_days(edge)
+        assert days > 365
+
+    @pytest.mark.asyncio
+    async def test_edge_age_with_datetime_object(self, service):
+        svc, _ = service
+        past = datetime.now(timezone.utc) - timedelta(days=10)
+        edge = {"created_at": past}
+        days = svc.get_edge_age_days(edge)
+        assert 9.9 < days < 10.1
+
+    @pytest.mark.asyncio
+    async def test_edge_age_with_naive_datetime(self, service):
+        svc, _ = service
+        past = datetime.utcnow() - timedelta(days=5)
+        edge = {"created_at": past}
+        days = svc.get_edge_age_days(edge)
+        assert 4.9 < days < 5.1
+
+    @pytest.mark.asyncio
+    async def test_edge_age_with_none_created_at(self, service):
+        svc, _ = service
+        edge = {"created_at": None}
+        assert svc.get_edge_age_days(edge) == 0.0
+
+    @pytest.mark.asyncio
+    async def test_edge_age_missing_created_at(self, service):
+        svc, _ = service
+        edge = {}
+        assert svc.get_edge_age_days(edge) == 0.0
+
+    @pytest.mark.asyncio
+    async def test_edge_age_non_string_type(self, service):
+        svc, _ = service
+        edge = {"created_at": 12345}  # Integer, not string or datetime
+        assert svc.get_edge_age_days(edge) == 0.0

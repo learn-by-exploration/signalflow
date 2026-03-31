@@ -113,3 +113,35 @@ class TestCausalChainBuilder:
         )
         assert "narrative" in chains[0]
         assert len(chains[0]["narrative"]) > 0
+
+    @pytest.mark.asyncio
+    async def test_chain_with_unknown_entity_uses_id_as_name(self, builder):
+        """When entity doesn't exist, should fallback to entity ID."""
+        bld, _ = builder
+        propagation_results = [
+            {"entity_id": "nonexistent-entity", "impact": 0.5, "depth": 1,
+             "path": ["tsmc", "nonexistent-entity"]},
+        ]
+        chains = await bld.build_chains(
+            trigger_entity_id="tsmc",
+            trigger_event="Event",
+            propagation_results=propagation_results,
+        )
+        assert len(chains) == 1
+        # Affected name should fallback to entity ID
+        assert chains[0]["affected_name"] == "nonexistent-entity"
+
+    @pytest.mark.asyncio
+    async def test_chain_with_unknown_trigger_uses_id(self, builder):
+        """When trigger entity doesn't exist, should fallback to ID."""
+        bld, _ = builder
+        propagation_results = [
+            {"entity_id": "nvidia", "impact": 0.9, "depth": 1,
+             "path": ["ghost", "nvidia"]},
+        ]
+        chains = await bld.build_chains(
+            trigger_entity_id="ghost",
+            trigger_event="Event",
+            propagation_results=propagation_results,
+        )
+        assert chains[0]["trigger_name"] == "ghost"

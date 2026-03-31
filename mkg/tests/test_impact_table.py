@@ -82,3 +82,31 @@ class TestImpactTableBuilder:
         table = await bld.build(results, trigger_name="TSMC fire")
         assert table["trigger"] == "TSMC fire"
         assert table["total"] == 1
+
+    @pytest.mark.asyncio
+    async def test_table_with_unknown_entity(self, builder):
+        """Entity not in storage should use entity_id as name."""
+        bld, _ = builder
+        results = [
+            {"entity_id": "unknown-x", "impact": 0.7, "depth": 1, "path": ["tsmc", "unknown-x"]},
+        ]
+        table = await bld.build(results)
+        assert table["rows"][0]["entity_name"] == "unknown-x"
+        assert table["rows"][0]["entity_type"] == "Unknown"
+
+    @pytest.mark.asyncio
+    async def test_table_rows_have_sequential_ranks(self, builder):
+        bld, _ = builder
+        results = [
+            {"entity_id": "nvidia", "impact": 0.9, "depth": 1, "path": ["tsmc", "nvidia"]},
+            {"entity_id": "amd", "impact": 0.5, "depth": 1, "path": ["tsmc", "amd"]},
+        ]
+        table = await bld.build(results)
+        ranks = [row["rank"] for row in table["rows"]]
+        assert ranks == [1, 2]
+
+    @pytest.mark.asyncio
+    async def test_table_trigger_defaults_to_none(self, builder):
+        bld, _ = builder
+        table = await bld.build([])
+        assert table["trigger"] is None

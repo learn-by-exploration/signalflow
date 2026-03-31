@@ -68,3 +68,21 @@ class TestCIPipeline:
         assert len(pipeline.stages) >= 3
         errors = pipeline.validate()
         assert errors == []
+
+    def test_circular_dependency_detected(self, pipeline):
+        pipeline.add_stage("a", command="cmd_a", order=1, depends_on=["b"])
+        pipeline.add_stage("b", command="cmd_b", order=2, depends_on=["a"])
+        errors = pipeline.validate()
+        assert any("ircular" in e for e in errors)
+
+    def test_self_dependency_detected(self, pipeline):
+        pipeline.add_stage("a", command="cmd_a", order=1, depends_on=["a"])
+        errors = pipeline.validate()
+        assert any("ircular" in e for e in errors)
+
+    def test_no_circular_for_valid_pipeline(self, pipeline):
+        pipeline.add_stage("lint", command="lint", order=1)
+        pipeline.add_stage("test", command="test", order=2, depends_on=["lint"])
+        pipeline.add_stage("build", command="build", order=3, depends_on=["test"])
+        errors = pipeline.validate()
+        assert errors == []

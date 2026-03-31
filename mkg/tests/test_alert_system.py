@@ -106,3 +106,19 @@ class TestAlertSystem:
             system.generate_alert(chain)
         recent = system.get_recent_alerts(limit=3)
         assert len(recent) == 3
+
+    def test_invalid_threshold_above_one(self):
+        from mkg.domain.services.alert_system import AlertSystem
+        with pytest.raises(ValueError, match="Threshold 'critical' must be in"):
+            AlertSystem(impact_thresholds={"critical": 1.5, "high": 0.6, "medium": 0.3})
+
+    def test_invalid_threshold_negative(self):
+        from mkg.domain.services.alert_system import AlertSystem
+        with pytest.raises(ValueError, match="Threshold 'medium' must be in"):
+            AlertSystem(impact_thresholds={"critical": 0.8, "high": 0.6, "medium": -0.1})
+
+    def test_valid_boundary_thresholds(self):
+        from mkg.domain.services.alert_system import AlertSystem
+        system = AlertSystem(impact_thresholds={"critical": 1.0, "high": 0.5, "medium": 0.0})
+        assert system._thresholds["critical"] == 1.0
+        assert system._thresholds["medium"] == 0.0

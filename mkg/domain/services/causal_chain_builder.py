@@ -7,8 +7,11 @@ narratives.
 """
 
 from typing import Any, Optional
+import logging
 
 from mkg.domain.interfaces.graph_storage import GraphStorage
+
+logger = logging.getLogger(__name__)
 
 
 class CausalChainBuilder:
@@ -47,6 +50,8 @@ class CausalChainBuilder:
         async def _get_entity_name(eid: str) -> str:
             if eid not in entity_cache:
                 entity = await self._storage.get_entity(eid)
+                if entity is None:
+                    logger.warning("Entity %s not found in storage during chain building", eid)
                 entity_cache[eid] = entity or {}
             return entity_cache.get(eid, {}).get("name", eid)
 

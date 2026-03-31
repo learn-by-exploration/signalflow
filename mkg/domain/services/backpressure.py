@@ -26,6 +26,10 @@ class BackpressureManager:
         max_queue_depth: int = 100,
         throttle_threshold: float = 0.8,
     ) -> None:
+        if max_queue_depth <= 0:
+            raise ValueError(f"max_queue_depth must be > 0, got {max_queue_depth}")
+        if not 0.0 <= throttle_threshold <= 1.0:
+            raise ValueError(f"throttle_threshold must be in [0, 1], got {throttle_threshold}")
         self.max_queue_depth = max_queue_depth
         self.throttle_threshold = throttle_threshold
         self._queue: deque[Any] = deque()

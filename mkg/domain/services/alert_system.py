@@ -30,6 +30,11 @@ class AlertSystem:
             "high": 0.6,
             "medium": 0.3,
         }
+        # Validate thresholds are in [0, 1] and properly ordered
+        for key in ("critical", "high", "medium"):
+            val = self._thresholds.get(key)
+            if val is not None and not 0.0 <= val <= 1.0:
+                raise ValueError(f"Threshold '{key}' must be in [0, 1], got {val}")
         self._seen: set[str] = set()
         self._history: list[dict[str, Any]] = []
 

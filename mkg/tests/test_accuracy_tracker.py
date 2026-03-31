@@ -82,3 +82,30 @@ class TestAccuracyTracker:
             tracker.record_outcome(f"p{i}", 0.7)
         accuracy = tracker.get_accuracy()
         assert abs(accuracy - 1.0) < 0.01  # Perfect predictions
+
+    def test_worst_case_accuracy(self, tracker):
+        tracker.record_prediction("p1", "tsmc", 0.0, "art")
+        tracker.record_outcome("p1", 1.0)
+        accuracy = tracker.get_accuracy()
+        assert accuracy == 0.0
+
+    def test_accuracy_by_entity_no_outcomes(self, tracker):
+        tracker.record_prediction("p1", "tsmc", 0.8, "art")
+        by_entity = tracker.get_accuracy_by_entity()
+        assert by_entity == {}  # No outcomes yet
+
+    def test_stats_with_no_predictions(self, tracker):
+        stats = tracker.get_stats()
+        assert stats["total_predictions"] == 0
+        assert stats["resolved_predictions"] == 0
+
+    def test_mixed_resolved_and_pending(self, tracker):
+        tracker.record_prediction("p1", "tsmc", 0.8, "art-1")
+        tracker.record_prediction("p2", "nvidia", 0.6, "art-2")
+        tracker.record_outcome("p1", 0.75)
+        # p2 has no outcome
+        accuracy = tracker.get_accuracy()
+        assert accuracy is not None  # Should compute from p1
+        stats = tracker.get_stats()
+        assert stats["total_predictions"] == 2
+        assert stats["resolved_predictions"] == 1

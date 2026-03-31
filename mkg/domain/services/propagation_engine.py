@@ -8,8 +8,11 @@ and cycle prevention.
 
 from collections import deque
 from typing import Any, Optional
+import logging
 
 from mkg.domain.interfaces.graph_storage import GraphStorage
+
+logger = logging.getLogger(__name__)
 
 
 class PropagationEngine:
@@ -54,7 +57,11 @@ class PropagationEngine:
 
         # Helper: get outgoing edges from an entity
         async def _outgoing_edges(eid: str) -> list[dict[str, Any]]:
-            edges = await self._storage.find_edges(source_id=eid, limit=1000)
+            try:
+                edges = await self._storage.find_edges(source_id=eid, limit=1000)
+            except Exception:
+                logger.exception("Failed to fetch edges for entity %s", eid)
+                return []
             if relation_types:
                 edges = [e for e in edges if e.get("relation_type") in relation_types]
             return edges

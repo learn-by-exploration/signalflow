@@ -35,10 +35,18 @@ class TestLLMExtractorInterface:
     def test_has_get_tier_method(self):
         cls = self._get_interface()
         assert hasattr(cls, "get_tier")
+        assert getattr(cls.get_tier, "__isabstractmethod__", False)
 
     def test_has_get_cost_estimate_method(self):
         cls = self._get_interface()
         assert hasattr(cls, "get_cost_estimate")
+        assert getattr(cls.get_cost_estimate, "__isabstractmethod__", False)
+
+    def test_cannot_instantiate_without_all_methods(self):
+        """LLMExtractor should not be instantiable directly."""
+        cls = self._get_interface()
+        with pytest.raises(TypeError):
+            cls()
 
     def test_all_abstract_methods_are_async(self):
         cls = self._get_interface()

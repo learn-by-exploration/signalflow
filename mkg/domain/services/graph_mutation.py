@@ -6,11 +6,14 @@ ensuring extraction results are safely persisted in the graph.
 """
 
 from typing import Any, Optional
+import logging
 
 from mkg.domain.entities.node import EntityType
 from mkg.domain.entities.edge import RelationType
 from mkg.domain.interfaces.graph_storage import GraphStorage
 from mkg.domain.services.canonical_registry import CanonicalEntityRegistry
+
+logger = logging.getLogger(__name__)
 
 
 class GraphMutationService:
@@ -119,6 +122,17 @@ class GraphMutationService:
             if not source_entities or not target_entities:
                 skipped += 1
                 continue
+
+            if len(source_entities) > 1:
+                logger.warning(
+                    "Multiple entities found for canonical name '%s' (using first of %d)",
+                    source_canonical, len(source_entities),
+                )
+            if len(target_entities) > 1:
+                logger.warning(
+                    "Multiple entities found for canonical name '%s' (using first of %d)",
+                    target_canonical, len(target_entities),
+                )
 
             source_id = source_entities[0]["id"]
             target_id = target_entities[0]["id"]

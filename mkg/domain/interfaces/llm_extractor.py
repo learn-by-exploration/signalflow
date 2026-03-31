@@ -55,10 +55,12 @@ class LLMExtractor(ABC):
         """
         ...
 
+    @abstractmethod
     def get_tier(self) -> ExtractionTier:
         """Return the extraction tier of this implementation."""
-        raise NotImplementedError
+        ...
 
+    @abstractmethod
     def get_cost_estimate(self, text_length: int) -> float:
         """Estimate cost in USD for extracting from text of given length."""
-        return 0.0
+        ...

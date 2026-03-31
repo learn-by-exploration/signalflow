@@ -66,3 +66,64 @@ class TestHallucinationVerifier:
         assert verified["stats"]["entities_total"] == 2
         assert verified["stats"]["entities_verified"] == 1
         assert verified["stats"]["entities_rejected"] == 1
+
+    def test_verify_empty_result(self, verifier):
+        verified = verifier.verify_result({"entities": [], "relations": []}, "text")
+        assert verified["entities"] == []
+        assert verified["relations"] == []
+        assert verified["stats"]["entities_total"] == 0
+
+    def test_verify_entity_empty_name(self, verifier):
+        text = "TSMC makes chips"
+        entity = {"name": "", "entity_type": "Company"}
+        assert verifier.verify_entity(entity, text) is True  # empty string in text
+
+    def test_verify_entity_partial_match(self, verifier):
+        text = "TSMC is the largest chipmaker"
+        entity = {"name": "TSM", "entity_type": "Company"}
+        # TSM is a substring of TSMC
+        assert verifier.verify_entity(entity, text) is True
+
+    def test_relation_with_hallucinated_entity_filtered(self, verifier):
+        text = "TSMC and NVIDIA are chip companies"
+        result = {
+            "entities": [
+                {"name": "TSMC", "entity_type": "Company"},
+                {"name": "NVIDIA", "entity_type": "Company"},
+            ],
+            "relations": [
+                {"source": "TSMC", "target": "Samsung", "relation_type": "X"},  # Samsung not in text
+            ],
+        }
+        verified = verifier.verify_result(result, text)
+        assert len(verified["relations"]) == 0
+
+    def test_verify_result_preserves_order(self, verifier):
+        text = "Apple Microsoft Google"
+        result = {
+            "entities": [
+                {"name": "Apple"},
+                {"name": "Microsoft"},
+                {"name": "Google"},
+            ],
+            "relations": [],
+        }
+        verified = verifier.verify_result(result, text)
+        names = [e["name"] for e in verified["entities"]]
+        assert names == ["Apple", "Microsoft", "Google"]
+
+    def test_relation_requires_both_entities_verified(self, verifier):
+        """Relation source/target must both be in verified entity set."""
+        text = "TSMC and Intel partnership with NVIDIA"
+        result = {
+            "entities": [
+                {"name": "TSMC"},
+                {"name": "Intel"},
+            ],
+            "relations": [
+                # Both in text but NVIDIA entity not extracted
+                {"source": "TSMC", "target": "NVIDIA", "relation_type": "X"},
+            ],
+        }
+        verified = verifier.verify_result(result, text)
+        assert len(verified["relations"]) == 0  # NVIDIA not in verified entities set

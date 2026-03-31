@@ -89,3 +89,37 @@ class TestTribalKnowledgeInput:
         )
         entity = await store.get_entity(result["id"])
         assert entity["source"] == "expert:analyst-2"
+
+    @pytest.mark.asyncio
+    async def test_override_confidence_invalid_negative(self, service):
+        svc, store = service
+        await store.create_entity("Company", {"name": "X", "confidence": 0.5}, entity_id="x1")
+        with pytest.raises(ValueError, match="Confidence must be in"):
+            await svc.override_confidence("x1", -0.1, "analyst", "test")
+
+    @pytest.mark.asyncio
+    async def test_override_confidence_invalid_above_one(self, service):
+        svc, store = service
+        await store.create_entity("Company", {"name": "X", "confidence": 0.5}, entity_id="x1")
+        with pytest.raises(ValueError, match="Confidence must be in"):
+            await svc.override_confidence("x1", 1.5, "analyst", "test")
+
+    @pytest.mark.asyncio
+    async def test_override_confidence_nonexistent_entity(self, service):
+        svc, _ = service
+        with pytest.raises(ValueError, match="not found"):
+            await svc.override_confidence("nonexistent", 0.5, "analyst", "test")
+
+    @pytest.mark.asyncio
+    async def test_override_confidence_boundary_zero(self, service):
+        svc, store = service
+        await store.create_entity("Company", {"name": "X", "confidence": 0.5}, entity_id="x1")
+        result = await svc.override_confidence("x1", 0.0, "analyst", "Zeroed")
+        assert result["confidence"] == 0.0
+
+    @pytest.mark.asyncio
+    async def test_override_confidence_boundary_one(self, service):
+        svc, store = service
+        await store.create_entity("Company", {"name": "X", "confidence": 0.5}, entity_id="x1")
+        result = await svc.override_confidence("x1", 1.0, "analyst", "Maxed")
+        assert result["confidence"] == 1.0

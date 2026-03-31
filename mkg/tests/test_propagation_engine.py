@@ -98,3 +98,78 @@ class TestPropagationEngine:
         await store.create_entity("Company", {"name": "Isolated"}, entity_id="iso")
         results = await eng.propagate(trigger_entity_id="iso", impact_score=1.0)
         assert len(results) == 0
+
+    @pytest.mark.asyncio
+    async def test_propagate_handles_storage_failure(self, engine):
+        """If storage raises an exception, propagation should degrade gracefully."""
+        from unittest.mock import AsyncMock, patch
+        eng, store = engine
+
+        original_find = store.find_edges
+        call_count = 0
+
+        async def failing_find(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count > 1:  # Fail on subsequent calls
+                raise RuntimeError("Storage unavailable")
+            return await original_find(*args, **kwargs)
+
+        store.find_edges = failing_find
+        eng_broken = type(eng)(store)
+        # Should not raise, just return partial results
+        results = await eng_broken.propagate(trigger_entity_id="tsmc", impact_score=1.0)
+        # Should still work for the first call
+        assert isinstance(results, list)
+
+    @pytest.mark.asyncio
+    async def test_propagate_with_relation_type_filter(self, engine):
+        eng, _ = engine
+        results = await eng.propagate(
+            trigger_entity_id="tsmc", impact_score=1.0,
+            relation_types=["SUPPLIES_TO"],
+        )
+        ids = [r["entity_id"] for r in results]
+        assert "nvidia" in ids
+        assert "apple" in ids
+        # AMD is connected via COMPETES_WITH, should be excluded
+        assert "amd" not in ids
+
+    @pytest.mark.asyncio
+    async def test_deep_propagation_chain(self, engine):
+        """Test propagation through a chain of 10+ entities."""
+        _, store = engine
+        # Build chain: e0 -> e1 -> e2 -> ... -> e9
+        prev = "chain0"
+        await store.create_entity("Company", {"name": f"Chain-0"}, entity_id=prev)
+        for i in range(1, 10):
+            eid = f"chain{i}"
+            await store.create_entity("Company", {"name": f"Chain-{i}"}, entity_id=eid)
+            await store.create_edge(prev, eid, "DEPENDS_ON",
+                                    {"weight": 0.9, "confidence": 0.9})
+            prev = eid
+        from mkg.domain.services.propagation_engine import PropagationEngine
+        eng2 = PropagationEngine(store)
+        results = await eng2.propagate("chain0", impact_score=1.0, max_depth=10)
+        ids = [r["entity_id"] for r in results]
+        assert "chain1" in ids
+        assert "chain4" in ids
+        # Impact should decay along the chain
+        impacts = {r["entity_id"]: r["impact"] for r in results}
+        assert impacts.get("chain1", 0) > impacts.get("chain4", 0)
+
+    @pytest.mark.asyncio
+    async def test_propagation_fan_out(self, engine):
+        """Test entity with many outgoing edges."""
+        _, store = engine
+        hub_id = "hub"
+        await store.create_entity("Company", {"name": "Hub"}, entity_id=hub_id)
+        for i in range(20):
+            eid = f"spoke-{i}"
+            await store.create_entity("Company", {"name": f"Spoke-{i}"}, entity_id=eid)
+            await store.create_edge(hub_id, eid, "SUPPLIES_TO",
+                                    {"weight": 0.5, "confidence": 0.8})
+        from mkg.domain.services.propagation_engine import PropagationEngine
+        eng2 = PropagationEngine(store)
+        results = await eng2.propagate(hub_id, impact_score=1.0)
+        assert len(results) == 20

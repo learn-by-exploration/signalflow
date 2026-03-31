@@ -57,8 +57,10 @@ class ArticleDedup:
             return True
         # Jaccard similarity check against stored token sets
         tokens = _tokenize(content)
+        if not tokens:
+            return False
         for stored_tokens in self._content_tokens:
-            if not tokens or not stored_tokens:
+            if not stored_tokens:
                 continue
             intersection = len(tokens & stored_tokens)
             union = len(tokens | stored_tokens)

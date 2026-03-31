@@ -24,6 +24,8 @@ class WeightAdjustmentService:
         storage: GraphStorage,
         weight_floor: float = 0.01,
     ) -> None:
+        if not 0.0 <= weight_floor < 1.0:
+            raise ValueError(f"weight_floor must be in [0, 1), got {weight_floor}")
         self._storage = storage
         self.weight_floor = weight_floor
 
@@ -53,14 +55,22 @@ class WeightAdjustmentService:
         return max(decayed, self.weight_floor)
 
     def get_edge_age_days(self, edge: dict[str, Any]) -> float:
-        """Calculate edge age in days from created_at."""
+        """Calculate edge age in days from created_at.
+
+        Handles both datetime objects and ISO 8601 strings.
+        Naive datetimes are assumed to be UTC.
+        """
         created_str = edge.get("created_at")
         if created_str is None:
             return 0.0
         if isinstance(created_str, datetime):
             created = created_str
+        elif isinstance(created_str, str):
+            # Handle 'Z' suffix (common in JSON)
+            normalized = created_str.replace("Z", "+00:00") if created_str.endswith("Z") else created_str
+            created = datetime.fromisoformat(normalized)
         else:
-            created = datetime.fromisoformat(str(created_str))
+            return 0.0
         if created.tzinfo is None:
             created = created.replace(tzinfo=timezone.utc)
         now = datetime.now(timezone.utc)

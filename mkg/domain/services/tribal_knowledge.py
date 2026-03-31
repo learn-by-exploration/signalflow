@@ -120,9 +120,14 @@ class TribalKnowledgeInput:
         Returns:
             Updated entity dict.
         """
+        if not 0.0 <= new_confidence <= 1.0:
+            raise ValueError(f"Confidence must be in [0, 1], got {new_confidence}")
+
         result = await self._storage.update_entity(entity_id, {
             "confidence": new_confidence,
         })
+        if result is None:
+            raise ValueError(f"Entity {entity_id} not found for confidence override")
 
         self._log_action("override_confidence", expert, {
             "entity_id": entity_id,

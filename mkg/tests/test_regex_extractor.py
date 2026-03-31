@@ -56,3 +56,19 @@ class TestRegexExtractor:
     async def test_empty_text_returns_empty(self, extractor):
         result = await extractor.extract_entities("")
         assert result == []
+
+    @pytest.mark.asyncio
+    async def test_supply_relation_with_repeated_entities(self, extractor):
+        """Regression: text.index() would ValueError if entity appears multiple times."""
+        text = "TSMC supplies chips. TSMC is the main supplier to NVIDIA. NVIDIA benefits."
+        result = await extractor.extract_all(text)
+        # Should not raise ValueError
+        assert "relations" in result
+
+    @pytest.mark.asyncio
+    async def test_extract_handles_overlapping_mentions(self, extractor):
+        """Entities mentioned multiple times should still extract correctly."""
+        text = "Apple and Apple suppliers reported that Apple is ahead of Samsung. Samsung responds."
+        result = await extractor.extract_entities(text)
+        names = [e["name"] for e in result]
+        assert "Apple" in names or "Samsung" in names

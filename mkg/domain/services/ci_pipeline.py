@@ -75,7 +75,33 @@ class CIPipeline:
                         f"Stage '{stage['name']}' depends on '{dep}' which does not exist"
                     )
 
+        # Check for circular dependencies
+        if self._has_circular_deps():
+            errors.append("Circular dependency detected in pipeline stages")
+
         return errors
+
+    def _has_circular_deps(self) -> bool:
+        """Detect circular dependencies using DFS."""
+        visited: set[str] = set()
+        in_stack: set[str] = set()
+
+        def _dfs(name: str) -> bool:
+            if name in in_stack:
+                return True
+            if name in visited:
+                return False
+            visited.add(name)
+            in_stack.add(name)
+            stage = self.stages.get(name)
+            if stage:
+                for dep in stage["depends_on"]:
+                    if _dfs(dep):
+                        return True
+            in_stack.discard(name)
+            return False
+
+        return any(_dfs(name) for name in self.stages)
 
     def dry_run(self) -> dict[str, Any]:
         """Simulate a pipeline run without executing commands.

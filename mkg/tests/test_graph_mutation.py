@@ -75,3 +75,30 @@ class TestGraphMutationService:
         ]
         result = await svc.apply_entities(entities, source="art-001")
         assert result["skipped"] == 1
+
+    @pytest.mark.asyncio
+    async def test_skips_invalid_entity_type(self, service):
+        svc, store = service
+        entities = [
+            {"name": "X", "entity_type": "InvalidType", "confidence": 0.5},
+        ]
+        result = await svc.apply_entities(entities, source="art-001")
+        assert result["skipped"] == 1
+
+    @pytest.mark.asyncio
+    async def test_skips_invalid_relation_type(self, service):
+        svc, store = service
+        await store.create_entity("Company", {"name": "A", "canonical_name": "A"}, entity_id="a")
+        await store.create_entity("Company", {"name": "B", "canonical_name": "B"}, entity_id="b")
+        relations = [
+            {"source": "A", "target": "B", "relation_type": "INVALID_REL"},
+        ]
+        result = await svc.apply_relations(relations, source="art-001")
+        assert result["skipped"] == 1
+
+    @pytest.mark.asyncio
+    async def test_apply_empty_extraction(self, service):
+        svc, _ = service
+        result = await svc.apply({}, source="art-001")
+        assert result["entities"]["created"] == 0
+        assert result["relations"]["created"] == 0

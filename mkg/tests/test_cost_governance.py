@@ -59,3 +59,25 @@ class TestCostGovernance:
         governor.record_cost(15.0, "tier_1_cloud", "art-001")
         governor.reset_monthly()
         assert governor.total_spent == 0.0
+
+    def test_negative_budget_raises(self):
+        from mkg.domain.services.cost_governance import CostGovernance
+        with pytest.raises(ValueError, match="must be > 0"):
+            CostGovernance(monthly_budget_usd=-1.0)
+
+    def test_zero_budget_raises(self):
+        from mkg.domain.services.cost_governance import CostGovernance
+        with pytest.raises(ValueError, match="must be > 0"):
+            CostGovernance(monthly_budget_usd=0.0)
+
+    def test_negative_cost_raises(self, governor):
+        with pytest.raises(ValueError, match="cost_usd must be >= 0"):
+            governor.record_cost(-1.0, "tier_1_cloud", "art-001")
+
+    def test_zero_cost_is_valid(self, governor):
+        governor.record_cost(0.0, "tier_3_regex", "art-001")
+        assert governor.total_spent == 0.0
+
+    def test_budget_remaining_never_negative(self, governor):
+        governor.record_cost(35.0, "tier_1_cloud", "art-001")  # Over budget
+        assert governor.budget_remaining == 0.0

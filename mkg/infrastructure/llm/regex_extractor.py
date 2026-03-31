@@ -91,7 +91,9 @@ class RegexExtractor(LLMExtractor):
                 if src == tgt:
                     continue
                 if _SUPPLY_KEYWORDS.search(text) and src in text and tgt in text:
-                    if text.index(src) < text.index(tgt):
+                    src_pos = text.find(src)
+                    tgt_pos = text.find(tgt)
+                    if src_pos >= 0 and tgt_pos >= 0 and src_pos < tgt_pos:
                         relations.append({
                             "source": src, "target": tgt,
                             "relation_type": "SUPPLIES_TO",

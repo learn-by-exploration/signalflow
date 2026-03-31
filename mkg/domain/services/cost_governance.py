@@ -18,6 +18,8 @@ class CostGovernance:
     """Tracks LLM API spending and recommends extraction tier."""
 
     def __init__(self, monthly_budget_usd: float = 30.0) -> None:
+        if monthly_budget_usd <= 0:
+            raise ValueError(f"monthly_budget_usd must be > 0, got {monthly_budget_usd}")
         self._monthly_budget = monthly_budget_usd
         self._total_spent = 0.0
         self._call_log: list[dict[str, Any]] = []
@@ -32,6 +34,8 @@ class CostGovernance:
 
     def record_cost(self, cost_usd: float, tier: str, article_id: str) -> None:
         """Record cost of an extraction call."""
+        if cost_usd < 0:
+            raise ValueError(f"cost_usd must be >= 0, got {cost_usd}")
         self._total_spent += cost_usd
         self._call_log.append({
             "cost_usd": cost_usd,
