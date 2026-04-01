@@ -38,6 +38,8 @@ class PipelineOrchestrator:
         alert_system: Any,
         impact_table_builder: Any,
         article_dedup: Any | None = None,
+        provenance_tracker: Any | None = None,
+        audit_logger: Any | None = None,
     ) -> None:
         self._storage = graph_storage
         self._extraction = extraction_orchestrator
@@ -48,6 +50,8 @@ class PipelineOrchestrator:
         self._alerts = alert_system
         self._impact_table = impact_table_builder
         self._dedup = article_dedup
+        self._provenance = provenance_tracker
+        self._audit = audit_logger
         self._processed_urls: set[str] = set()
 
     async def process_article(
@@ -83,11 +87,13 @@ class PipelineOrchestrator:
 
         # Step 1: Deduplication
         if url and url in self._processed_urls:
+            self._record_provenance(article_id, "dedup", {"url": url}, {"is_duplicate": True})
             return self._result(article_id, "duplicate", start_time)
 
         if self._dedup and url:
             is_dup = await self._check_dedup(content, url)
             if is_dup:
+                self._record_provenance(article_id, "dedup", {"url": url}, {"is_duplicate": True})
                 return self._result(article_id, "duplicate", start_time)
 
         # Step 2: Extract entities and relations
@@ -98,6 +104,13 @@ class PipelineOrchestrator:
         raw_entities = extraction.get("entities", [])
         raw_relations = extraction.get("relations", [])
 
+        self._record_provenance(
+            article_id, "extraction",
+            {"source": source, "url": url},
+            {"tier_used": tier_used, "entities_count": len(raw_entities),
+             "relations_count": len(raw_relations)},
+        )
+
         if not raw_entities:
             logger.info("No entities extracted for article %s", article_id)
             if url:
@@ -106,6 +119,7 @@ class PipelineOrchestrator:
                 article_id, "completed", start_time,
                 tier_used=tier_used,
                 entities_created=0, relations_created=0,
+                provenance_chain=self._build_provenance_chain(article_id),
             )
 
         # Step 3: Hallucination verification
@@ -115,6 +129,12 @@ class PipelineOrchestrator:
         )
         verified_entities = verified.get("verified_entities", raw_entities)
         verified_relations = verified.get("verified_relations", raw_relations)
+
+        self._record_provenance(
+            article_id, "verification",
+            {"entities_in": len(raw_entities), "relations_in": len(raw_relations)},
+            {"entities_out": len(verified_entities), "relations_out": len(verified_relations)},
+        )
 
         # Step 4: Graph mutation
         entity_result = await self._mutation.apply_entities(
@@ -126,6 +146,23 @@ class PipelineOrchestrator:
 
         entities_created = entity_result.get("created", 0) + entity_result.get("updated", 0)
         relations_created = relation_result.get("created", 0)
+
+        self._record_provenance(
+            article_id, "mutation",
+            {"entities_verified": len(verified_entities), "relations_verified": len(verified_relations)},
+            {"entities_created": entities_created, "relations_created": relations_created},
+        )
+
+        # Record entity origins in provenance
+        for entity in verified_entities:
+            entity_name = entity.get("name", "unknown")
+            confidence = entity.get("confidence", 0.0)
+            self._record_entity_origin(
+                entity_name, entity_name, article_id, tier_used, confidence,
+            )
+
+        # Record audit entries for mutations
+        self._record_audit_mutations(article_id, entity_result, relation_result, source)
 
         # Mark URL as processed
         if url:
@@ -149,6 +186,23 @@ class PipelineOrchestrator:
                     impact_score=1.0,
                     max_depth=4,
                 )
+
+                self._record_provenance(
+                    article_id, "propagation",
+                    {"trigger_entity": trigger_entity_name, "trigger_event": trigger_event},
+                    {"impacts_count": len(impacts)},
+                )
+
+                # Record propagation in provenance tracker
+                if self._provenance:
+                    self._provenance.record_propagation(
+                        trigger_entity_id=trigger_entity_id,
+                        trigger_event=trigger_event or "market event",
+                        article_id=article_id,
+                        impacts_count=len(impacts),
+                        max_depth=4,
+                        chains_count=0,
+                    )
 
                 # Step 6: Causal chains
                 if impacts:
@@ -188,6 +242,7 @@ class PipelineOrchestrator:
             "alerts": alerts,
             "impact_table": impact_table,
             "elapsed_seconds": elapsed,
+            "provenance_chain": self._build_provenance_chain(article_id),
         }
 
     async def _find_entity_id(self, name: str) -> str | None:
@@ -237,4 +292,83 @@ class PipelineOrchestrator:
             "alerts": [],
             "impact_table": {},
             **kwargs,
+        }
+
+    # ── Provenance & Audit helpers ──
+
+    def _record_provenance(
+        self,
+        article_id: str,
+        step: str,
+        inputs: dict[str, Any],
+        outputs: dict[str, Any],
+    ) -> None:
+        """Record a pipeline step in provenance tracker (if wired)."""
+        if self._provenance:
+            self._provenance.record_step(article_id, step, inputs, outputs)
+
+    def _record_entity_origin(
+        self,
+        entity_id: str,
+        entity_name: str,
+        article_id: str,
+        extraction_tier: str,
+        confidence: float,
+    ) -> None:
+        """Record entity origin in provenance tracker (if wired)."""
+        if self._provenance:
+            self._provenance.record_entity_origin(
+                entity_id, entity_name, article_id, extraction_tier, confidence,
+            )
+
+    def _record_audit_mutations(
+        self,
+        article_id: str,
+        entity_result: dict[str, Any],
+        relation_result: dict[str, Any],
+        source: str,
+    ) -> None:
+        """Record graph mutation events in audit logger (if wired)."""
+        if not self._audit:
+            return
+        from mkg.domain.services.audit_logger import AuditAction
+
+        created = entity_result.get("created", 0)
+        updated = entity_result.get("updated", 0)
+        if created > 0:
+            self._audit.log(
+                action=AuditAction.ENTITY_CREATED,
+                actor="pipeline",
+                target_id=article_id,
+                target_type="article",
+                details={"entities_created": created, "source": source},
+            )
+        if updated > 0:
+            self._audit.log(
+                action=AuditAction.ENTITY_UPDATED,
+                actor="pipeline",
+                target_id=article_id,
+                target_type="article",
+                details={"entities_updated": updated, "source": source},
+            )
+        rel_created = relation_result.get("created", 0)
+        if rel_created > 0:
+            self._audit.log(
+                action=AuditAction.EDGE_CREATED,
+                actor="pipeline",
+                target_id=article_id,
+                target_type="article",
+                details={"relations_created": rel_created, "source": source},
+            )
+
+    def _build_provenance_chain(self, article_id: str) -> dict[str, Any]:
+        """Build provenance chain for the pipeline result."""
+        if not self._provenance:
+            return {"article_id": article_id, "steps": []}
+        lineage = self._provenance.get_article_lineage(article_id)
+        return {
+            "article_id": article_id,
+            "steps": lineage.get("steps", []),
+            "entities_created": lineage.get("entities_created", []),
+            "edges_created": lineage.get("edges_created", []),
         }

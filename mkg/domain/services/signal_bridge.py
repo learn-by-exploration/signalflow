@@ -19,12 +19,23 @@ class SignalBridge:
     - AI reasoning enrichment (context for Claude prompt)
     - Confidence adjustment (amplify/dampen based on supply chain risk)
     - Risk factor summary (for signal cards)
+
+    Optionally wraps output with compliance metadata (disclaimers,
+    classification, data sources) when compliance_manager is provided.
     """
 
     # Minimum impact score to include in signal enrichment
     MIN_IMPACT_THRESHOLD = 0.05
     # Maximum MKG-based confidence adjustment
     MAX_CONFIDENCE_ADJUSTMENT = 15
+
+    def __init__(
+        self,
+        compliance_manager: Any = None,
+        lineage_tracer: Any = None,
+    ) -> None:
+        self._compliance = compliance_manager
+        self._lineage = lineage_tracer
 
     def enrich_signal(
         self,
@@ -98,6 +109,87 @@ class SignalBridge:
             "impact_count": 0,
             "max_impact": 0.0,
         }
+
+    def enrich_signal_with_compliance(
+        self,
+        symbol: str,
+        pipeline_result: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Produce signal enrichment wrapped with compliance metadata.
+
+        Combines standard enrichment with:
+        - Regulatory disclaimers (NOT_FINANCIAL_ADVICE, AI_GENERATED, etc.)
+        - Risk classification (high/medium/low)
+        - Data source disclosure
+        - Lineage references
+
+        Args:
+            symbol: The trading symbol being evaluated.
+            pipeline_result: Output from PipelineOrchestrator.process_article().
+
+        Returns:
+            Enrichment dict with all standard fields PLUS:
+            - disclaimers: list of disclaimer texts
+            - classification: {risk_level, requires_disclosure, reason}
+            - data_sources: list of attributed sources
+        """
+        # Get standard enrichment
+        enrichment = self.enrich_signal(symbol, pipeline_result)
+
+        # Build disclaimers
+        disclaimers = self._build_disclaimers(enrichment)
+
+        # Classify regulatory risk
+        classification = self._classify_enrichment(enrichment)
+
+        # Get data sources from lineage
+        data_sources = self._get_data_sources()
+
+        # Merge compliance into enrichment
+        enrichment["disclaimers"] = disclaimers
+        enrichment["classification"] = classification
+        enrichment["data_sources"] = data_sources
+
+        return enrichment
+
+    def _build_disclaimers(self, enrichment: dict[str, Any]) -> list[str]:
+        """Build list of applicable disclaimer texts."""
+        if not self._compliance:
+            from mkg.domain.services.compliance_manager import ComplianceManager, DisclaimerType
+            cm = ComplianceManager()
+        else:
+            from mkg.domain.services.compliance_manager import DisclaimerType
+            cm = self._compliance
+
+        disclaimers = [
+            cm.get_disclaimer(DisclaimerType.NOT_FINANCIAL_ADVICE),
+            cm.get_disclaimer(DisclaimerType.AI_GENERATED),
+        ]
+
+        if enrichment.get("has_material_impact"):
+            disclaimers.append(cm.get_disclaimer(DisclaimerType.RISK_WARNING))
+
+        return disclaimers
+
+    def _classify_enrichment(self, enrichment: dict[str, Any]) -> dict[str, Any]:
+        """Classify enrichment for regulatory risk level."""
+        if not self._compliance:
+            from mkg.domain.services.compliance_manager import ComplianceManager
+            cm = ComplianceManager()
+        else:
+            cm = self._compliance
+
+        return cm.classify_impact(
+            supply_chain_risk=enrichment.get("supply_chain_risk", 0.0),
+            confidence_adjustment=enrichment.get("confidence_adjustment", 0),
+            has_material_impact=enrichment.get("has_material_impact", False),
+        )
+
+    def _get_data_sources(self) -> list[dict[str, Any]]:
+        """Get data sources from lineage tracer."""
+        if self._lineage and hasattr(self._lineage, '_provenance'):
+            return self._lineage._provenance.get_all_data_sources()
+        return []
 
     def _find_symbol_impact(
         self, symbol: str, chains: list[dict[str, Any]]
