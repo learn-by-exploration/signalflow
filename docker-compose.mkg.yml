@@ -1,0 +1,82 @@
+# MKG Docker Compose — Development
+# Runs MKG API, Celery worker, and placeholder Neo4j / Redis
+
+services:
+  # ── MKG API ──
+  mkg-api:
+    build:
+      context: .
+      dockerfile: mkg/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONPATH=/app
+      - MKG_ENV=development
+      - NEO4J_URI=bolt://mkg-neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=mkg_dev_password
+      - REDIS_URL=redis://mkg-redis:6379/1
+    depends_on:
+      - mkg-neo4j
+      - mkg-redis
+    volumes:
+      - ./mkg:/app/mkg
+    restart: unless-stopped
+
+  # ── MKG Celery Worker ──
+  mkg-worker:
+    build:
+      context: .
+      dockerfile: mkg/Dockerfile
+    command: celery -A mkg.tasks.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - PYTHONPATH=/app
+      - MKG_ENV=development
+      - REDIS_URL=redis://mkg-redis:6379/1
+    depends_on:
+      - mkg-redis
+    volumes:
+      - ./mkg:/app/mkg
+    restart: unless-stopped
+
+  # ── MKG Celery Beat (scheduler) ──
+  mkg-beat:
+    build:
+      context: .
+      dockerfile: mkg/Dockerfile
+    command: celery -A mkg.tasks.celery_app beat --loglevel=info
+    environment:
+      - PYTHONPATH=/app
+      - MKG_ENV=development
+      - REDIS_URL=redis://mkg-redis:6379/1
+    depends_on:
+      - mkg-redis
+    volumes:
+      - ./mkg:/app/mkg
+    restart: unless-stopped
+
+  # ── Neo4j (graph database) ──
+  mkg-neo4j:
+    image: neo4j:5.18-community
+    ports:
+      - "7474:7474"  # Browser
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/mkg_dev_password
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - mkg_neo4j_data:/data
+    restart: unless-stopped
+
+  # ── Redis (cache + broker) ──
+  mkg-redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"  # 6380 to avoid conflict with SignalFlow Redis on 6379
+    volumes:
+      - mkg_redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  mkg_neo4j_data:
+  mkg_redis_data:

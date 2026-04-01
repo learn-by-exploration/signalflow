@@ -1,0 +1,19 @@
+# MKG Python dependencies
+# Core
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+httpx>=0.27.0
+
+# Task queue
+celery>=5.3.0
+redis>=5.0.0
+
+# Graph (dummy for now — uncomment when Neo4j is provisioned)
+# neo4j>=5.18.0
+
+# LLM
+anthropic>=0.25.0
+
+# Utilities
+pydantic>=2.0.0
+python-dotenv>=1.0.0
