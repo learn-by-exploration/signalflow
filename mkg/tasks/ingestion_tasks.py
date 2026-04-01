@@ -47,19 +47,49 @@ def _get_factory(db_dir: str | None = None):
 
 @app.task(name="mkg.tasks.fetch_news")
 def fetch_news(sources: list[str] | None = None) -> dict[str, Any]:
-    """Fetch news articles from configured sources.
+    """Fetch news articles from configured sources and process through pipeline.
 
-    Dummy: returns a sample batch size. Real version would call
-    news APIs and pass articles to the ingestion pipeline.
+    Fetches articles from RSS feeds and runs each through the full MKG pipeline
+    with provenance tracking and audit logging.
     """
+    db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
     sources = sources or ["reuters", "sec_filings", "industry_rss"]
-    logger.info("DUMMY fetch_news: would fetch from %s", sources)
-    return {
-        "status": "dummy",
-        "sources_checked": sources,
-        "articles_fetched": 0,
-        "message": "Dummy fetcher — no real news API connected",
-    }
+    try:
+        articles = _fetch_articles(sources)
+        logger.info("Fetched %d articles from news sources", len(articles))
+
+        if not articles:
+            return {"status": "completed", "sources_checked": sources, "articles_fetched": 0}
+
+        factory = _get_factory(db_dir)
+        pipeline = factory.create_pipeline_orchestrator()
+        loop = asyncio.new_event_loop()
+        processed = 0
+        try:
+            for article in articles:
+                result = loop.run_until_complete(
+                    pipeline.process_article(
+                        title=article.get("title", ""),
+                        content=article.get("content", ""),
+                        source=article.get("source", "rss"),
+                        url=article.get("url"),
+                    )
+                )
+                if result.get("status") == "completed":
+                    processed += 1
+        finally:
+            loop.run_until_complete(factory.shutdown())
+            loop.close()
+
+        return {
+            "status": "completed",
+            "sources_checked": sources,
+            "articles_fetched": len(articles),
+            "articles_processed": processed,
+        }
+    except Exception as e:
+        logger.error("fetch_news failed: %s", e)
+        return {"status": "error", "error": str(e), "articles_fetched": 0}
 
 
 def fetch_news_real(
@@ -144,29 +174,84 @@ def process_article_real(
 
 
 @app.task(name="mkg.tasks.process_article")
-def process_article(article_id: str) -> dict[str, Any]:
-    """Process a single article through NER/RE extraction.
+def process_article(
+    title: str = "",
+    content: str = "",
+    source: str = "unknown",
+    url: str | None = None,
+    article_id: str | None = None,
+) -> dict[str, Any]:
+    """Process a single article through the full MKG pipeline.
 
-    Dummy: logs the article_id. Real version would run the
-    full extraction pipeline (dedup → NER/RE → graph mutation).
+    Runs dedup → extraction → verification → graph mutation → propagation.
+    Provenance and audit are recorded at each step.
     """
-    logger.info("DUMMY process_article: would process article_id=%s", article_id)
-    return {
-        "status": "dummy",
-        "article_id": article_id,
-        "message": "Dummy processor — no real LLM extraction",
-    }
+    db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+    # Support legacy call with just article_id (look up from storage)
+    if article_id and not content:
+        logger.info("process_article called with article_id=%s but no content; skipping", article_id)
+        return {"status": "skipped", "article_id": article_id, "reason": "no content provided"}
+
+    factory = _get_factory(db_dir)
+    pipeline = factory.create_pipeline_orchestrator()
+    loop = asyncio.new_event_loop()
+    try:
+        result = loop.run_until_complete(
+            pipeline.process_article(
+                title=title,
+                content=content,
+                source=source,
+                url=url,
+            )
+        )
+        return result
+    except Exception as e:
+        logger.error("process_article failed: %s", e)
+        return {"status": "error", "error": str(e)}
+    finally:
+        loop.run_until_complete(factory.shutdown())
+        loop.close()
 
 
 @app.task(name="mkg.tasks.batch_extract")
-def batch_extract(article_ids: list[str]) -> dict[str, Any]:
-    """Batch process multiple articles.
+def batch_extract(articles: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Batch process multiple articles through the MKG pipeline.
 
-    Dummy: returns count. Real version would parallelize extraction.
+    Args:
+        articles: List of article dicts with title, content, source, url keys.
     """
-    logger.info("DUMMY batch_extract: would process %d articles", len(article_ids))
+    if not articles:
+        return {"status": "completed", "count": 0, "processed": 0}
+
+    db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+    factory = _get_factory(db_dir)
+    pipeline = factory.create_pipeline_orchestrator()
+    loop = asyncio.new_event_loop()
+    processed = 0
+    errors = 0
+    try:
+        for article in articles:
+            try:
+                result = loop.run_until_complete(
+                    pipeline.process_article(
+                        title=article.get("title", ""),
+                        content=article.get("content", ""),
+                        source=article.get("source", "unknown"),
+                        url=article.get("url"),
+                    )
+                )
+                if result.get("status") == "completed":
+                    processed += 1
+            except Exception as e:
+                logger.error("batch_extract article error: %s", e)
+                errors += 1
+    finally:
+        loop.run_until_complete(factory.shutdown())
+        loop.close()
+
     return {
-        "status": "dummy",
-        "count": len(article_ids),
-        "message": "Dummy batch — no real extraction",
+        "status": "completed",
+        "count": len(articles),
+        "processed": processed,
+        "errors": errors,
     }

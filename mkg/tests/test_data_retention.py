@@ -19,7 +19,7 @@ class TestRetentionPolicy:
         rp = RetentionPolicy()
         assert rp.article_retention_days == 90
         assert rp.entity_retention_days == 365
-        assert rp.audit_retention_days == 730  # 2 years for SEBI compliance
+        assert rp.audit_retention_days == 1825  # 5 years for SEBI IA Regulations 2013
 
     def test_custom_retention_periods(self):
         from mkg.domain.services.retention_policy import RetentionPolicy

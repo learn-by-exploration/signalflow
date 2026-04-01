@@ -20,11 +20,13 @@ TEST_API_KEY = "test-mkg-api-key-for-testing"
 
 
 @pytest.fixture
-async def authed_app():
+async def authed_app(tmp_path):
     """Create app with auth enabled."""
     import os
     old_key = os.environ.get("MKG_API_KEY")
+    old_db_dir = os.environ.get("MKG_DB_DIR")
     os.environ["MKG_API_KEY"] = TEST_API_KEY
+    os.environ["MKG_DB_DIR"] = str(tmp_path)
     app = create_app()
     container = init_container()
     await container.startup()
@@ -37,13 +39,19 @@ async def authed_app():
         os.environ.pop("MKG_API_KEY", None)
     else:
         os.environ["MKG_API_KEY"] = old_key
+    if old_db_dir is not None:
+        os.environ["MKG_DB_DIR"] = old_db_dir
+    else:
+        os.environ.pop("MKG_DB_DIR", None)
 
 
 @pytest.fixture
-async def unauthed_app():
+async def unauthed_app(tmp_path):
     """Create app WITHOUT auth (no MKG_API_KEY set)."""
     import os
     old_key = os.environ.pop("MKG_API_KEY", None)
+    old_db_dir = os.environ.get("MKG_DB_DIR")
+    os.environ["MKG_DB_DIR"] = str(tmp_path)
     app = create_app()
     container = init_container()
     await container.startup()
@@ -54,6 +62,10 @@ async def unauthed_app():
     deps._container = None
     if old_key is not None:
         os.environ["MKG_API_KEY"] = old_key
+    if old_db_dir is not None:
+        os.environ["MKG_DB_DIR"] = old_db_dir
+    else:
+        os.environ.pop("MKG_DB_DIR", None)
 
 
 class TestAPIKeyAuth:

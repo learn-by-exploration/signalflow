@@ -237,7 +237,7 @@ class TestFullPipelineE2E:
 
         # 6. Check retention status
         resp = await client.get("/api/v1/retention/status")
-        assert resp.json()["data"]["audit_retention_days"] == 730
+        assert resp.json()["data"]["audit_retention_days"] == 1825
 
     @pytest.mark.asyncio
     async def test_empty_pipeline_enrichment(self, e2e_client):

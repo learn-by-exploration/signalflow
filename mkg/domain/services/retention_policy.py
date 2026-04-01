@@ -2,7 +2,7 @@
 """RetentionPolicy — configurable data retention periods.
 
 Ensures compliance with data retention requirements:
-- SEBI requires audit records for minimum 5 years (we default to 2 years)
+- SEBI IA Regulations 2013 require audit records for minimum 5 years
 - Articles kept for 90 days (configurable)
 - Entity data kept for 1 year (configurable)
 
@@ -22,14 +22,14 @@ class RetentionPolicy:
     Default retention periods:
     - Articles: 90 days
     - Entities: 365 days (1 year)
-    - Audit records: 730 days (2 years, SEBI minimum)
+    - Audit records: 1825 days (5 years, SEBI IA Regulations 2013 requirement)
     """
 
     def __init__(
         self,
         article_retention_days: int = 90,
         entity_retention_days: int = 365,
-        audit_retention_days: int = 730,
+        audit_retention_days: int = 1825,
     ) -> None:
         self.article_retention_days = article_retention_days
         self.entity_retention_days = entity_retention_days

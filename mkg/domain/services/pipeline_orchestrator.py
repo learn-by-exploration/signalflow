@@ -40,6 +40,7 @@ class PipelineOrchestrator:
         article_dedup: Any | None = None,
         provenance_tracker: Any | None = None,
         audit_logger: Any | None = None,
+        pii_detector: Any | None = None,
     ) -> None:
         self._storage = graph_storage
         self._extraction = extraction_orchestrator
@@ -52,6 +53,7 @@ class PipelineOrchestrator:
         self._dedup = article_dedup
         self._provenance = provenance_tracker
         self._audit = audit_logger
+        self._pii = pii_detector
         self._processed_urls: set[str] = set()
 
     async def process_article(
@@ -96,10 +98,60 @@ class PipelineOrchestrator:
                 self._record_provenance(article_id, "dedup", {"url": url}, {"is_duplicate": True})
                 return self._result(article_id, "duplicate", start_time)
 
+        # Step 1b: PII scanning & redaction
+        pii_redacted = False
+        if self._pii:
+            scan_result = self._pii.scan(content)
+            if scan_result.get("has_pii"):
+                content = self._pii.redact(content)
+                pii_redacted = True
+                self._record_provenance(
+                    article_id, "pii_redaction",
+                    {"pii_types": scan_result.get("pii_types", [])},
+                    {"redacted": True, "pii_count": scan_result.get("pii_count", 0)},
+                )
+                if self._audit:
+                    from mkg.domain.services.audit_logger import AuditAction
+                    self._audit.log(
+                        action=AuditAction.PIPELINE_DECISION,
+                        actor="pipeline",
+                        target_id=article_id,
+                        target_type="article",
+                        details={
+                            "decision": "pii_redaction",
+                            "pii_types": scan_result.get("pii_types", []),
+                            "pii_count": scan_result.get("pii_count", 0),
+                        },
+                    )
+
         # Step 2: Extract entities and relations
-        extraction = await self._extraction.extract(
-            content, article_id=article_id
-        )
+        try:
+            extraction = await self._extraction.extract(
+                content, article_id=article_id
+            )
+        except Exception as e:
+            logger.error("Extraction failed for article %s: %s", article_id, e)
+            self._record_provenance(
+                article_id, "extraction",
+                {"source": source, "url": url},
+                {"error": str(e), "tier_used": "none"},
+            )
+            if self._audit:
+                from mkg.domain.services.audit_logger import AuditAction
+                self._audit.log(
+                    action=AuditAction.PIPELINE_DECISION,
+                    actor="pipeline",
+                    target_id=article_id,
+                    target_type="article",
+                    details={"decision": "extraction_error", "error": str(e), "source": source},
+                )
+            if url:
+                self._processed_urls.add(url)
+            return self._result(
+                article_id, "error", start_time,
+                error=f"Extraction failed: {e}",
+                provenance_chain=self._build_provenance_chain(article_id),
+            )
         tier_used = extraction.get("tier_used", "none")
         raw_entities = extraction.get("entities", [])
         raw_relations = extraction.get("relations", [])
@@ -137,12 +189,37 @@ class PipelineOrchestrator:
         )
 
         # Step 4: Graph mutation
-        entity_result = await self._mutation.apply_entities(
-            verified_entities, source=source
-        )
-        relation_result = await self._mutation.apply_relations(
-            verified_relations, source=source
-        )
+        try:
+            entity_result = await self._mutation.apply_entities(
+                verified_entities, source=source
+            )
+            relation_result = await self._mutation.apply_relations(
+                verified_relations, source=source
+            )
+        except Exception as e:
+            logger.error("Graph mutation failed for article %s: %s", article_id, e)
+            self._record_provenance(
+                article_id, "mutation",
+                {"entities_verified": len(verified_entities), "relations_verified": len(verified_relations)},
+                {"error": str(e)},
+            )
+            if self._audit:
+                from mkg.domain.services.audit_logger import AuditAction
+                self._audit.log(
+                    action=AuditAction.PIPELINE_DECISION,
+                    actor="pipeline",
+                    target_id=article_id,
+                    target_type="article",
+                    details={"decision": "mutation_error", "error": str(e)},
+                )
+            if url:
+                self._processed_urls.add(url)
+            return self._result(
+                article_id, "error", start_time,
+                error=f"Graph mutation failed: {e}",
+                tier_used=tier_used,
+                provenance_chain=self._build_provenance_chain(article_id),
+            )
 
         entities_created = entity_result.get("created", 0) + entity_result.get("updated", 0)
         relations_created = relation_result.get("created", 0)
@@ -184,7 +261,7 @@ class PipelineOrchestrator:
                 impacts = await self._propagation.propagate(
                     trigger_entity_id=trigger_entity_id,
                     impact_score=1.0,
-                    max_depth=4,
+                    max_depth=6,
                 )
 
                 self._record_provenance(
@@ -200,7 +277,7 @@ class PipelineOrchestrator:
                         trigger_event=trigger_event or "market event",
                         article_id=article_id,
                         impacts_count=len(impacts),
-                        max_depth=4,
+                        max_depth=6,
                         chains_count=0,
                     )
 

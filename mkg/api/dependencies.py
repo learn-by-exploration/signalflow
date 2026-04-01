@@ -1,7 +1,7 @@
 # mkg/api/dependencies.py
 """Dependency injection for MKG FastAPI application.
 
-Provides singleton service instances wired to the Neo4j dummy connector.
+Provides singleton service instances wired to SQLite-backed persistent storage.
 All services are constructed once at startup and injected via FastAPI Depends().
 """
 
@@ -30,10 +30,11 @@ from mkg.domain.services.pipeline_observability import PipelineObservability
 from mkg.domain.services.propagation_engine import PropagationEngine
 from mkg.domain.services.retention_policy import RetentionPolicy
 from mkg.domain.services.seed_loader import SeedDataLoader
+from mkg.domain.services.signal_bridge import SignalBridge
 from mkg.domain.services.tribal_knowledge import TribalKnowledgeInput
 from mkg.domain.services.webhook_delivery import WebhookDelivery
 from mkg.domain.services.weight_adjustment import WeightAdjustmentService
-from mkg.infrastructure.neo4j.graph_storage import Neo4jGraphStorage
+from mkg.infrastructure.sqlite.graph_storage import SQLiteGraphStorage
 from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
 from mkg.infrastructure.persistent.provenance_tracker import PersistentProvenanceTracker
 
@@ -42,14 +43,21 @@ class ServiceContainer:
     """Holds all MKG service singletons.
 
     Created once at app startup. Access individual services via properties.
+    Uses SQLiteGraphStorage for persistent graph data that survives restarts.
     """
 
     def __init__(self) -> None:
-        # Core storage
-        self.graph_storage = Neo4jGraphStorage()
+        # Persistent storage directory
+        self._db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+        os.makedirs(self._db_dir, exist_ok=True)
+
+        # Core storage — SQLite-backed for persistence across restarts
+        self.graph_storage = SQLiteGraphStorage(
+            db_path=os.path.join(self._db_dir, "graph.db")
+        )
         self.registry = CanonicalEntityRegistry(load_defaults=True)
 
-        # Domain services (graph-dependent)
+        # Domain services (graph-dependent) — wired after storage init
         self.entity_service = EntityService(self.graph_storage)
         self.propagation_engine = PropagationEngine(self.graph_storage)
         self.weight_adjustment = WeightAdjustmentService(self.graph_storage)
@@ -73,13 +81,11 @@ class ServiceContainer:
         self.dlq = DeadLetterQueue()
 
         # Compliance & traceability services (SQLite-backed for persistence)
-        db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
-        os.makedirs(db_dir, exist_ok=True)
         self.provenance_tracker = PersistentProvenanceTracker(
-            db_path=os.path.join(db_dir, "provenance.db")
+            db_path=os.path.join(self._db_dir, "provenance.db")
         )
         self.audit_logger = PersistentAuditLogger(
-            db_path=os.path.join(db_dir, "audit.db")
+            db_path=os.path.join(self._db_dir, "audit.db")
         )
         self.compliance_manager = ComplianceManager()
         self.lineage_tracer = LineageTracer(
@@ -89,9 +95,15 @@ class ServiceContainer:
         self.retention_policy = RetentionPolicy()
         self.pii_detector = PIIDetector()
 
+        # Signal bridge — connects MKG analysis to SignalFlow signals
+        self.signal_bridge = SignalBridge(
+            compliance_manager=self.compliance_manager,
+            lineage_tracer=self.lineage_tracer,
+        )
+
     async def startup(self) -> None:
-        """Connect storage and seed default data."""
-        await self.graph_storage.connect()
+        """Initialize persistent storage (create tables, open connections)."""
+        await self.graph_storage.initialize()
 
     async def shutdown(self) -> None:
         """Close storage connections."""

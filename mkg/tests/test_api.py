@@ -4,6 +4,9 @@
 Uses httpx AsyncClient with the ASGI app for true async testing.
 """
 
+import os
+import tempfile
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -13,13 +16,15 @@ import mkg.api.dependencies as deps
 
 
 @pytest.fixture
-async def client():
+async def client(tmp_path):
     """Create a test client with an ephemeral app instance.
 
     Auth is disabled (no MKG_API_KEY set) so all endpoints are accessible.
+    Uses a temp directory for SQLite DBs so tests are isolated.
     """
-    import os
     old_key = os.environ.pop("MKG_API_KEY", None)
+    old_db_dir = os.environ.get("MKG_DB_DIR")
+    os.environ["MKG_DB_DIR"] = str(tmp_path)
     app = create_app()
     # Manually init container for tests (lifespan doesn't run with ASGITransport)
     container = init_container()
@@ -31,6 +36,10 @@ async def client():
     deps._container = None
     if old_key is not None:
         os.environ["MKG_API_KEY"] = old_key
+    if old_db_dir is not None:
+        os.environ["MKG_DB_DIR"] = old_db_dir
+    else:
+        os.environ.pop("MKG_DB_DIR", None)
 
 
 class TestHealthEndpoints:
@@ -42,7 +51,7 @@ class TestHealthEndpoints:
         data = resp.json()
         assert data["status"] == "healthy"
         assert "version" in data
-        assert data["graph"]["backend"] == "neo4j_dummy"
+        assert data["graph"]["backend"] == "sqlite"
 
     async def test_metrics(self, client):
         resp = await client.get("/metrics")

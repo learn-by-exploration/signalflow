@@ -29,7 +29,7 @@ class PropagationEngine:
         self,
         trigger_entity_id: str,
         impact_score: float,
-        max_depth: int = 4,
+        max_depth: int = 6,
         min_impact: float = 0.01,
         relation_types: Optional[list[str]] = None,
     ) -> list[dict[str, Any]]:
@@ -41,7 +41,7 @@ class PropagationEngine:
         Args:
             trigger_entity_id: Entity where the event originated.
             impact_score: Initial impact magnitude [0, 1].
-            max_depth: Maximum hops from trigger (default 4 per R-PE2).
+            max_depth: Maximum hops from trigger (default 6 for financial supply chains).
             min_impact: Minimum impact to continue propagation.
             relation_types: Optional filter by edge types.
 

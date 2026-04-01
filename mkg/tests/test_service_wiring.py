@@ -6,11 +6,24 @@ Iterations 1-2: These tests verify the ROOT CAUSE fix — services must be
 wired into the composition roots, not just built as orphan code.
 """
 
+import os
+import tempfile
+
 import pytest
 
 
 class TestServiceContainerWiring:
     """ServiceContainer must expose all compliance/audit services."""
+
+    @pytest.fixture(autouse=True)
+    def _set_db_dir(self, tmp_path):
+        old = os.environ.get("MKG_DB_DIR")
+        os.environ["MKG_DB_DIR"] = str(tmp_path)
+        yield
+        if old is not None:
+            os.environ["MKG_DB_DIR"] = old
+        else:
+            os.environ.pop("MKG_DB_DIR", None)
 
     def test_container_has_provenance_tracker(self):
         from mkg.api.dependencies import ServiceContainer

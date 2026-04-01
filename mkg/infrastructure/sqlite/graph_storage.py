@@ -68,6 +68,11 @@ class SQLiteGraphStorage(GraphStorage):
             await self._db.close()
             self._db = None
 
+    @property
+    def is_connected(self) -> bool:
+        """Whether the database connection is open."""
+        return self._db is not None
+
     def _ensure_db(self) -> aiosqlite.Connection:
         if not self._db:
             raise RuntimeError("Database not initialized. Call initialize() first.")

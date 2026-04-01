@@ -134,6 +134,7 @@ class ServiceFactory:
         from mkg.domain.services.graph_mutation import GraphMutationService
         from mkg.domain.services.hallucination_verifier import HallucinationVerifier
         from mkg.domain.services.impact_table import ImpactTableBuilder
+        from mkg.domain.services.pii_detector import PIIDetector
         from mkg.domain.services.pipeline_orchestrator import PipelineOrchestrator
         from mkg.domain.services.propagation_engine import PropagationEngine
 
@@ -152,6 +153,7 @@ class ServiceFactory:
             article_dedup=ArticleDedup(),
             provenance_tracker=self._provenance_tracker,
             audit_logger=self._audit_logger,
+            pii_detector=PIIDetector(),
         )
 
     def create_signal_bridge(self) -> Any:
