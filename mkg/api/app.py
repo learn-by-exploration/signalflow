@@ -113,6 +113,7 @@ def create_app() -> FastAPI:
     from mkg.api.routes import (
         alerts,
         articles,
+        compliance,
         entities,
         graph,
         propagation,
@@ -125,6 +126,7 @@ def create_app() -> FastAPI:
     app.include_router(articles.router, prefix="/api/v1", tags=["articles"])
     app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
     app.include_router(tribal.router, prefix="/api/v1", tags=["tribal-knowledge"])
+    app.include_router(compliance.router, prefix="/api/v1", tags=["compliance"])
 
     return app
 

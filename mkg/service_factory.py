@@ -43,6 +43,24 @@ class ServiceFactory:
         )
         await self._article_storage.initialize()
 
+        # Compliance & traceability services (SQLite-backed for persistence)
+        from mkg.infrastructure.persistent.provenance_tracker import PersistentProvenanceTracker
+        from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
+        from mkg.domain.services.compliance_manager import ComplianceManager
+        from mkg.domain.services.lineage_tracer import LineageTracer
+
+        self._provenance_tracker = PersistentProvenanceTracker(
+            db_path=os.path.join(self._db_dir, "provenance.db")
+        )
+        self._audit_logger = PersistentAuditLogger(
+            db_path=os.path.join(self._db_dir, "audit.db")
+        )
+        self._compliance_manager = ComplianceManager()
+        self._lineage_tracer = LineageTracer(
+            provenance_tracker=self._provenance_tracker,
+            compliance_manager=self._compliance_manager,
+        )
+
         self._initialized = True
         logger.info("MKG ServiceFactory initialized: db_dir=%s", self._db_dir)
 
@@ -63,6 +81,26 @@ class ServiceFactory:
     def article_storage(self) -> Any:
         assert self._initialized, "Call initialize() first"
         return self._article_storage
+
+    @property
+    def provenance_tracker(self) -> Any:
+        assert self._initialized, "Call initialize() first"
+        return self._provenance_tracker
+
+    @property
+    def audit_logger(self) -> Any:
+        assert self._initialized, "Call initialize() first"
+        return self._audit_logger
+
+    @property
+    def compliance_manager(self) -> Any:
+        assert self._initialized, "Call initialize() first"
+        return self._compliance_manager
+
+    @property
+    def lineage_tracer(self) -> Any:
+        assert self._initialized, "Call initialize() first"
+        return self._lineage_tracer
 
     def create_extraction_orchestrator(self) -> Any:
         """Create the ExtractionOrchestrator with tiered extractors."""
@@ -112,6 +150,17 @@ class ServiceFactory:
             alert_system=AlertSystem(),
             impact_table_builder=ImpactTableBuilder(storage),
             article_dedup=ArticleDedup(),
+            provenance_tracker=self._provenance_tracker,
+            audit_logger=self._audit_logger,
+        )
+
+    def create_signal_bridge(self) -> Any:
+        """Create SignalBridge with compliance wiring."""
+        from mkg.domain.services.signal_bridge import SignalBridge
+
+        return SignalBridge(
+            compliance_manager=self._compliance_manager,
+            lineage_tracer=self._lineage_tracer,
         )
 
     def create_news_fetcher(self) -> Any:

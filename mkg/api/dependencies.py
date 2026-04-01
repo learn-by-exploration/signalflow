@@ -7,6 +7,8 @@ All services are constructed once at startup and injected via FastAPI Depends().
 
 from __future__ import annotations
 
+import os
+
 from mkg.domain.services.accuracy_tracker import AccuracyTracker
 from mkg.domain.services.alert_system import AlertSystem
 from mkg.domain.services.article_dedup import ArticleDedup
@@ -15,19 +17,25 @@ from mkg.domain.services.auth_tenant import AuthTenantService
 from mkg.domain.services.backpressure import BackpressureManager
 from mkg.domain.services.canonical_registry import CanonicalEntityRegistry
 from mkg.domain.services.causal_chain_builder import CausalChainBuilder
+from mkg.domain.services.compliance_manager import ComplianceManager
 from mkg.domain.services.cost_governance import CostGovernance
 from mkg.domain.services.dlq import DeadLetterQueue
 from mkg.domain.services.entity_service import EntityService
 from mkg.domain.services.graph_mutation import GraphMutationService
 from mkg.domain.services.hallucination_verifier import HallucinationVerifier
 from mkg.domain.services.impact_table import ImpactTableBuilder
+from mkg.domain.services.lineage_tracer import LineageTracer
+from mkg.domain.services.pii_detector import PIIDetector
 from mkg.domain.services.pipeline_observability import PipelineObservability
 from mkg.domain.services.propagation_engine import PropagationEngine
+from mkg.domain.services.retention_policy import RetentionPolicy
 from mkg.domain.services.seed_loader import SeedDataLoader
 from mkg.domain.services.tribal_knowledge import TribalKnowledgeInput
 from mkg.domain.services.webhook_delivery import WebhookDelivery
 from mkg.domain.services.weight_adjustment import WeightAdjustmentService
 from mkg.infrastructure.neo4j.graph_storage import Neo4jGraphStorage
+from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
+from mkg.infrastructure.persistent.provenance_tracker import PersistentProvenanceTracker
 
 
 class ServiceContainer:
@@ -63,6 +71,23 @@ class ServiceContainer:
         self.observability = PipelineObservability()
         self.backpressure = BackpressureManager()
         self.dlq = DeadLetterQueue()
+
+        # Compliance & traceability services (SQLite-backed for persistence)
+        db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+        os.makedirs(db_dir, exist_ok=True)
+        self.provenance_tracker = PersistentProvenanceTracker(
+            db_path=os.path.join(db_dir, "provenance.db")
+        )
+        self.audit_logger = PersistentAuditLogger(
+            db_path=os.path.join(db_dir, "audit.db")
+        )
+        self.compliance_manager = ComplianceManager()
+        self.lineage_tracer = LineageTracer(
+            provenance_tracker=self.provenance_tracker,
+            compliance_manager=self.compliance_manager,
+        )
+        self.retention_policy = RetentionPolicy()
+        self.pii_detector = PIIDetector()
 
     async def startup(self) -> None:
         """Connect storage and seed default data."""
