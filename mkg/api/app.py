@@ -36,6 +36,7 @@ TAGS_METADATA = [
     {"name": "articles", "description": "Article ingestion pipeline and NER/RE extraction"},
     {"name": "alerts", "description": "Alert system, webhook delivery, and observability"},
     {"name": "tribal-knowledge", "description": "Expert-asserted entities, edges, and annotations"},
+    {"name": "about", "description": "MKG features, competitive positioning, applications, and MiroFish integration"},
 ]
 
 
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
         articles,
         compliance,
         entities,
+        features,
         graph,
         propagation,
         tribal,
@@ -127,6 +129,7 @@ def create_app() -> FastAPI:
     app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
     app.include_router(tribal.router, prefix="/api/v1", tags=["tribal-knowledge"])
     app.include_router(compliance.router, prefix="/api/v1", tags=["compliance"])
+    app.include_router(features.router, prefix="/api/v1", tags=["about"])
 
     return app
 
