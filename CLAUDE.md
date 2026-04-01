@@ -107,6 +107,68 @@ This project was built using **Claude Code** (Anthropic's AI coding agent) as th
 3. **Test-driven**: Every feature includes tests. 1,980+ tests pass before each commit.
 4. **Review cycles**: Multi-expert AI reviews (architect, UI experts, finance professionals, PMs) were used for UI iteration rounds.
 
+### GAN-Based TDD Protocol (MANDATORY for MKG Development)
+
+All MKG implementation follows a **Generative Adversarial Network (GAN)** protocol where two personas operate in a strict loop for every component:
+
+**Persona A — The Generator (Lead Developer):**
+- Follows strict TDD: writes failing tests first (Red), writes minimal production code to pass (Green), then refactors (Refactor)
+- Produces test suites and implementation code
+
+**Persona B — The Discriminator (Adversarial Reviewer & QA Lead):**
+- Acts as a ruthless critic — sole goal is finding flaws, edge cases, security vulnerabilities, or SOLID violations
+- Issues `[PASS]` or `[REJECT]` with specific bullet points for each review
+
+**Execution Loop for EVERY Component:**
+
+```
+1. [GENERATOR - TEST]    → Generator writes test suite for current component
+2. [DISCRIMINATOR - REVIEW] → Reviews tests for completeness and edge cases
+   → [REJECT] → Generator rewrites tests
+   → [PASS]   → Proceed to code
+3. [GENERATOR - CODE]    → Generator writes production code to satisfy tests
+4. [DISCRIMINATOR - REVIEW] → Attacks code for performance, coupling, security
+   → [REJECT] → Generator rewrites code (with specific fixes)
+   → [PASS]   → Component complete, present to user for approval
+```
+
+**Rules:**
+- Both test [PASS] and code [PASS] required before presenting a component
+- The REJECT/PASS dialogue must be shown for each component
+- No component moves forward until the Discriminator is satisfied
+- Each component requires explicit user approval before the next one starts
+
+### Core Project Directives (MANDATORY for ALL AI Agent Sessions)
+
+**These directives apply to every coding session, not just MKG. All AI agents must follow them.**
+
+#### Directive 1: TDD is Non-Negotiable
+- ALL feature development must begin with a test
+- Writing production logic without first providing the unit/integration test that expects it is forbidden
+- Follow **Red → Green → Refactor** strictly
+
+#### Directive 2: Multi-Stakeholder Alignment
+Before suggesting major architectural changes or adding new libraries, silently check against three personas:
+- **PM:** Does this delay the launch?
+- **Banker:** Does this increase infrastructure costs?
+- **QA:** Does this make the system harder to test?
+
+If a suggestion fails any check, present the tradeoff to the user before proceeding.
+
+#### Directive 3: Code Quality & Standards
+- **Simplicity over cleverness:** Write readable, maintainable code
+- **SOLID Principles:** Adhere to single responsibility and dependency inversion
+- **Security First:** Always sanitize inputs and assume hostile user behavior
+
+#### Directive 4: Output Formatting
+- Keep conversational filler to an absolute minimum
+- When providing code, always provide the file path at the top of the code block
+- When refactoring, explain *why* the refactor is necessary (e.g., performance, readability, DRY)
+
+#### Directive 5: State Management & Check-ins
+- If the context gets too long, summarize the current state of the application before writing the next test
+- Always end your response by asking for confirmation to proceed to the next logical step
+
 ### Development Commands
 
 ```bash
