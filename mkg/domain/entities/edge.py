@@ -50,7 +50,7 @@ class Edge:
     __slots__ = (
         "id", "source_id", "target_id", "relation_type",
         "weight", "confidence", "metadata", "source",
-        "created_at", "updated_at",
+        "created_at", "updated_at", "valid_from", "valid_until",
     )
 
     def __init__(
@@ -65,6 +65,8 @@ class Edge:
         source: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
+        valid_from: Optional[datetime] = None,
+        valid_until: Optional[datetime] = None,
     ) -> None:
         if not source_id:
             raise ValueError("source_id cannot be empty")
@@ -88,10 +90,12 @@ class Edge:
         now = datetime.now(timezone.utc)
         self.created_at = created_at or now
         self.updated_at = updated_at or now
+        self.valid_from = valid_from if valid_from is not None else self.created_at
+        self.valid_until = valid_until
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict for storage/API."""
-        return {
+        d = {
             "id": self.id,
             "source_id": self.source_id,
             "target_id": self.target_id,
@@ -102,7 +106,10 @@ class Edge:
             "source": self.source,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
+            "valid_from": self.valid_from.isoformat() if self.valid_from else None,
+            "valid_until": self.valid_until.isoformat() if self.valid_until else None,
         }
+        return d
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Edge:
@@ -113,6 +120,13 @@ class Edge:
             created_at = datetime.fromisoformat(created_at)
         if isinstance(updated_at, str):
             updated_at = datetime.fromisoformat(updated_at)
+
+        valid_from = data.get("valid_from")
+        valid_until = data.get("valid_until")
+        if isinstance(valid_from, str):
+            valid_from = datetime.fromisoformat(valid_from)
+        if isinstance(valid_until, str):
+            valid_until = datetime.fromisoformat(valid_until)
 
         return cls(
             id=data["id"],
@@ -125,6 +139,8 @@ class Edge:
             source=data.get("source"),
             created_at=created_at,
             updated_at=updated_at,
+            valid_from=valid_from,
+            valid_until=valid_until,
         )
 
     def __repr__(self) -> str:

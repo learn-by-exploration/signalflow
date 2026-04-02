@@ -10,6 +10,7 @@ import json
 import logging
 import shutil
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 import aiosqlite
@@ -23,8 +24,10 @@ CREATE TABLE IF NOT EXISTS entities (
     id TEXT PRIMARY KEY,
     entity_type TEXT NOT NULL,
     name TEXT NOT NULL,
+    canonical_name TEXT NOT NULL DEFAULT '',
     properties TEXT NOT NULL DEFAULT '{}',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS edges (
@@ -34,8 +37,12 @@ CREATE TABLE IF NOT EXISTS edges (
     relation_type TEXT NOT NULL,
     weight REAL NOT NULL DEFAULT 1.0,
     confidence REAL NOT NULL DEFAULT 1.0,
+    direction TEXT NOT NULL DEFAULT 'positive',
+    valid_from TEXT,
+    valid_until TEXT,
     properties TEXT NOT NULL DEFAULT '{}',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(entity_type);
@@ -44,6 +51,23 @@ CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id);
 CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id);
 CREATE INDEX IF NOT EXISTS idx_edges_relation ON edges(relation_type);
 """
+
+# Indexes that depend on new columns (must run AFTER migrations)
+_POST_MIGRATION_INDEX_SQL = [
+    "CREATE INDEX IF NOT EXISTS idx_entities_canonical ON entities(canonical_name)",
+    "CREATE INDEX IF NOT EXISTS idx_edges_valid_from ON edges(valid_from)",
+    "CREATE INDEX IF NOT EXISTS idx_edges_valid_until ON edges(valid_until)",
+]
+
+# Schema migration: adds new columns to existing databases
+_MIGRATION_SQL = [
+    "ALTER TABLE entities ADD COLUMN canonical_name TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE entities ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))",
+    "ALTER TABLE edges ADD COLUMN direction TEXT NOT NULL DEFAULT 'positive'",
+    "ALTER TABLE edges ADD COLUMN valid_from TEXT",
+    "ALTER TABLE edges ADD COLUMN valid_until TEXT",
+    "ALTER TABLE edges ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))",
+]
 
 
 class SQLiteGraphStorage(GraphStorage):
@@ -59,6 +83,15 @@ class SQLiteGraphStorage(GraphStorage):
         await self._db.execute("PRAGMA journal_mode=WAL")
         await self._db.execute("PRAGMA foreign_keys=ON")
         await self._db.executescript(_SCHEMA_SQL)
+        # Apply migrations for existing databases (idempotent)
+        for sql in _MIGRATION_SQL:
+            try:
+                await self._db.execute(sql)
+            except Exception:
+                pass  # Column already exists
+        # Create indexes that depend on migrated columns
+        for sql in _POST_MIGRATION_INDEX_SQL:
+            await self._db.execute(sql)
         await self._db.commit()
         logger.info("SQLiteGraphStorage initialized: %s", self._db_path)
 
@@ -81,27 +114,43 @@ class SQLiteGraphStorage(GraphStorage):
     # ── Entity helpers ──
 
     def _entity_to_dict(self, row: tuple) -> dict[str, Any]:
-        """Convert a DB row to entity dict."""
-        props = json.loads(row[3]) if row[3] else {}
+        """Convert a DB row to entity dict.
+
+        Row columns: id, entity_type, name, canonical_name, properties, created_at, updated_at
+        """
+        props = json.loads(row[4]) if row[4] else {}
         return {
             "id": row[0],
             "entity_type": row[1],
             "name": row[2],
+            "canonical_name": row[3] or "",
+            "created_at": row[5],
+            "updated_at": row[6],
             **props,
         }
 
     def _edge_to_dict(self, row: tuple) -> dict[str, Any]:
-        """Convert a DB row to edge dict."""
-        props = json.loads(row[6]) if row[6] else {}
-        return {
+        """Convert a DB row to edge dict.
+
+        Row columns: id, source_id, target_id, relation_type, weight, confidence,
+                     direction, valid_from, valid_until, properties, created_at, updated_at
+        """
+        props = json.loads(row[9]) if row[9] else {}
+        result = {
             "id": row[0],
             "source_id": row[1],
             "target_id": row[2],
             "relation_type": row[3],
             "weight": row[4],
             "confidence": row[5],
+            "direction": row[6] or "positive",
+            "valid_from": row[7],
+            "valid_until": row[8],
+            "created_at": row[10],
+            "updated_at": row[11],
             **props,
         }
+        return result
 
     # ── Entity CRUD ──
 
@@ -114,19 +163,27 @@ class SQLiteGraphStorage(GraphStorage):
         db = self._ensure_db()
         eid = entity_id or str(uuid.uuid4())
         name = properties.pop("name", "")
+        canonical_name = properties.pop("canonical_name", name)
+        now = datetime.now(timezone.utc).isoformat()
         props_json = json.dumps(properties)
 
         await db.execute(
-            "INSERT INTO entities (id, entity_type, name, properties) VALUES (?, ?, ?, ?)",
-            (eid, entity_type, name, props_json),
+            "INSERT INTO entities (id, entity_type, name, canonical_name, properties, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (eid, entity_type, name, canonical_name, props_json, now, now),
         )
         await db.commit()
-        return {"id": eid, "entity_type": entity_type, "name": name, **properties}
+        return {
+            "id": eid, "entity_type": entity_type, "name": name,
+            "canonical_name": canonical_name, "created_at": now, "updated_at": now,
+            **properties,
+        }
 
     async def get_entity(self, entity_id: str) -> Optional[dict[str, Any]]:
         db = self._ensure_db()
         async with db.execute(
-            "SELECT id, entity_type, name, properties FROM entities WHERE id = ?",
+            "SELECT id, entity_type, name, canonical_name, properties, created_at, updated_at "
+            "FROM entities WHERE id = ?",
             (entity_id,),
         ) as cursor:
             row = await cursor.fetchone()
@@ -141,17 +198,25 @@ class SQLiteGraphStorage(GraphStorage):
             return None
 
         name = properties.pop("name", existing["name"])
-        # Merge properties
-        merged = {k: v for k, v in existing.items() if k not in ("id", "entity_type", "name")}
+        canonical_name = properties.pop("canonical_name", existing.get("canonical_name", name))
+        now = datetime.now(timezone.utc).isoformat()
+        # Merge properties — exclude first-class columns
+        exclude_keys = {"id", "entity_type", "name", "canonical_name", "created_at", "updated_at"}
+        merged = {k: v for k, v in existing.items() if k not in exclude_keys}
         merged.update(properties)
         props_json = json.dumps(merged)
 
         await db.execute(
-            "UPDATE entities SET name = ?, properties = ? WHERE id = ?",
-            (name, props_json, entity_id),
+            "UPDATE entities SET name = ?, canonical_name = ?, properties = ?, updated_at = ? WHERE id = ?",
+            (name, canonical_name, props_json, now, entity_id),
         )
         await db.commit()
-        return {"id": entity_id, "entity_type": existing["entity_type"], "name": name, **merged}
+        return {
+            "id": entity_id, "entity_type": existing["entity_type"],
+            "name": name, "canonical_name": canonical_name,
+            "created_at": existing.get("created_at"), "updated_at": now,
+            **merged,
+        }
 
     async def delete_entity(self, entity_id: str) -> bool:
         db = self._ensure_db()
@@ -174,7 +239,7 @@ class SQLiteGraphStorage(GraphStorage):
         offset: int = 0,
     ) -> list[dict[str, Any]]:
         db = self._ensure_db()
-        query = "SELECT id, entity_type, name, properties FROM entities WHERE 1=1"
+        query = "SELECT id, entity_type, name, canonical_name, properties, created_at, updated_at FROM entities WHERE 1=1"
         params: list[Any] = []
 
         if entity_type:
@@ -183,7 +248,7 @@ class SQLiteGraphStorage(GraphStorage):
 
         if filters:
             for key, value in filters.items():
-                if key in ("name",):
+                if key in ("name", "canonical_name"):
                     query += f" AND {key} = ?"
                     params.append(value)
                 else:
@@ -220,28 +285,41 @@ class SQLiteGraphStorage(GraphStorage):
         eid = edge_id or str(uuid.uuid4())
         weight = properties.pop("weight", 1.0)
         confidence = properties.pop("confidence", 1.0)
+        direction = properties.pop("direction", "positive")
+        valid_from = properties.pop("valid_from", None)
+        valid_until = properties.pop("valid_until", None)
+        now = datetime.now(timezone.utc).isoformat()
         props_json = json.dumps(properties)
 
         await db.execute(
-            "INSERT INTO edges (id, source_id, target_id, relation_type, weight, confidence, properties) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (eid, source_id, target_id, relation_type, weight, confidence, props_json),
+            "INSERT INTO edges (id, source_id, target_id, relation_type, weight, confidence, "
+            "direction, valid_from, valid_until, properties, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (eid, source_id, target_id, relation_type, weight, confidence,
+             direction, valid_from, valid_until, props_json, now, now),
         )
         await db.commit()
-        return {
+        result = {
             "id": eid,
             "source_id": source_id,
             "target_id": target_id,
             "relation_type": relation_type,
             "weight": weight,
             "confidence": confidence,
+            "direction": direction,
+            "valid_from": valid_from,
+            "valid_until": valid_until,
+            "created_at": now,
+            "updated_at": now,
             **properties,
         }
+        return result
 
     async def get_edge(self, edge_id: str) -> Optional[dict[str, Any]]:
         db = self._ensure_db()
         async with db.execute(
-            "SELECT id, source_id, target_id, relation_type, weight, confidence, properties "
+            "SELECT id, source_id, target_id, relation_type, weight, confidence, "
+            "direction, valid_from, valid_until, properties, created_at, updated_at "
             "FROM edges WHERE id = ?",
             (edge_id,),
         ) as cursor:
@@ -258,16 +336,24 @@ class SQLiteGraphStorage(GraphStorage):
 
         weight = properties.pop("weight", existing["weight"])
         confidence = properties.pop("confidence", existing["confidence"])
-        merged = {
-            k: v for k, v in existing.items()
-            if k not in ("id", "source_id", "target_id", "relation_type", "weight", "confidence")
+        direction = properties.pop("direction", existing.get("direction", "positive"))
+        valid_from = properties.pop("valid_from", existing.get("valid_from"))
+        valid_until = properties.pop("valid_until", existing.get("valid_until"))
+        now = datetime.now(timezone.utc).isoformat()
+
+        exclude_keys = {
+            "id", "source_id", "target_id", "relation_type",
+            "weight", "confidence", "direction",
+            "valid_from", "valid_until", "created_at", "updated_at",
         }
+        merged = {k: v for k, v in existing.items() if k not in exclude_keys}
         merged.update(properties)
         props_json = json.dumps(merged)
 
         await db.execute(
-            "UPDATE edges SET weight = ?, confidence = ?, properties = ? WHERE id = ?",
-            (weight, confidence, props_json, edge_id),
+            "UPDATE edges SET weight = ?, confidence = ?, direction = ?, "
+            "valid_from = ?, valid_until = ?, properties = ?, updated_at = ? WHERE id = ?",
+            (weight, confidence, direction, valid_from, valid_until, props_json, now, edge_id),
         )
         await db.commit()
         return {
@@ -277,6 +363,11 @@ class SQLiteGraphStorage(GraphStorage):
             "relation_type": existing["relation_type"],
             "weight": weight,
             "confidence": confidence,
+            "direction": direction,
+            "valid_from": valid_from,
+            "valid_until": valid_until,
+            "created_at": existing.get("created_at"),
+            "updated_at": now,
             **merged,
         }
 
@@ -295,7 +386,8 @@ class SQLiteGraphStorage(GraphStorage):
     ) -> list[dict[str, Any]]:
         db = self._ensure_db()
         query = (
-            "SELECT id, source_id, target_id, relation_type, weight, confidence, properties "
+            "SELECT id, source_id, target_id, relation_type, weight, confidence, "
+            "direction, valid_from, valid_until, properties, created_at, updated_at "
             "FROM edges WHERE 1=1"
         )
         params: list[Any] = []
@@ -331,7 +423,7 @@ class SQLiteGraphStorage(GraphStorage):
 
         if direction in ("outgoing", "both"):
             query = (
-                "SELECT e.id, e.entity_type, e.name, e.properties "
+                "SELECT e.id, e.entity_type, e.name, e.canonical_name, e.properties, e.created_at, e.updated_at "
                 "FROM entities e JOIN edges r ON e.id = r.target_id "
                 "WHERE r.source_id = ?"
             )
@@ -347,7 +439,7 @@ class SQLiteGraphStorage(GraphStorage):
 
         if direction in ("incoming", "both"):
             query = (
-                "SELECT e.id, e.entity_type, e.name, e.properties "
+                "SELECT e.id, e.entity_type, e.name, e.canonical_name, e.properties, e.created_at, e.updated_at "
                 "FROM entities e JOIN edges r ON e.id = r.source_id "
                 "WHERE r.target_id = ?"
             )
@@ -458,28 +550,108 @@ class SQLiteGraphStorage(GraphStorage):
         vector_weight: float = 0.7,
         keyword_weight: float = 0.3,
     ) -> list[dict[str, Any]]:
+        """Search entities with BM25-style relevance scoring.
+
+        Scoring ranks:
+        1. Exact name match (score = 1.0)
+        2. Exact canonical_name match (score = 0.95)
+        3. Name starts with query (score = 0.8)
+        4. Canonical name starts with query (score = 0.75)
+        5. Name contains query (score = 0.5)
+        6. Canonical name contains query (score = 0.4)
+        7. Properties contain query (score = 0.2)
+        """
         db = self._ensure_db()
+        query_lower = query.lower()
+
+        # Fetch candidates: name or canonical_name or properties contain query
         sql = (
-            "SELECT id, entity_type, name, properties FROM entities "
-            "WHERE name LIKE ?"
+            "SELECT id, entity_type, name, canonical_name, properties, created_at, updated_at "
+            "FROM entities WHERE (name LIKE ? COLLATE NOCASE "
+            "OR canonical_name LIKE ? COLLATE NOCASE "
+            "OR properties LIKE ? COLLATE NOCASE)"
         )
-        params: list[Any] = [f"%{query}%"]
+        params: list[Any] = [f"%{query}%", f"%{query}%", f"%{query}%"]
 
         if entity_type:
             sql += " AND entity_type = ?"
             params.append(entity_type)
 
-        sql += " COLLATE NOCASE LIMIT ?"
-        params.append(limit)
+        sql += " LIMIT ?"
+        params.append(limit * 3)  # Fetch extra for re-ranking
 
         async with db.execute(sql, params) as cursor:
             rows = await cursor.fetchall()
             results = []
             for row in rows:
                 entity = self._entity_to_dict(row)
-                entity["score"] = 1.0
+                name_lower = entity.get("name", "").lower()
+                canon_lower = entity.get("canonical_name", "").lower()
+
+                # BM25-style scoring
+                if name_lower == query_lower:
+                    score = 1.0
+                elif canon_lower == query_lower:
+                    score = 0.95
+                elif name_lower.startswith(query_lower):
+                    score = 0.8
+                elif canon_lower.startswith(query_lower):
+                    score = 0.75
+                elif query_lower in name_lower:
+                    score = 0.5
+                elif query_lower in canon_lower:
+                    score = 0.4
+                else:
+                    score = 0.2  # Properties match only
+
+                entity["score"] = score
                 results.append(entity)
-            return results
+
+            results.sort(key=lambda r: r["score"], reverse=True)
+            return results[:limit]
+
+    # ── Temporal queries ──
+
+    async def find_edges_at_time(
+        self,
+        as_of: str,
+        source_id: Optional[str] = None,
+        target_id: Optional[str] = None,
+        relation_type: Optional[str] = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        """Find edges that were valid at a specific point in time.
+
+        An edge is valid at time T if:
+        - valid_from <= T (or valid_from is NULL)
+        - valid_until > T (or valid_until is NULL — still active)
+        """
+        db = self._ensure_db()
+        query = (
+            "SELECT id, source_id, target_id, relation_type, weight, confidence, "
+            "direction, valid_from, valid_until, properties, created_at, updated_at "
+            "FROM edges WHERE "
+            "(valid_from IS NULL OR valid_from <= ?) "
+            "AND (valid_until IS NULL OR valid_until > ?)"
+        )
+        params: list[Any] = [as_of, as_of]
+
+        if source_id:
+            query += " AND source_id = ?"
+            params.append(source_id)
+        if target_id:
+            query += " AND target_id = ?"
+            params.append(target_id)
+        if relation_type:
+            query += " AND relation_type = ?"
+            params.append(relation_type)
+
+        query += " LIMIT ?"
+        params.append(limit)
+
+        async with db.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+            return [self._edge_to_dict(row) for row in rows]
 
     # ── Merge ──
 
