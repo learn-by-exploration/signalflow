@@ -62,17 +62,17 @@ async def audit_log(
     """Query audit trail with optional filters."""
     c = get_container()
 
-    # Convert action string to AuditAction if provided
-    action_enum = None
+    # Convert action string to AuditAction value if provided
+    action_filter = None
     if action:
         from mkg.domain.services.audit_logger import AuditAction
         try:
-            action_enum = AuditAction(action)
+            action_filter = AuditAction(action).value
         except ValueError:
             pass  # Invalid action, return all
 
     entries = c.audit_logger.get_entries(
-        action=action_enum, target_id=target_id, actor=actor, limit=limit
+        action=action_filter, target_id=target_id, actor=actor, limit=limit
     )
     return {"data": entries, "meta": {"count": len(entries)}}
 

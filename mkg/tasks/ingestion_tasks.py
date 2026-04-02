@@ -1,13 +1,14 @@
 # mkg/tasks/ingestion_tasks.py
 """News ingestion Celery tasks.
 
-Contains both dummy tasks (backward compat) and real implementations
-that use ServiceFactory to wire the full pipeline.
+Dummy implementations that log what would happen with real data sources.
+Real implementations (*_real functions) use actual pipeline services.
 """
 
 import asyncio
 import logging
 import os
+import uuid
 from typing import Any
 
 from mkg.tasks.celery_app import app
@@ -15,243 +16,164 @@ from mkg.tasks.celery_app import app
 logger = logging.getLogger(__name__)
 
 
-def _fetch_articles(sources: list[str] | None = None) -> list[dict[str, Any]]:
-    """Fetch articles from RSS feeds (sync wrapper).
-
-    Uses RealMultiSourceFetcher under the hood.
-    Separated for testability (can be mocked in tests).
-    """
-    from mkg.infrastructure.external.real_news_fetcher import (
-        RSSNewsFetcher,
-        RealMultiSourceFetcher,
-    )
-    fetcher = RealMultiSourceFetcher(fetchers=[RSSNewsFetcher()])
-    loop = asyncio.new_event_loop()
-    try:
-        return loop.run_until_complete(fetcher.fetch())
-    finally:
-        loop.close()
-
-
-def _get_factory(db_dir: str | None = None):
-    """Create and initialize a ServiceFactory (sync wrapper)."""
-    from mkg.service_factory import ServiceFactory
-    factory = ServiceFactory(db_dir=db_dir)
-    loop = asyncio.new_event_loop()
-    try:
-        loop.run_until_complete(factory.initialize())
-    finally:
-        loop.close()
-    return factory
-
-
 @app.task(name="mkg.tasks.fetch_news")
 def fetch_news(sources: list[str] | None = None) -> dict[str, Any]:
-    """Fetch news articles from configured sources and process through pipeline.
+    """Fetch news articles from configured sources.
 
-    Fetches articles from RSS feeds and runs each through the full MKG pipeline
-    with provenance tracking and audit logging.
+    Dummy: returns a sample batch size. Real version would call
+    news APIs and pass articles to the ingestion pipeline.
     """
-    db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
     sources = sources or ["reuters", "sec_filings", "industry_rss"]
-    try:
-        articles = _fetch_articles(sources)
-        logger.info("Fetched %d articles from news sources", len(articles))
+    logger.info("DUMMY fetch_news: would fetch from %s", sources)
+    return {
+        "status": "dummy",
+        "sources_checked": sources,
+        "articles_fetched": 0,
+        "message": "Dummy fetcher — no real news API connected",
+    }
 
-        if not articles:
-            return {"status": "completed", "sources_checked": sources, "articles_fetched": 0}
 
-        factory = _get_factory(db_dir)
-        pipeline = factory.create_pipeline_orchestrator()
-        loop = asyncio.new_event_loop()
-        processed = 0
+@app.task(name="mkg.tasks.process_article")
+def process_article(article_id: str) -> dict[str, Any]:
+    """Process a single article through NER/RE extraction.
+
+    Dummy: logs the article_id. Real version would run the
+    full extraction pipeline (dedup → NER/RE → graph mutation).
+    """
+    logger.info("DUMMY process_article: would process article_id=%s", article_id)
+    return {
+        "status": "dummy",
+        "article_id": article_id,
+        "message": "Dummy processor — no real LLM extraction",
+    }
+
+
+@app.task(name="mkg.tasks.batch_extract")
+def batch_extract(article_ids: list[str]) -> dict[str, Any]:
+    """Batch process multiple articles.
+
+    Dummy: returns count. Real version would parallelize extraction.
+    """
+    logger.info("DUMMY batch_extract: would process %d articles", len(article_ids))
+    return {
+        "status": "dummy",
+        "count": len(article_ids),
+        "message": "Dummy batch — no real extraction",
+    }
+
+
+def _fetch_articles() -> list[dict[str, Any]]:
+    """Fetch articles from configured RSS feeds.
+
+    Hook for real news fetcher. Tests mock this function.
+    """
+    from mkg.infrastructure.external.real_news_fetcher import RSSNewsFetcher
+
+    fetcher = RSSNewsFetcher()
+    feeds = fetcher.get_default_feeds()
+    articles: list[dict[str, Any]] = []
+    for feed in feeds:
         try:
-            for article in articles:
-                result = loop.run_until_complete(
-                    pipeline.process_article(
-                        title=article.get("title", ""),
-                        content=article.get("content", ""),
-                        source=article.get("source", "rss"),
-                        url=article.get("url"),
-                    )
-                )
-                if result.get("status") == "completed":
-                    processed += 1
-        finally:
-            loop.run_until_complete(factory.shutdown())
-            loop.close()
-
-        return {
-            "status": "completed",
-            "sources_checked": sources,
-            "articles_fetched": len(articles),
-            "articles_processed": processed,
-        }
-    except Exception as e:
-        logger.error("fetch_news failed: %s", e)
-        return {"status": "error", "error": str(e), "articles_fetched": 0}
+            fetched = fetcher.fetch(feed["url"])
+            articles.extend(fetched)
+        except Exception as exc:
+            logger.warning("Failed to fetch %s: %s", feed["url"], exc)
+    return articles
 
 
-def fetch_news_real(
-    sources: list[str] | None = None,
-    db_dir: str | None = None,
-) -> dict[str, Any]:
-    """Real implementation of fetch_news.
+def fetch_news_real(db_dir: str | None = None) -> dict[str, Any]:
+    """Fetch news articles using real RSS fetcher.
 
-    Fetches articles from RSS feeds and processes each through the pipeline.
+    Args:
+        db_dir: Directory for SQLite databases. Uses MKG_DB_DIR env var if not provided.
+
+    Returns:
+        Result dict with status and articles_fetched count.
     """
     db_dir = db_dir or os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+    os.makedirs(db_dir, exist_ok=True)
+
     try:
-        articles = _fetch_articles(sources)
-        logger.info("Fetched %d articles from news sources", len(articles))
-
-        if not articles:
-            return {"status": "completed", "articles_fetched": 0}
-
-        # Process each article through the pipeline
-        factory = _get_factory(db_dir)
-        pipeline = factory.create_pipeline_orchestrator()
-        loop = asyncio.new_event_loop()
-        processed = 0
-        try:
-            for article in articles:
-                result = loop.run_until_complete(
-                    pipeline.process_article(
-                        title=article.get("title", ""),
-                        content=article.get("content", ""),
-                        source=article.get("source", "rss"),
-                        url=article.get("url"),
-                    )
-                )
-                if result.get("status") == "completed":
-                    processed += 1
-        finally:
-            loop.run_until_complete(factory.shutdown())
-            loop.close()
-
+        articles = _fetch_articles()
         return {
             "status": "completed",
             "articles_fetched": len(articles),
-            "articles_processed": processed,
         }
-    except Exception as e:
-        logger.error("fetch_news_real failed: %s", e)
-        return {"status": "error", "error": str(e), "articles_fetched": 0}
+    except Exception as exc:
+        logger.error("fetch_news_real failed: %s", exc)
+        return {
+            "status": "error",
+            "error": str(exc),
+        }
 
 
 def process_article_real(
     title: str,
     content: str,
-    source: str = "unknown",
-    url: str | None = None,
+    source: str,
     db_dir: str | None = None,
-) -> dict[str, Any]:
-    """Real implementation of process_article.
-
-    Runs a single article through the full MKG pipeline with provenance
-    and audit wired.
-    """
-    db_dir = db_dir or os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
-    factory = _get_factory(db_dir)
-    pipeline = factory.create_pipeline_orchestrator()
-    loop = asyncio.new_event_loop()
-    try:
-        result = loop.run_until_complete(
-            pipeline.process_article(
-                title=title,
-                content=content,
-                source=source,
-                url=url,
-            )
-        )
-        return result
-    except Exception as e:
-        logger.error("process_article_real failed: %s", e)
-        return {"status": "error", "error": str(e)}
-    finally:
-        loop.run_until_complete(factory.shutdown())
-        loop.close()
-
-
-@app.task(name="mkg.tasks.process_article")
-def process_article(
-    title: str = "",
-    content: str = "",
-    source: str = "unknown",
     url: str | None = None,
-    article_id: str | None = None,
 ) -> dict[str, Any]:
-    """Process a single article through the full MKG pipeline.
-
-    Runs dedup → extraction → verification → graph mutation → propagation.
-    Provenance and audit are recorded at each step.
-    """
-    db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
-    # Support legacy call with just article_id (look up from storage)
-    if article_id and not content:
-        logger.info("process_article called with article_id=%s but no content; skipping", article_id)
-        return {"status": "skipped", "article_id": article_id, "reason": "no content provided"}
-
-    factory = _get_factory(db_dir)
-    pipeline = factory.create_pipeline_orchestrator()
-    loop = asyncio.new_event_loop()
-    try:
-        result = loop.run_until_complete(
-            pipeline.process_article(
-                title=title,
-                content=content,
-                source=source,
-                url=url,
-            )
-        )
-        return result
-    except Exception as e:
-        logger.error("process_article failed: %s", e)
-        return {"status": "error", "error": str(e)}
-    finally:
-        loop.run_until_complete(factory.shutdown())
-        loop.close()
-
-
-@app.task(name="mkg.tasks.batch_extract")
-def batch_extract(articles: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    """Batch process multiple articles through the MKG pipeline.
+    """Process a single article through the real extraction pipeline.
 
     Args:
-        articles: List of article dicts with title, content, source, url keys.
+        title: Article title.
+        content: Article body text.
+        source: Source identifier (e.g., 'reuters', 'test').
+        db_dir: Directory for SQLite databases.
+        url: Optional article URL.
+
+    Returns:
+        Result dict with status, article_id, entities_created, provenance_chain.
     """
-    if not articles:
-        return {"status": "completed", "count": 0, "processed": 0}
+    db_dir = db_dir or os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+    os.makedirs(db_dir, exist_ok=True)
 
-    db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
-    factory = _get_factory(db_dir)
-    pipeline = factory.create_pipeline_orchestrator()
-    loop = asyncio.new_event_loop()
-    processed = 0
-    errors = 0
+    if not content or not content.strip():
+        return {"status": "failed", "error": "Empty content"}
+
     try:
-        for article in articles:
-            try:
-                result = loop.run_until_complete(
-                    pipeline.process_article(
-                        title=article.get("title", ""),
-                        content=article.get("content", ""),
-                        source=article.get("source", "unknown"),
-                        url=article.get("url"),
-                    )
-                )
-                if result.get("status") == "completed":
-                    processed += 1
-            except Exception as e:
-                logger.error("batch_extract article error: %s", e)
-                errors += 1
-    finally:
-        loop.run_until_complete(factory.shutdown())
-        loop.close()
+        from mkg.domain.services.audit_logger import AuditAction
+        from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
+        from mkg.infrastructure.persistent.provenance_tracker import PersistentProvenanceTracker
+        from mkg.infrastructure.llm.regex_extractor import RegexExtractor
 
-    return {
-        "status": "completed",
-        "count": len(articles),
-        "processed": processed,
-        "errors": errors,
-    }
+        article_id = str(uuid.uuid4())
+        audit = PersistentAuditLogger(db_path=os.path.join(db_dir, "audit.db"))
+        provenance = PersistentProvenanceTracker(db_path=os.path.join(db_dir, "provenance.db"))
+
+        # Extract entities using regex extractor
+        extractor = RegexExtractor()
+        loop = asyncio.new_event_loop()
+        try:
+            entities = loop.run_until_complete(extractor.extract_entities(content))
+        finally:
+            loop.close()
+
+        # Record provenance
+        provenance.record_step(
+            article_id=article_id,
+            step="extraction",
+            inputs={"title": title, "source": source, "url": url or ""},
+            outputs={"entities_found": len(entities)},
+        )
+
+        # Record audit entries for created entities
+        for entity in entities:
+            audit.log(
+                action=AuditAction.ENTITY_CREATED,
+                actor="pipeline:extraction",
+                target_id=entity.get("id", str(uuid.uuid4())),
+                target_type="entity",
+                details={"name": entity.get("name", ""), "article_id": article_id},
+            )
+
+        return {
+            "status": "completed",
+            "article_id": article_id,
+            "entities_created": len(entities),
+            "provenance_chain": [article_id],
+        }
+    except Exception as exc:
+        logger.error("process_article_real failed: %s", exc)
+        return {"status": "error", "error": str(exc)}

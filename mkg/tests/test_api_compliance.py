@@ -13,8 +13,9 @@ import mkg.api.dependencies as deps
 
 
 @pytest.fixture
-async def client():
+async def client(tmp_path):
     import os
+    os.environ["MKG_DB_DIR"] = str(tmp_path)
     old_key = os.environ.pop("MKG_API_KEY", None)
     app = create_app()
     container = init_container()
@@ -26,6 +27,7 @@ async def client():
     deps._container = None
     if old_key is not None:
         os.environ["MKG_API_KEY"] = old_key
+    os.environ.pop("MKG_DB_DIR", None)
 
 
 class TestComplianceEndpoints:

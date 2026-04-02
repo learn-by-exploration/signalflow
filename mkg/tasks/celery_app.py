@@ -1,21 +1,16 @@
 # mkg/tasks/celery_app.py
 """Celery application configuration for MKG.
 
-Uses Redis broker when REDIS_URL is set (production), falls back to
-in-memory broker for development/testing.
+Dummy broker (in-memory) for development. Swap BROKER_URL
+to Redis for production.
 """
-
-import os
 
 from celery import Celery
 
-_broker = os.environ.get("REDIS_URL", "memory://")
-_backend = os.environ.get("REDIS_URL", "cache+memory://")
-
 app = Celery(
     "mkg",
-    broker=_broker,
-    backend=_backend,
+    broker="memory://",
+    backend="cache+memory://",
 )
 
 app.conf.update(

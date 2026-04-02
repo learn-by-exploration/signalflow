@@ -36,7 +36,6 @@ TAGS_METADATA = [
     {"name": "articles", "description": "Article ingestion pipeline and NER/RE extraction"},
     {"name": "alerts", "description": "Alert system, webhook delivery, and observability"},
     {"name": "tribal-knowledge", "description": "Expert-asserted entities, edges, and annotations"},
-    {"name": "about", "description": "MKG features, competitive positioning, applications, and MiroFish integration"},
 ]
 
 

@@ -8,8 +8,6 @@ Validates:
 - Validation errors from Pydantic return 422 with field details
 """
 
-import os
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -19,10 +17,8 @@ import mkg.api.dependencies as deps
 
 
 @pytest.fixture
-async def client(tmp_path):
-    """Create test client with isolated SQLite storage."""
-    old_db_dir = os.environ.get("MKG_DB_DIR")
-    os.environ["MKG_DB_DIR"] = str(tmp_path)
+async def client():
+    """Create test client."""
     app = create_app()
     container = init_container()
     await container.startup()
@@ -31,10 +27,6 @@ async def client(tmp_path):
         yield c
     await container.shutdown()
     deps._container = None
-    if old_db_dir is not None:
-        os.environ["MKG_DB_DIR"] = old_db_dir
-    else:
-        os.environ.pop("MKG_DB_DIR", None)
 
 
 class TestErrorHandling:

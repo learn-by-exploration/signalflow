@@ -2,7 +2,6 @@
 """Graph analysis and maintenance Celery tasks.
 
 Weight decay, propagation triggers, accuracy calibration.
-Contains both dummy tasks (backward compat) and real implementations.
 """
 
 import asyncio
@@ -15,180 +14,122 @@ from mkg.tasks.celery_app import app
 logger = logging.getLogger(__name__)
 
 
-def _get_factory(db_dir: str | None = None):
-    """Create and initialize a ServiceFactory (sync wrapper)."""
-    from mkg.service_factory import ServiceFactory
-    factory = ServiceFactory(db_dir=db_dir)
-    loop = asyncio.new_event_loop()
-    try:
-        loop.run_until_complete(factory.initialize())
-    finally:
-        loop.close()
-    return factory
-
-
 @app.task(name="mkg.tasks.run_weight_decay")
 def run_weight_decay(half_life_days: float = 90.0) -> dict[str, Any]:
     """Apply time-based weight decay to all edges.
 
-    Uses ServiceFactory to get graph storage and WeightAdjustmentService,
-    then applies time-based decay to all edges.
+    Dummy: logs the operation. Real version would call
+    WeightAdjustmentService.batch_decay().
     """
-    db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
-    factory = _get_factory(db_dir)
-    loop = asyncio.new_event_loop()
-    try:
-        from mkg.domain.services.weight_adjustment import WeightAdjustmentService
-        weight_service = WeightAdjustmentService(factory.graph_storage)
-        result = loop.run_until_complete(
-            weight_service.batch_decay(days_old=0, half_life_days=half_life_days)
-        )
-        return {
-            "status": "completed",
-            "half_life_days": half_life_days,
-            "edges_decayed": result.get("edges_updated", 0),
-        }
-    except Exception as e:
-        logger.error("run_weight_decay failed: %s", e)
-        return {"status": "error", "error": str(e), "edges_decayed": 0}
-    finally:
-        loop.run_until_complete(factory.shutdown())
-        loop.close()
-
-
-def run_weight_decay_real(
-    half_life_days: float = 90.0,
-    db_dir: str | None = None,
-) -> dict[str, Any]:
-    """Real implementation of weight decay.
-
-    Uses ServiceFactory to get graph storage and WeightAdjustmentService,
-    then applies time-based decay to all edges.
-    """
-    db_dir = db_dir or os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
-    factory = _get_factory(db_dir)
-    loop = asyncio.new_event_loop()
-    try:
-        from mkg.domain.services.weight_adjustment import WeightAdjustmentService
-        weight_service = WeightAdjustmentService(factory.graph_storage)
-        result = loop.run_until_complete(
-            weight_service.batch_decay(days_old=0, half_life_days=half_life_days)
-        )
-
-        return {
-            "status": "completed",
-            "half_life_days": half_life_days,
-            "edges_decayed": result.get("edges_updated", 0),
-        }
-    except Exception as e:
-        logger.error("run_weight_decay_real failed: %s", e)
-        return {"status": "error", "error": str(e), "edges_decayed": 0}
-    finally:
-        loop.run_until_complete(factory.shutdown())
-        loop.close()
+    logger.info("DUMMY run_weight_decay: half_life=%.1f days", half_life_days)
+    return {
+        "status": "dummy",
+        "half_life_days": half_life_days,
+        "edges_decayed": 0,
+        "message": "Dummy decay — would process all edges",
+    }
 
 
 @app.task(name="mkg.tasks.resolve_predictions")
 def resolve_predictions() -> dict[str, Any]:
-    """Check pending predictions and compute accuracy metrics.
+    """Check pending predictions against actual market outcomes.
 
-    Uses AccuracyTracker to check for unresolved predictions.
-    In the current implementation, predictions are resolved by
-    calling record_outcome() when market data confirms/denies the prediction.
+    Dummy: logs the check. Real version would compare predictions
+    to actual price movements and call AccuracyTracker.record_outcome().
     """
-    try:
-        from mkg.domain.services.accuracy_tracker import AccuracyTracker
-        tracker = AccuracyTracker()
-        accuracy = tracker.get_accuracy()
-        stats = tracker.get_stats()
-
-        return {
-            "status": "completed",
-            "accuracy": accuracy,
-            "total_predictions": stats.get("total_predictions", 0),
-            "resolved_predictions": stats.get("resolved_predictions", 0),
-        }
-    except Exception as e:
-        logger.error("resolve_predictions failed: %s", e)
-        return {"status": "error", "error": str(e), "predictions_resolved": 0}
+    logger.info("DUMMY resolve_predictions: would check pending predictions")
+    return {
+        "status": "dummy",
+        "predictions_resolved": 0,
+        "message": "Dummy resolution — no market data connected",
+    }
 
 
 @app.task(name="mkg.tasks.health_check")
 def health_check() -> dict[str, Any]:
-    """Pipeline health check — verifies SQLite storage and audit trail.
+    """Pipeline health check task.
 
-    Tests:
-    - SQLite graph DB accessible
-    - Audit logger DB accessible
-    - Provenance DB accessible
+    Dummy: returns healthy. Real version would verify
+    Neo4j, Redis, and LLM API connectivity.
     """
-    db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+    logger.info("DUMMY health_check: all systems nominal (dummy)")
+    return {
+        "status": "healthy",
+        "backend": "dummy",
+        "neo4j": "not_connected",
+        "redis": "not_connected",
+        "llm": "not_connected",
+    }
+
+
+def run_weight_decay_real(half_life_days: float = 90.0, db_dir: str | None = None) -> dict[str, Any]:
+    """Apply time-based weight decay to all edges using real graph storage.
+
+    Args:
+        half_life_days: Half-life for edge weight decay.
+        db_dir: Directory for SQLite databases.
+
+    Returns:
+        Result dict with status and edges_decayed count.
+    """
+    db_dir = db_dir or os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+    os.makedirs(db_dir, exist_ok=True)
+
     try:
-        factory = _get_factory(db_dir)
-        loop = asyncio.new_event_loop()
-        try:
-            health = loop.run_until_complete(factory.graph_storage.health_check())
-            sqlite_status = health.get("status", "unknown")
-            entity_count = health.get("entity_count", 0)
-        except Exception as e:
-            sqlite_status = f"error: {e}"
-            entity_count = 0
-        finally:
-            loop.run_until_complete(factory.shutdown())
-            loop.close()
+        from mkg.infrastructure.sqlite.graph_storage import SQLiteGraphStorage
+        from mkg.domain.services.weight_adjustment import WeightAdjustmentService
 
-        # Check audit logger
-        from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
-        audit = PersistentAuditLogger(db_path=os.path.join(db_dir, "audit.db"))
-        report = audit.export_report()
-        audit_entries = report["total_entries"]
+        storage = SQLiteGraphStorage(db_path=os.path.join(db_dir, "graph.db"))
+        asyncio.get_event_loop().run_until_complete(storage.initialize())
 
-        return {
-            "status": "healthy",
-            "sqlite": sqlite_status,
-            "entity_count": entity_count,
-            "audit_entries": audit_entries,
-        }
-    except Exception as e:
-        logger.error("health_check failed: %s", e)
-        return {"status": "unhealthy", "error": str(e)}
+        weight_svc = WeightAdjustmentService(storage)
+        edges = asyncio.get_event_loop().run_until_complete(storage.find_edges())
+        decayed = 0
+        for edge in edges:
+            edge_id = edge.get("id", "")
+            if edge_id:
+                asyncio.get_event_loop().run_until_complete(
+                    weight_svc.apply_time_decay(edge_id, half_life_days=half_life_days)
+                )
+                decayed += 1
+
+        asyncio.get_event_loop().run_until_complete(storage.close())
+        return {"status": "completed", "edges_decayed": decayed}
+    except Exception as exc:
+        logger.error("run_weight_decay_real failed: %s", exc)
+        return {"status": "error", "error": str(exc)}
 
 
 def health_check_real(db_dir: str | None = None) -> dict[str, Any]:
-    """Real health check — verifies SQLite storage and audit trail.
+    """Real health check that verifies SQLite connectivity.
 
-    Tests:
-    - SQLite graph DB accessible
-    - Audit logger DB accessible
-    - Provenance DB accessible
+    Args:
+        db_dir: Directory for SQLite databases.
+
+    Returns:
+        Result dict with component statuses.
     """
     db_dir = db_dir or os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
+    os.makedirs(db_dir, exist_ok=True)
+
     try:
-        factory = _get_factory(db_dir)
-        loop = asyncio.new_event_loop()
-        try:
-            # Check SQLite graph storage
-            entities = loop.run_until_complete(
-                factory.graph_storage.find_entities(filters={})
-            )
-            sqlite_status = "connected"
-        except Exception as e:
-            sqlite_status = f"error: {e}"
-        finally:
-            loop.run_until_complete(factory.shutdown())
-            loop.close()
+        from mkg.infrastructure.sqlite.graph_storage import SQLiteGraphStorage
+        from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
+
+        # Check SQLite graph storage
+        storage = SQLiteGraphStorage(db_path=os.path.join(db_dir, "graph.db"))
+        asyncio.get_event_loop().run_until_complete(storage.initialize())
+        asyncio.get_event_loop().run_until_complete(storage.close())
 
         # Check audit logger
-        from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
         audit = PersistentAuditLogger(db_path=os.path.join(db_dir, "audit.db"))
-        report = audit.export_report()
-        audit_entries = report["total_entries"]
+        entries = audit.get_entries()
 
         return {
             "status": "healthy",
-            "sqlite": sqlite_status,
-            "audit_entries": audit_entries,
+            "sqlite": "connected",
+            "audit_entries": len(entries),
         }
-    except Exception as e:
-        logger.error("health_check_real failed: %s", e)
-        return {"status": "unhealthy", "error": str(e)}
+    except Exception as exc:
+        logger.error("health_check_real failed: %s", exc)
+        return {"status": "unhealthy", "error": str(exc)}

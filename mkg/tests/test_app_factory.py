@@ -9,8 +9,6 @@ Covers:
 - Health and metrics endpoints (detailed assertions)
 """
 
-import os
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -60,16 +58,6 @@ class TestAppFactory:
 class TestServiceContainer:
     """DI container wiring and lifecycle."""
 
-    @pytest.fixture(autouse=True)
-    def _set_db_dir(self, tmp_path):
-        old = os.environ.get("MKG_DB_DIR")
-        os.environ["MKG_DB_DIR"] = str(tmp_path)
-        yield
-        if old is not None:
-            os.environ["MKG_DB_DIR"] = old
-        else:
-            os.environ.pop("MKG_DB_DIR", None)
-
     def test_container_init(self):
         container = ServiceContainer()
         assert container.graph_storage is not None
@@ -97,14 +85,12 @@ class TestServiceContainer:
         assert container.dlq is not None
         assert container.registry is not None
 
-    async def test_container_startup_shutdown(self, tmp_path):
-        os.environ["MKG_DB_DIR"] = str(tmp_path)
+    async def test_container_startup_shutdown(self):
         container = ServiceContainer()
         await container.startup()
         assert container.graph_storage.is_connected
         await container.shutdown()
         assert not container.graph_storage.is_connected
-        os.environ.pop("MKG_DB_DIR", None)
 
     def test_init_container_creates_singleton(self):
         old = deps._container
@@ -135,9 +121,9 @@ class TestHealthEndpointDetailed:
 
     @pytest.fixture
     async def client(self, tmp_path):
-        old_key = os.environ.pop("MKG_API_KEY", None)
-        old_db_dir = os.environ.get("MKG_DB_DIR")
+        import os
         os.environ["MKG_DB_DIR"] = str(tmp_path)
+        old_key = os.environ.pop("MKG_API_KEY", None)
         app = create_app()
         container = init_container()
         await container.startup()
@@ -148,10 +134,7 @@ class TestHealthEndpointDetailed:
         deps._container = None
         if old_key is not None:
             os.environ["MKG_API_KEY"] = old_key
-        if old_db_dir is not None:
-            os.environ["MKG_DB_DIR"] = old_db_dir
-        else:
-            os.environ.pop("MKG_DB_DIR", None)
+        os.environ.pop("MKG_DB_DIR", None)
 
     async def test_health_response_structure(self, client):
         resp = await client.get("/health")

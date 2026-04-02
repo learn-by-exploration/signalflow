@@ -1,18 +1,17 @@
 # mkg/api/dependencies.py
 """Dependency injection for MKG FastAPI application.
 
-Provides singleton service instances wired to SQLite-backed persistent storage.
+Provides singleton service instances wired to the Neo4j dummy connector.
 All services are constructed once at startup and injected via FastAPI Depends().
 """
 
 from __future__ import annotations
 
-import os
-
 from mkg.domain.services.accuracy_tracker import AccuracyTracker
 from mkg.domain.services.alert_system import AlertSystem
 from mkg.domain.services.article_dedup import ArticleDedup
 from mkg.domain.services.article_pipeline import ArticleIngestionPipeline
+from mkg.domain.services.audit_logger import AuditLogger
 from mkg.domain.services.auth_tenant import AuthTenantService
 from mkg.domain.services.backpressure import BackpressureManager
 from mkg.domain.services.canonical_registry import CanonicalEntityRegistry
@@ -28,6 +27,7 @@ from mkg.domain.services.lineage_tracer import LineageTracer
 from mkg.domain.services.pii_detector import PIIDetector
 from mkg.domain.services.pipeline_observability import PipelineObservability
 from mkg.domain.services.propagation_engine import PropagationEngine
+from mkg.domain.services.provenance_tracker import ProvenanceTracker
 from mkg.domain.services.retention_policy import RetentionPolicy
 from mkg.domain.services.seed_loader import SeedDataLoader
 from mkg.domain.services.signal_bridge import SignalBridge
@@ -35,29 +35,26 @@ from mkg.domain.services.tribal_knowledge import TribalKnowledgeInput
 from mkg.domain.services.webhook_delivery import WebhookDelivery
 from mkg.domain.services.weight_adjustment import WeightAdjustmentService
 from mkg.infrastructure.sqlite.graph_storage import SQLiteGraphStorage
-from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
-from mkg.infrastructure.persistent.provenance_tracker import PersistentProvenanceTracker
 
 
 class ServiceContainer:
     """Holds all MKG service singletons.
 
     Created once at app startup. Access individual services via properties.
-    Uses SQLiteGraphStorage for persistent graph data that survives restarts.
     """
 
     def __init__(self) -> None:
-        # Persistent storage directory
+        import os
         self._db_dir = os.environ.get("MKG_DB_DIR", "/tmp/mkg_data")
         os.makedirs(self._db_dir, exist_ok=True)
 
-        # Core storage — SQLite-backed for persistence across restarts
+        # Core storage — SQLite for persistence
         self.graph_storage = SQLiteGraphStorage(
             db_path=os.path.join(self._db_dir, "graph.db")
         )
         self.registry = CanonicalEntityRegistry(load_defaults=True)
 
-        # Domain services (graph-dependent) — wired after storage init
+        # Domain services (graph-dependent)
         self.entity_service = EntityService(self.graph_storage)
         self.propagation_engine = PropagationEngine(self.graph_storage)
         self.weight_adjustment = WeightAdjustmentService(self.graph_storage)
@@ -80,29 +77,32 @@ class ServiceContainer:
         self.backpressure = BackpressureManager()
         self.dlq = DeadLetterQueue()
 
-        # Compliance & traceability services (SQLite-backed for persistence)
-        self.provenance_tracker = PersistentProvenanceTracker(
-            db_path=os.path.join(self._db_dir, "provenance.db")
-        )
+        # Compliance & traceability services (persistent backends)
+        from mkg.infrastructure.persistent.audit_logger import PersistentAuditLogger
+        from mkg.infrastructure.persistent.provenance_tracker import PersistentProvenanceTracker
+
+        self.compliance_manager = ComplianceManager()
         self.audit_logger = PersistentAuditLogger(
             db_path=os.path.join(self._db_dir, "audit.db")
         )
-        self.compliance_manager = ComplianceManager()
+        self.pii_detector = PIIDetector()
+        self.provenance_tracker = PersistentProvenanceTracker(
+            db_path=os.path.join(self._db_dir, "provenance.db")
+        )
+        self.retention_policy = RetentionPolicy()
         self.lineage_tracer = LineageTracer(
             provenance_tracker=self.provenance_tracker,
             compliance_manager=self.compliance_manager,
         )
-        self.retention_policy = RetentionPolicy()
-        self.pii_detector = PIIDetector()
 
-        # Signal bridge — connects MKG analysis to SignalFlow signals
+        # Signal bridge (connects MKG analysis to SignalFlow)
         self.signal_bridge = SignalBridge(
             compliance_manager=self.compliance_manager,
             lineage_tracer=self.lineage_tracer,
         )
 
     async def startup(self) -> None:
-        """Initialize persistent storage (create tables, open connections)."""
+        """Initialize storage and seed default data."""
         await self.graph_storage.initialize()
 
     async def shutdown(self) -> None:

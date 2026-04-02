@@ -4,9 +4,6 @@
 Uses httpx AsyncClient with the ASGI app for true async testing.
 """
 
-import os
-import tempfile
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -20,8 +17,9 @@ async def client(tmp_path):
     """Create a test client with an ephemeral app instance.
 
     Auth is disabled (no MKG_API_KEY set) so all endpoints are accessible.
-    Uses a temp directory for SQLite DBs so tests are isolated.
+    Uses a temp directory for SQLite storage to avoid cross-test contamination.
     """
+    import os
     old_key = os.environ.pop("MKG_API_KEY", None)
     old_db_dir = os.environ.get("MKG_DB_DIR")
     os.environ["MKG_DB_DIR"] = str(tmp_path)
