@@ -107,6 +107,30 @@ class WeightAdjustmentService:
 
         return await self._storage.update_edge(edge_id, {"weight": clamped})
 
+    async def apply_shock(
+        self,
+        edge_id: str,
+        new_weight: float,
+    ) -> Optional[dict[str, Any]]:
+        """Apply a shock event — bypass blending, set weight directly.
+
+        Shock events (e.g., black swan events) skip the normal weighted
+        blending and immediately set the edge weight to the new value.
+
+        Args:
+            edge_id: Edge to update.
+            new_weight: Target weight [0, 1].
+
+        Returns:
+            Updated edge dict or None if edge not found.
+        """
+        edge = await self._storage.get_edge(edge_id)
+        if edge is None:
+            return None
+
+        clamped = max(0.0, min(1.0, new_weight))
+        return await self._storage.update_edge(edge_id, {"weight": clamped})
+
     async def batch_decay(
         self,
         days_old: float,

@@ -127,3 +127,109 @@ class PropagationEngine:
         # Sort by impact descending
         results.sort(key=lambda r: r["impact"], reverse=True)
         return results
+
+    async def propagate_multi(
+        self,
+        triggers: list[dict[str, Any]],
+        max_depth: int = 6,
+        min_impact: float = 0.01,
+        relation_types: Optional[list[str]] = None,
+        as_of: Optional[str] = None,
+    ) -> list[dict[str, Any]]:
+        """Propagate from multiple trigger entities simultaneously.
+
+        Runs propagation from each trigger, then merges results:
+        - Same entity reached from multiple triggers: impacts are combined (max)
+        - Each result includes trigger_sources tracking
+
+        Args:
+            triggers: List of dicts with 'entity_id' and 'impact_score'.
+            max_depth: Maximum hops per trigger.
+            min_impact: Minimum impact threshold.
+            relation_types: Optional edge type filter.
+            as_of: Optional temporal scope.
+
+        Returns:
+            Merged results sorted by impact (descending).
+        """
+        # Collect all results with trigger attribution
+        entity_results: dict[str, dict[str, Any]] = {}
+
+        for trigger in triggers:
+            entity_id = trigger["entity_id"]
+            impact_score = trigger["impact_score"]
+
+            results = await self.propagate(
+                trigger_entity_id=entity_id,
+                impact_score=impact_score,
+                max_depth=max_depth,
+                min_impact=min_impact,
+                relation_types=relation_types,
+                as_of=as_of,
+            )
+
+            for r in results:
+                eid = r["entity_id"]
+                if eid in entity_results:
+                    existing = entity_results[eid]
+                    # Combine: use max impact, merge trigger sources
+                    if r["impact"] > existing["impact"]:
+                        existing["impact"] = r["impact"]
+                        existing["depth"] = r["depth"]
+                        existing["path"] = r["path"]
+                        existing["direction"] = r["direction"]
+                    existing["trigger_sources"].append(entity_id)
+                else:
+                    entity_results[eid] = {
+                        **r,
+                        "trigger_sources": [entity_id],
+                    }
+
+        merged = list(entity_results.values())
+        merged.sort(key=lambda r: r["impact"], reverse=True)
+        return merged
+
+    @staticmethod
+    def aggregate_confidence(results: list[dict[str, Any]]) -> dict[str, Any]:
+        """Aggregate confidence metrics across propagation results.
+
+        Args:
+            results: List of propagation result dicts.
+
+        Returns:
+            Dict with mean_impact, max_impact, entity_count,
+            weighted_confidence, positive_count, negative_count.
+        """
+        if not results:
+            return {
+                "mean_impact": 0.0,
+                "max_impact": 0.0,
+                "entity_count": 0,
+                "weighted_confidence": 0.0,
+                "positive_count": 0,
+                "negative_count": 0,
+            }
+
+        impacts = [r.get("impact", 0.0) for r in results]
+        total_impact = sum(impacts)
+        count = len(results)
+
+        positive_count = sum(1 for r in results if r.get("direction", "positive") == "positive")
+        negative_count = count - positive_count
+
+        # Weighted confidence: impact-weighted average of (1/depth) as proxy
+        weighted_sum = 0.0
+        for r in results:
+            depth = max(r.get("depth", 1), 1)
+            weighted_sum += r.get("impact", 0.0) * (1.0 / depth)
+
+        weighted_confidence = weighted_sum / total_impact if total_impact > 0 else 0.0
+
+        return {
+            "mean_impact": total_impact / count,
+            "max_impact": max(impacts),
+            "entity_count": count,
+            "weighted_confidence": weighted_confidence,
+            "positive_count": positive_count,
+            "negative_count": negative_count,
+        }
