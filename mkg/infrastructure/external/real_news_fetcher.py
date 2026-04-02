@@ -22,11 +22,57 @@ _DEFAULT_FINANCIAL_FEEDS = [
 ]
 
 
+def get_default_feeds() -> list[dict[str, Any]]:
+    """Return the default 12-feed configuration across 5 categories.
+
+    Each feed has: url, category, language, credibility_score.
+    Categories: equities, crypto, forex, macro, commodities.
+    """
+    return [
+        # ── Equities ──
+        {"url": "https://feeds.finance.yahoo.com/rss/2.0/headline?s=^NSEI&region=IN&lang=en-IN",
+         "category": "equities", "language": "en", "credibility_score": 0.75},
+        {"url": "https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best",
+         "category": "equities", "language": "en", "credibility_score": 0.95},
+        {"url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+         "category": "equities", "language": "en", "credibility_score": 0.72},
+        # ── Crypto ──
+        {"url": "https://cointelegraph.com/rss",
+         "category": "crypto", "language": "en", "credibility_score": 0.65},
+        {"url": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+         "category": "crypto", "language": "en", "credibility_score": 0.70},
+        # ── Forex ──
+        {"url": "https://www.forexfactory.com/rss.php",
+         "category": "forex", "language": "en", "credibility_score": 0.68},
+        {"url": "https://www.fxstreet.com/rss/news",
+         "category": "forex", "language": "en", "credibility_score": 0.65},
+        # ── Macro ──
+        {"url": "https://feeds.bbci.co.uk/news/business/rss.xml",
+         "category": "macro", "language": "en", "credibility_score": 0.80},
+        {"url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+         "category": "macro", "language": "en", "credibility_score": 0.78},
+        {"url": "https://www.livemint.com/rss/economy",
+         "category": "macro", "language": "en", "credibility_score": 0.70},
+        # ── Commodities ──
+        {"url": "https://www.kitco.com/rss/gold.xml",
+         "category": "commodities", "language": "en", "credibility_score": 0.72},
+        {"url": "https://oilprice.com/rss/main",
+         "category": "commodities", "language": "en", "credibility_score": 0.65},
+    ]
+
+
 class RSSNewsFetcher:
     """Fetches articles from RSS/Atom feeds using httpx + lxml."""
 
-    def __init__(self, feed_urls: list[str] | None = None) -> None:
-        self._feed_urls = feed_urls or _DEFAULT_FINANCIAL_FEEDS
+    def __init__(
+        self,
+        feed_urls: list[str] | None = None,
+        feed_metadata: dict[str, dict[str, Any]] | None = None,
+    ) -> None:
+        self._feed_urls = feed_urls or [f["url"] for f in get_default_feeds()]
+        self._feed_metadata = feed_metadata or {
+            f["url"]: f for f in get_default_feeds()
+        }
         self._http_get: Callable = self._default_http_get
 
     def source_name(self) -> str:
