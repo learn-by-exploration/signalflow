@@ -72,6 +72,7 @@ export const NAV_RESEARCH_LINKS = [
 
 export const NAV_INFO_LINKS = [
   { href: '/how-it-works', label: 'How It Works', icon: '❓' },
+  { href: '/research', label: 'Research Library', icon: '📚' },
   { href: '/pricing', label: 'Pricing', icon: '💎' },
 ];
 
@@ -110,6 +111,7 @@ export const NAV_MOBILE_MENU_GROUPS = [
     title: 'About',
     links: [
       { href: '/how-it-works', label: 'How It Works', icon: '❓' },
+      { href: '/research', label: 'Research Library', icon: '📚' },
       { href: '/pricing', label: 'Pricing', icon: '💎' },
     ],
   },

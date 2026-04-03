@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — Research Intelligence Library</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:       #08090c;
+  --surface:  #0e0f14;
+  --surface2: #13151c;
+  --border:   #1c1f2b;
+  --border2:  #252836;
+  --gold:     #c9a84c;
+  --gold-l:   #e8c97a;
+  --gold-dim: rgba(201,168,76,0.12);
+  --red:      #b5341c;
+  --red-dim:  rgba(181,52,28,0.10);
+  --teal:     #1abc9c;
+  --teal-dim: rgba(26,188,156,0.10);
+  --blue:     #4a9eff;
+  --blue-dim: rgba(74,158,255,0.10);
+  --violet:   #9b6fff;
+  --violet-dim:rgba(155,111,255,0.10);
+  --text:     #dce3f0;
+  --muted:    #5a6280;
+  --muted2:   #3a3f55;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Grain overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.3;
+}
+
+/* ── Top bar ── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 52px;
+  background: rgba(8,9,12,0.95);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.tb-brand {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.tb-right {
+  display: flex; gap: 24px; align-items: center;
+}
+
+.tb-link {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.tb-link:hover { color: var(--gold); }
+
+.tb-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--red);
+  border: 1px solid rgba(181,52,28,0.3);
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+
+/* ── Hero ── */
+.hero {
+  padding: 120px 0 80px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+.hero-kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 32px;
+  letter-spacing: -0.5px;
+}
+
+.hero-title strong {
+  font-weight: 700;
+  font-style: normal;
+  color: #fff;
+}
+
+.hero-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 720px;
+  margin-bottom: 48px;
+}
+
+/* ── Stats row ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 80px;
+  max-width: 1080px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.stat-cell {
+  background: var(--surface);
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* ── Section ── */
+.section {
+  max-width: 1080px;
+  margin: 0 auto 80px;
+  padding: 0 40px;
+}
+
+.section-kicker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(28px, 3.5vw, 42px);
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 12px;
+  line-height: 1.1;
+}
+
+.section-sub {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 640px;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+/* ── Research cards ── */
+.card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.research-card {
+  display: grid;
+  grid-template-columns: 56px 1fr 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.research-card:hover {
+  border-color: var(--border2);
+  background: var(--surface2);
+  transform: translateX(4px);
+}
+
+.card-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gold-dim);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+}
+
+.research-card:hover .card-number {
+  color: var(--gold);
+}
+
+.card-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.card-desc {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 20px 24px;
+  gap: 8px;
+}
+
+.card-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.tag-foundation { color: var(--red); border-color: rgba(181,52,28,0.3); background: var(--red-dim); }
+.tag-market     { color: var(--blue); border-color: rgba(74,158,255,0.3); background: var(--blue-dim); }
+.tag-strategy   { color: var(--gold); border-color: rgba(201,168,76,0.3); background: var(--gold-dim); }
+.tag-applied    { color: var(--teal); border-color: rgba(26,188,156,0.3); background: var(--teal-dim); }
+.tag-moat       { color: var(--violet); border-color: rgba(155,111,255,0.3); background: var(--violet-dim); }
+
+.card-arrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  color: var(--muted2);
+  transition: color 0.2s;
+}
+
+.research-card:hover .card-arrow { color: var(--gold); }
+
+/* ── Audience guide ── */
+.audience-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.audience-card {
+  background: var(--surface);
+  padding: 28px 24px;
+}
+
+.audience-role {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.audience-reads {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.audience-docs {
+  list-style: none;
+  padding: 0;
+}
+
+.audience-docs li {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.audience-docs li:last-child { border-bottom: none; }
+
+.audience-docs a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.audience-docs a:hover { color: var(--gold); }
+
+/* ── Power quote ── */
+.power-quote {
+  border-left: 2px solid var(--gold-dim);
+  padding: 32px 40px;
+  margin: 80px auto;
+  max-width: 1080px;
+}
+
+.power-quote blockquote {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.power-quote cite {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+/* ── Footer ── */
+.footer {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 40px 60px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-left {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted2);
+  text-transform: uppercase;
+}
+
+.footer-right {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--red);
+  border: 1px solid rgba(181,52,28,0.25);
+  padding: 4px 12px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .topbar { padding: 0 20px; }
+  .hero, .section { padding-left: 20px; padding-right: 20px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .research-card { grid-template-columns: 48px 1fr; }
+  .card-meta { display: none; }
+  .audience-grid { grid-template-columns: 1fr; }
+  .footer { flex-direction: column; gap: 16px; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<div class="topbar">
+  <span class="tb-brand">MKG Research</span>
+  <div class="tb-right">
+    <a href="/research/docs" class="tb-link">API Docs</a>
+    <a href="/research/health" class="tb-link">System Status</a>
+    <span class="tb-badge">Confidential</span>
+  </div>
+</div>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="hero-kicker">Market Knowledge Graph — Intelligence Library</div>
+  <h1 class="hero-title">
+    The world runs on <strong>relationships.</strong><br>
+    No tool maps them.
+  </h1>
+  <p class="hero-sub">
+    Seven research documents that define why MKG exists, who needs it,
+    what the market looks like, and why no one else can build it.
+    This is the intellectual foundation of the product.
+  </p>
+</div>
+
+<!-- ── Stats ── -->
+<div class="stats-row">
+  <div class="stat-cell">
+    <div class="stat-value">$35B</div>
+    <div class="stat-label">Annual institutional<br>data spend</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-value">7</div>
+    <div class="stat-label">Uncontested gaps<br>no competitor fills</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-value">9</div>
+    <div class="stat-label">Competitors analyzed<br>across 3 tiers</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-value">42%</div>
+    <div class="stat-label">Institutional knowledge<br>in individual heads</div>
+  </div>
+</div>
+
+<!-- ── Combined Thesis ── -->
+<div class="section">
+  <div class="section-kicker">Start Here</div>
+  <h2 class="section-title">The Complete Thesis — One Page</h2>
+  <p class="section-sub">
+    Problem, evidence, market, competitors, niche, scenarios, and moat — combined into a single narrative experience. Everything below, distilled.
+  </p>
+
+  <div class="card-grid">
+    <a href="/research/MKG_Complete_Thesis.html" class="research-card" style="border-color:var(--gold-dim); background:rgba(201,168,76,0.03);">
+      <div class="card-number" style="color:var(--gold);">★</div>
+      <div class="card-body">
+        <div class="card-title" style="font-size:24px;">The Complete MKG Thesis</div>
+        <div class="card-desc">All seven research documents combined into a single cohesive narrative. Three speeds, $35B market, nine competitors, 16-capability matrix, three live scenarios, the knowledge iceberg, and MKG's precise position — in one scroll.</div>
+      </div>
+      <div class="card-meta">
+        <span class="card-tag tag-strategy">Complete</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ── Documents — Narrative Order ── -->
+<div class="section">
+  <div class="section-kicker">Individual Documents</div>
+  <h2 class="section-title">Or read each piece in narrative order.</h2>
+  <p class="section-sub">
+    Start with the problem. Understand the evidence. Map the market.
+    Study the competitors. Define the niche. Apply it. Defend the moat.
+  </p>
+
+  <div class="card-grid">
+
+    <a href="/research/MKG_Problem_Definition.html" class="research-card">
+      <div class="card-number">01</div>
+      <div class="card-body">
+        <div class="card-title">Problem Definition</div>
+        <div class="card-desc">Markets have three speeds. Every commercial platform serves Speed 1 and Speed 2. No one serves Speed 3 — the supply chain contagion that arrives weeks later, completely invisible.</div>
+      </div>
+      <div class="card-meta">
+        <span class="card-tag tag-foundation">Foundation</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/research/MKG_Problem_Research-2.html" class="research-card">
+      <div class="card-number">02</div>
+      <div class="card-body">
+        <div class="card-title">The Problem. Deeply Researched.</div>
+        <div class="card-desc">Academic evidence from 1968 to 2025. PEAD anomaly, supply chain contagion literature, cross-network effects. The alpha mechanism: a 14-week window where no tool is scanning the network.</div>
+      </div>
+      <div class="card-meta">
+        <span class="card-tag tag-foundation">Foundation</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/research/MKG_Market_Research.html" class="research-card">
+      <div class="card-number">03</div>
+      <div class="card-body">
+        <div class="card-title">Market Research &amp; Competitive Intelligence</div>
+        <div class="card-desc">$35B market with a structural blind spot. Five market segments sized and ranked. Pricing landscape: what a 10-person desk already spends ($525K–$900K/yr). Nine competitor profiles across three tiers.</div>
+      </div>
+      <div class="card-meta">
+        <span class="card-tag tag-market">Market</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/research/MKG_Competitor_Deep_Dive.html" class="research-card">
+      <div class="card-number">04</div>
+      <div class="card-body">
+        <div class="card-title">Full Competitive Intelligence</div>
+        <div class="card-desc">Every tool. Every feature. Every gap. Precisely. Bloomberg, LSEG, FactSet, AlphaSense, RavenPack, Palantir, Interos — deep-dive profiles with 16-capability feature matrix.</div>
+      </div>
+      <div class="card-meta">
+        <span class="card-tag tag-market">Market</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/research/MKG_Niche_Definition_FINAL.html" class="research-card">
+      <div class="card-number">05</div>
+      <div class="card-body">
+        <div class="card-title">The Definitive Niche</div>
+        <div class="card-desc">Two verticals (Financial Markets + Supply Chain), one architecture. 12 buyer personas with severity scores. The master gap matrix: 20 capabilities exclusive to MKG. What MKG is — and deliberately is not.</div>
+      </div>
+      <div class="card-meta">
+        <span class="card-tag tag-strategy">Strategy</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/research/MKG_SupplyChain_Application.html" class="research-card">
+      <div class="card-number">06</div>
+      <div class="card-body">
+        <div class="card-title">Applied to Supply Chain Intelligence</div>
+        <div class="card-desc">Three live scenarios: Red Sea crisis, Renesas factory fire, China REE restriction. Before/after MKG walkthroughs. Six disruption taxonomies. The 11-day language gap advantage.</div>
+      </div>
+      <div class="card-meta">
+        <span class="card-tag tag-applied">Applied</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/research/MKG_Tribal_Knowledge_Gap.html" class="research-card">
+      <div class="card-number">07</div>
+      <div class="card-body">
+        <div class="card-title">The Tribal Knowledge Gap</div>
+        <div class="card-desc">What the tools show. What the expert knows. The gap between. The knowledge iceberg: explicit → implicit → tacit → tribal. Six types of tribal knowledge MKG encodes that no other system can.</div>
+      </div>
+      <div class="card-meta">
+        <span class="card-tag tag-moat">Moat</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<!-- ── Power Quote ── -->
+<div class="power-quote">
+  <blockquote>
+    "Bloomberg tells you what happened. AlphaSense tells you what was said about it.
+    RavenPack tells you how the market felt. FactSet Revere tells you who is statically connected.
+    Interos tells you that your Tier 1 and partial Tier 2 suppliers are at risk.
+    Palantir, if you have $5M and 18 months, will build you a graph.
+    <br><br>
+    None of them can answer the question that matters: A news event just hit this entity.
+    Which other entities are affected, in what direction, with what weight, through what path,
+    at what confidence, over what time horizon? — and deliver that answer in 60 seconds.
+    <br><br>
+    MKG can."
+  </blockquote>
+  <cite>— MKG Niche Definition</cite>
+</div>
+
+<!-- ── Audience Guide ── -->
+<div class="section">
+  <div class="section-kicker">Reading Guide</div>
+  <h2 class="section-title">Start here based on your role.</h2>
+  <p class="section-sub">
+    Each document is designed to stand alone, but the full narrative
+    builds from problem to proof to positioning.
+  </p>
+
+  <div class="audience-grid">
+
+    <div class="audience-card">
+      <div class="audience-role">Investor / Board</div>
+      <div class="audience-reads">Why the market gap exists and why it's defensible.</div>
+      <ul class="audience-docs">
+        <li><a href="/research/MKG_Problem_Definition.html">01 — Problem Definition</a></li>
+        <li><a href="/research/MKG_Market_Research.html">03 — Market Research</a></li>
+        <li><a href="/research/MKG_Niche_Definition_FINAL.html">05 — Niche Definition</a></li>
+      </ul>
+    </div>
+
+    <div class="audience-card">
+      <div class="audience-role">Portfolio Manager / CTO</div>
+      <div class="audience-reads">Technical evidence and competitive positioning.</div>
+      <ul class="audience-docs">
+        <li><a href="/research/MKG_Problem_Research-2.html">02 — Deep Research</a></li>
+        <li><a href="/research/MKG_Competitor_Deep_Dive.html">04 — Competitor Deep Dive</a></li>
+        <li><a href="/research/MKG_Tribal_Knowledge_Gap.html">07 — Tribal Knowledge</a></li>
+      </ul>
+    </div>
+
+    <div class="audience-card">
+      <div class="audience-role">CPO / Supply Chain</div>
+      <div class="audience-reads">Real-world scenarios and disruption intelligence.</div>
+      <ul class="audience-docs">
+        <li><a href="/research/MKG_SupplyChain_Application.html">06 — Supply Chain Application</a></li>
+        <li><a href="/research/MKG_Niche_Definition_FINAL.html">05 — Niche Definition</a></li>
+        <li><a href="/research/MKG_Tribal_Knowledge_Gap.html">07 — Tribal Knowledge</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<div class="footer">
+  <div class="footer-left">MKG — Market Knowledge Graph · Research Intelligence Library</div>
+  <div class="footer-right">Confidential · Internal Use Only</div>
+</div>
+
+</body>
+</html>

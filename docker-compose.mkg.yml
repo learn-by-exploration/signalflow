@@ -14,13 +14,23 @@ services:
       - MKG_ENV=development
       - NEO4J_URI=bolt://mkg-neo4j:7687
       - NEO4J_USER=neo4j
-      - NEO4J_PASSWORD=mkg_dev_password
+      - NEO4J_PASSWORD=${MKG_NEO4J_PASSWORD:-mkg_dev_password}
       - REDIS_URL=redis://mkg-redis:6379/1
+      - MKG_DB_DIR=/app/data
     depends_on:
-      - mkg-neo4j
-      - mkg-redis
+      mkg-neo4j:
+        condition: service_healthy
+      mkg-redis:
+        condition: service_healthy
     volumes:
       - ./mkg:/app/mkg
+      - mkg_app_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
 
   # ── MKG Celery Worker ──
@@ -33,10 +43,19 @@ services:
       - PYTHONPATH=/app
       - MKG_ENV=development
       - REDIS_URL=redis://mkg-redis:6379/1
+      - MKG_DB_DIR=/app/data
     depends_on:
-      - mkg-redis
+      mkg-redis:
+        condition: service_healthy
     volumes:
       - ./mkg:/app/mkg
+      - mkg_app_data:/app/data
+    healthcheck:
+      test: ["CMD", "celery", "-A", "mkg.tasks.celery_app", "inspect", "ping", "--timeout", "5"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   # ── MKG Celery Beat (scheduler) ──
@@ -50,7 +69,8 @@ services:
       - MKG_ENV=development
       - REDIS_URL=redis://mkg-redis:6379/1
     depends_on:
-      - mkg-redis
+      mkg-redis:
+        condition: service_healthy
     volumes:
       - ./mkg:/app/mkg
     restart: unless-stopped
@@ -62,10 +82,16 @@ services:
       - "7474:7474"  # Browser
       - "7687:7687"  # Bolt
     environment:
-      - NEO4J_AUTH=neo4j/mkg_dev_password
+      - NEO4J_AUTH=neo4j/${MKG_NEO4J_PASSWORD:-mkg_dev_password}
       - NEO4J_PLUGINS=["apoc"]
     volumes:
       - mkg_neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   # ── Redis (cache + broker) ──
@@ -75,8 +101,15 @@ services:
       - "6380:6379"  # 6380 to avoid conflict with SignalFlow Redis on 6379
     volumes:
       - mkg_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
 
 volumes:
   mkg_neo4j_data:
   mkg_redis_data:
+  mkg_app_data:

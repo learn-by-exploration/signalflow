@@ -1,0 +1,63 @@
+# MKG Docker Compose — Production Overrides
+# Usage: docker compose -f docker-compose.mkg.yml -f docker-compose.mkg.prod.yml up -d
+
+services:
+  mkg-api:
+    environment:
+      - MKG_ENV=production
+      - SENTRY_DSN=${MKG_SENTRY_DSN:-}
+    volumes: []  # No host mounts in production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mkg-worker:
+    environment:
+      - MKG_ENV=production
+      - SENTRY_DSN=${MKG_SENTRY_DSN:-}
+    volumes: []  # No host mounts in production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mkg-beat:
+    environment:
+      - MKG_ENV=production
+    volumes: []
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  mkg-neo4j:
+    ports: []  # No external access in production
+    environment:
+      - NEO4J_AUTH=neo4j/${MKG_NEO4J_PASSWORD:?MKG_NEO4J_PASSWORD required}
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  mkg-redis:
+    ports: []  # No external access in production
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M

@@ -121,4 +121,34 @@ describe('signalStore', () => {
     useSignalStore.getState().resetUnseen();
     expect(useSignalStore.getState().unseenCount).toBe(0);
   });
+
+  it('addSignal trims to MAX_SIGNALS (500)', () => {
+    const initial = Array.from({ length: 500 }, (_, i) => makeSignal({ id: `s-${i}` }));
+    useSignalStore.getState().setSignals(initial);
+    expect(useSignalStore.getState().signals).toHaveLength(500);
+
+    useSignalStore.getState().addSignal(makeSignal({ id: 'new-one' }));
+    const { signals } = useSignalStore.getState();
+    expect(signals).toHaveLength(500);
+    expect(signals[0].id).toBe('new-one');
+    expect(signals[499].id).toBe('s-498'); // last one was trimmed
+  });
+
+  it('addSignal does not trim when under limit', () => {
+    useSignalStore.getState().setSignals([makeSignal({ id: 'a' })]);
+    useSignalStore.getState().addSignal(makeSignal({ id: 'b' }));
+    expect(useSignalStore.getState().signals).toHaveLength(2);
+  });
+
+  it('appendSignals trims to MAX_SIGNALS (500)', () => {
+    const initial = Array.from({ length: 490 }, (_, i) => makeSignal({ id: `s-${i}` }));
+    useSignalStore.getState().setSignals(initial);
+
+    const extras = Array.from({ length: 20 }, (_, i) => makeSignal({ id: `extra-${i}` }));
+    useSignalStore.getState().appendSignals(extras);
+
+    const { signals } = useSignalStore.getState();
+    expect(signals).toHaveLength(500);
+    expect(signals[0].id).toBe('s-0');
+  });
 });

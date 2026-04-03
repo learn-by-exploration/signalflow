@@ -1,6 +1,14 @@
 """Celery Beat schedule definition."""
 
+import random
+
 from celery.schedules import crontab
+
+
+def _jittered(base_seconds: float, jitter_pct: float = 0.1) -> float:
+    """Add up to ±jitter_pct random jitter to a schedule interval."""
+    jitter = base_seconds * jitter_pct * (2 * random.random() - 1)
+    return max(10.0, base_seconds + jitter)
 
 CELERY_BEAT_SCHEDULE = {
     # ── Data Ingestion ──
@@ -28,24 +36,24 @@ CELERY_BEAT_SCHEDULE = {
     # ── Analysis ──
     "run-technical-analysis": {
         "task": "app.tasks.analysis_tasks.run_analysis",
-        "schedule": 300.0,
+        "schedule": _jittered(300.0),
     },
     # ── AI Engine ──
     # Sentiment runs every 60 min (budget-sustainable).
     # The task itself gates by market hours for stocks/forex.
     "run-sentiment-analysis": {
         "task": "app.tasks.ai_tasks.run_sentiment",
-        "schedule": 3600.0,
+        "schedule": _jittered(3600.0),
     },
     # ── Signal Generation ──
     "generate-signals": {
         "task": "app.tasks.signal_tasks.generate_signals",
-        "schedule": 300.0,
+        "schedule": _jittered(300.0),
     },
     # ── Digests ──
     "morning-brief": {
         "task": "app.tasks.alert_tasks.morning_brief",
-        "schedule": crontab(hour=8, minute=0),
+        "schedule": crontab(hour=9, minute=30),  # After NSE opens at 9:15 AM IST
     },
     "evening-wrap": {
         "task": "app.tasks.alert_tasks.evening_wrap",

@@ -1067,14 +1067,15 @@ class TestSchedulerCompleteness:
             assert task in CELERY_BEAT_SCHEDULE, f"Missing: {task}"
 
     def test_seo_runs_after_morning_brief(self):
-        """SEO generation must run after morning brief (8 AM → 8:30 AM)."""
+        """SEO generation must run after morning brief (9:30 AM → 8:30 AM; SEO at fixed 8:30)."""
         from app.tasks.scheduler import CELERY_BEAT_SCHEDULE
 
         seo = CELERY_BEAT_SCHEDULE["generate-seo-pages"]["schedule"]
         morning = CELERY_BEAT_SCHEDULE["morning-brief"]["schedule"]
         # Both are crontab objects
         assert seo.minute == {30}  # 8:30 AM
-        assert morning.minute == {0}  # 8:00 AM
+        assert morning.minute == {30}  # 9:30 AM (after NSE opens at 9:15)
+        assert morning.hour == {9}
 
     def test_free_digest_after_weekly_digest(self):
         """Free tier digest should run after paid weekly digest."""

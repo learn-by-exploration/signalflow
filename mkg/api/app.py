@@ -10,10 +10,12 @@ from __future__ import annotations
 import os
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from mkg import __version__
 from mkg.api.dependencies import get_container, init_container
@@ -24,6 +26,19 @@ from mkg.api.middleware import (
     RequestLoggingMiddleware,
     setup_rate_limiting,
 )
+
+# Initialize Sentry if DSN is configured
+_sentry_dsn = os.environ.get("SENTRY_DSN", "")
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            traces_sample_rate=0.1,
+            environment=os.environ.get("MKG_ENV", "development"),
+        )
+    except Exception:
+        pass  # Sentry is optional
 
 _start_time: float = 0.0
 
@@ -129,6 +144,18 @@ def create_app() -> FastAPI:
     app.include_router(tribal.router, prefix="/api/v1", tags=["tribal-knowledge"])
     app.include_router(compliance.router, prefix="/api/v1", tags=["compliance"])
     app.include_router(features.router, prefix="/api/v1", tags=["about"])
+
+    # --- Static files: MKG Research Intelligence Library ---
+    # Serve core/ research documents at /research/
+    # These are the intellectual moat documents (competitive analysis, niche
+    # definition, problem definition, etc.)
+    research_dir = Path(__file__).resolve().parent.parent.parent / "core"
+    if research_dir.is_dir():
+        app.mount(
+            "/research",
+            StaticFiles(directory=str(research_dir), html=True),
+            name="research",
+        )
 
     return app
 

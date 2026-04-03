@@ -43,7 +43,62 @@ logger = structlog.get_logger()
 _startup_time: datetime | None = None
 
 
-@asynccontextmanager
+async def _validate_schema() -> None:
+    """Check that all ORM model columns exist in the database.
+
+    Runs a lightweight query on startup to detect model-vs-schema drift
+    before any user request hits a missing-column error.
+    """
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    check_engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+    try:
+        async with check_engine.connect() as conn:
+            # Pull the real column names for all public tables
+            result = await conn.execute(text(
+                "SELECT table_name, column_name "
+                "FROM information_schema.columns "
+                "WHERE table_schema = 'public' "
+                "ORDER BY table_name, ordinal_position"
+            ))
+            db_columns: dict[str, set[str]] = {}
+            for row in result:
+                db_columns.setdefault(row[0], set()).add(row[1])
+
+        # Import ALL models so Base.metadata is fully populated
+        from app.database import Base
+        import app.models  # noqa: F401 — triggers __init__.py which imports all 19 models
+
+        missing = []
+        for table in Base.metadata.tables.values():
+            if table.name not in db_columns:
+                missing.append(f"table '{table.name}' missing entirely")
+                continue
+            for col in table.columns:
+                if col.name not in db_columns[table.name]:
+                    missing.append(f"{table.name}.{col.name}")
+
+        if missing:
+            # Log full details for operators, but don't leak schema in exceptions
+            logger.error(
+                "schema_drift_detected",
+                missing_count=len(missing),
+                missing=missing,
+                hint="Run 'alembic upgrade head' or create a new migration",
+            )
+            if settings.environment == "production":
+                raise RuntimeError(
+                    f"Database schema is not up to date — {len(missing)} "
+                    f"missing columns/tables detected. "
+                    f"Run migrations before starting the application."
+                )
+        else:
+            logger.info("schema_validation_passed")
+    finally:
+        await check_engine.dispose()
+
+
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan: startup and shutdown hooks."""
     global _startup_time
@@ -73,6 +128,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if settings.sentry_dsn:
         import sentry_sdk
         sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0.1)
+
+    # Validate database schema matches ORM models (catches missing migrations)
+    try:
+        await _validate_schema()
+    except RuntimeError:
+        raise  # Re-raise in production — don't start with broken schema
+    except Exception as exc:
+        # DB unreachable at startup — log warning but allow startup in dev.
+        # In production, fail hard — never serve requests against unknown schema.
+        logger.warning("schema_validation_failed", error=str(exc))
+        if settings.environment == "production":
+            raise RuntimeError(
+                "Cannot validate database schema — database is unreachable. "
+                "Refusing to start in production without schema verification."
+            ) from exc
 
     # Start PubSub broadcaster for multi-worker WebSocket support
     _pubsub_broadcaster = None

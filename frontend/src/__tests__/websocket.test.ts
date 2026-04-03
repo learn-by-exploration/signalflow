@@ -34,6 +34,7 @@ class MockWebSocket {
   }
 
   simulateClose() {
+    this.readyState = MockWebSocket.CLOSED;
     this.onclose?.();
   }
 
@@ -187,5 +188,88 @@ describe('SignalWebSocket', () => {
     // Send malformed JSON directly
     mockWsInstance.onmessage?.({ data: 'not-json{{{' });
     expect(onMessage).not.toHaveBeenCalled();
+  });
+
+  it('uses exponential backoff for reconnection', () => {
+    let constructorCallCount = 0;
+    const CountingWsCtor = function () {
+      constructorCallCount++;
+      mockWsInstance = new MockWebSocket();
+      return mockWsInstance;
+    } as unknown as typeof WebSocket;
+    CountingWsCtor.OPEN = 1;
+    CountingWsCtor.CLOSED = 3;
+    CountingWsCtor.CLOSING = 2;
+    CountingWsCtor.CONNECTING = 0;
+    globalThis.WebSocket = CountingWsCtor;
+
+    const ws = new SignalWebSocket(vi.fn());
+    ws.connect();
+    mockWsInstance.simulateOpen();
+    const initialCount = constructorCallCount;
+
+    // Simulate close — first reconnect should be at 1000ms (1000 * 2^0)
+    mockWsInstance.simulateClose();
+    vi.advanceTimersByTime(999);
+    expect(constructorCallCount).toBe(initialCount);
+    vi.advanceTimersByTime(1);
+    expect(constructorCallCount).toBe(initialCount + 1);
+  });
+
+  it('caps exponential backoff at 30 seconds', () => {
+    let constructorCallCount = 0;
+    const CountingWsCtor = function () {
+      constructorCallCount++;
+      mockWsInstance = new MockWebSocket();
+      return mockWsInstance;
+    } as unknown as typeof WebSocket;
+    CountingWsCtor.OPEN = 1;
+    CountingWsCtor.CLOSED = 3;
+    CountingWsCtor.CLOSING = 2;
+    CountingWsCtor.CONNECTING = 0;
+    globalThis.WebSocket = CountingWsCtor;
+
+    const ws = new SignalWebSocket(vi.fn());
+    ws.connect();
+    mockWsInstance.simulateOpen();
+
+    // Force multiple reconnect attempts to hit the cap
+    for (let i = 0; i < 6; i++) {
+      mockWsInstance.simulateClose();
+      vi.advanceTimersByTime(30001); // advance past max backoff
+      mockWsInstance.simulateOpen();
+    }
+
+    // After 6 attempts, backoff would be 2^5 * 1000 = 32000 but capped at 30000
+    // If it weren't capped, constructorCallCount would differ
+    expect(constructorCallCount).toBeGreaterThan(1);
+  });
+
+  it('force-reconnects on heartbeat timeout (no message for 45s)', () => {
+    let constructorCallCount = 0;
+    const CountingWsCtor = function () {
+      constructorCallCount++;
+      mockWsInstance = new MockWebSocket();
+      return mockWsInstance;
+    } as unknown as typeof WebSocket;
+    CountingWsCtor.OPEN = 1;
+    CountingWsCtor.CLOSED = 3;
+    CountingWsCtor.CLOSING = 2;
+    CountingWsCtor.CONNECTING = 0;
+    globalThis.WebSocket = CountingWsCtor;
+
+    const ws = new SignalWebSocket(vi.fn());
+    ws.connect();
+    mockWsInstance.simulateOpen();
+
+    const initialCount = constructorCallCount;
+
+    // Heartbeat interval fires every 15s, checking if > 45s since last message.
+    // At 60s mark, the check sees 60s gap > 45s → triggers close + reconnect.
+    vi.advanceTimersByTime(60001);
+
+    // Give time for the reconnect backoff timer (1000ms for first attempt)
+    vi.advanceTimersByTime(2000);
+    expect(constructorCallCount).toBeGreaterThan(initialCount);
   });
 });

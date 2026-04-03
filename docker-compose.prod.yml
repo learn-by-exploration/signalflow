@@ -25,7 +25,7 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 512M
+          memory: 768M
 
   celery:
     build:
@@ -43,7 +43,7 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 512M
+          memory: 768M
 
   frontend:
     build:
@@ -67,7 +67,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 256M
+          memory: 384M
 
   db:
     ports: []  # No external access in production

@@ -59,50 +59,65 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    headers,
-    ...init,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!res.ok) {
-    // Handle 401 — attempt token refresh once
-    if (res.status === 401 && typeof window !== 'undefined') {
-      // Deduplicate concurrent refresh attempts
-      if (!isRefreshing) {
-        isRefreshing = true;
-        refreshPromise = tryRefreshToken().finally(() => {
-          isRefreshing = false;
-          refreshPromise = null;
-        });
-      }
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers,
+      ...init,
+      signal: controller.signal,
+    });
 
-      const refreshed = await (refreshPromise ?? Promise.resolve(false));
-      if (refreshed) {
-        // Retry original request with new token
-        const newToken = getAccessToken();
-        const retryHeaders: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        if (newToken) {
-          retryHeaders['Authorization'] = `Bearer ${newToken}`;
+    if (!res.ok) {
+      // Handle 401 — attempt token refresh once
+      if (res.status === 401 && typeof window !== 'undefined') {
+        // Deduplicate concurrent refresh attempts
+        if (!isRefreshing) {
+          isRefreshing = true;
+          refreshPromise = tryRefreshToken().finally(() => {
+            isRefreshing = false;
+            refreshPromise = null;
+          });
         }
-        const retryRes = await fetch(`${API_URL}${path}`, {
-          headers: retryHeaders,
-          ...init,
-        });
-        if (retryRes.ok) {
-          return retryRes.json() as Promise<T>;
-        }
-      }
 
-      // Refresh failed — clear auth state
-      sessionStorage.removeItem('signalflow_access_token');
-      sessionStorage.removeItem('signalflow_refresh_token');
+        const refreshed = await (refreshPromise ?? Promise.resolve(false));
+        if (refreshed) {
+          // Retry original request with new token
+          const newToken = getAccessToken();
+          const retryHeaders: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+          if (newToken) {
+            retryHeaders['Authorization'] = `Bearer ${newToken}`;
+          }
+          const retryController = new AbortController();
+          const retryTimeoutId = setTimeout(() => retryController.abort(), 15000);
+          try {
+            const retryRes = await fetch(`${API_URL}${path}`, {
+              headers: retryHeaders,
+              ...init,
+              signal: retryController.signal,
+            });
+            if (retryRes.ok) {
+              return retryRes.json() as Promise<T>;
+            }
+          } finally {
+            clearTimeout(retryTimeoutId);
+          }
+        }
+
+        // Refresh failed — clear auth state
+        sessionStorage.removeItem('signalflow_access_token');
+        sessionStorage.removeItem('signalflow_refresh_token');
     }
     throw new Error(`API error: ${res.status} ${res.statusText}`);
   }
 
   return res.json() as Promise<T>;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export const api = {

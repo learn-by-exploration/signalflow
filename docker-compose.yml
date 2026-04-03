@@ -56,6 +56,11 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     command: >
       bash -c "alembic upgrade head &&
                uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -104,7 +109,7 @@ services:
     command: >
       celery -A app.tasks.celery_app flower
       --port=5555
-      --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-signalflow_flower_dev}
+      --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:?FLOWER_PASSWORD required}
 
   # ── Next.js Frontend ──
   frontend:
@@ -115,6 +120,7 @@ services:
         NEXT_PUBLIC_SHOW_DEMO: "true"
         NEXT_PUBLIC_API_KEY: ${API_SECRET_KEY:-}
         BACKEND_URL: http://backend:8000
+        MKG_URL: http://mkg-api:8001
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -122,9 +128,16 @@ services:
       NEXT_PUBLIC_SHOW_DEMO: "true"
       NEXT_PUBLIC_API_KEY: ${API_SECRET_KEY:-}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET required}
+      NEXTAUTH_URL: ${FRONTEND_URL:-http://localhost:3000}
       BACKEND_URL: http://backend:8000
+      MKG_URL: http://mkg-api:8001
     depends_on:
       - backend
+
+  # ── Network isolation: internal backend network ──
+networks:
+  default:
+    driver: bridge
 
 volumes:
   pgdata:

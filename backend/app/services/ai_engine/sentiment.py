@@ -12,6 +12,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 import httpx
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from app.config import get_settings
 from app.services.ai_engine.cost_tracker import CostTracker
@@ -281,26 +287,11 @@ class AISentimentEngine:
         )
 
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                request_body: dict[str, Any] = {
-                    "model": self.settings.claude_model,
-                    "max_tokens": 800,
-                    "temperature": 0,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "tools": [EVENT_CHAIN_TOOL],
-                    "tool_choice": {"type": "tool", "name": "report_event_chains"},
-                }
-                resp = await client.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "x-api-key": self.settings.anthropic_api_key,
-                        "anthropic-version": "2023-06-01",
-                        "content-type": "application/json",
-                    },
-                    json=request_body,
-                )
-                resp.raise_for_status()
-                data = resp.json()
+            data = await self._call_claude_api(
+                prompt=prompt,
+                tools=[EVENT_CHAIN_TOOL],
+                tool_choice={"type": "tool", "name": "report_event_chains"},
+            )
 
             # Track cost
             usage = data.get("usage", {})
@@ -376,26 +367,12 @@ class AISentimentEngine:
         )
 
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                request_body: dict[str, Any] = {
-                    "model": self.settings.claude_model,
-                    "max_tokens": 300,
-                    "temperature": 0,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "tools": [SENTIMENT_TOOL],
-                    "tool_choice": {"type": "tool", "name": "report_sentiment"},
-                }
-                resp = await client.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "x-api-key": self.settings.anthropic_api_key,
-                        "anthropic-version": "2023-06-01",
-                        "content-type": "application/json",
-                    },
-                    json=request_body,
-                )
-                resp.raise_for_status()
-                data = resp.json()
+            data = await self._call_claude_api(
+                prompt=prompt,
+                tools=[SENTIMENT_TOOL],
+                tool_choice={"type": "tool", "name": "report_sentiment"},
+                max_tokens=300,
+            )
 
             usage = data.get("usage", {})
             self.cost_tracker.record_usage(
@@ -432,6 +409,56 @@ class AISentimentEngine:
         except Exception:
             logger.exception("Sentiment fallback also failed for %s", symbol)
             return self._neutral_fallback(symbol, reason="api_error")
+
+    async def _call_claude_api(
+        self,
+        prompt: str,
+        tools: list[dict[str, Any]],
+        tool_choice: dict[str, str],
+        max_tokens: int = 800,
+    ) -> dict[str, Any]:
+        """Call Claude API with retry on transient errors (429, 5xx).
+
+        Uses tenacity for exponential backoff retry on rate limit
+        and server errors. Non-retryable errors propagate immediately.
+        """
+        request_body: dict[str, Any] = {
+            "model": self.settings.claude_model,
+            "max_tokens": max_tokens,
+            "temperature": 0,
+            "messages": [{"role": "user", "content": prompt}],
+            "tools": tools,
+            "tool_choice": tool_choice,
+        }
+        headers = {
+            "x-api-key": self.settings.anthropic_api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+
+        @retry(
+            retry=retry_if_exception_type(httpx.HTTPStatusError),
+            stop=stop_after_attempt(3),
+            wait=wait_exponential(multiplier=1, min=2, max=30),
+            reraise=True,
+        )
+        async def _do_request() -> dict[str, Any]:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers=headers,
+                    json=request_body,
+                )
+                try:
+                    status = int(resp.status_code)
+                except (TypeError, ValueError):
+                    status = 0
+                if status == 429 or status >= 500:
+                    resp.raise_for_status()
+                resp.raise_for_status()
+                return resp.json()
+
+        return await _do_request()
 
     @staticmethod
     def _neutral_fallback(symbol: str, reason: str = "unknown") -> dict[str, Any]:

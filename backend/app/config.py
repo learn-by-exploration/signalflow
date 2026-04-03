@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -113,6 +114,20 @@ class Settings(BaseSettings):
         "USD/JPY",
         "AUD/USD",
     ]
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def jwt_secret_not_empty(cls, v: str) -> str:
+        if not v and __import__("os").environ.get("ENVIRONMENT", "development") == "production":
+            raise ValueError("JWT_SECRET_KEY must be set in production")
+        return v
+
+    @field_validator("database_url")
+    @classmethod
+    def database_url_not_empty(cls, v: str) -> str:
+        if not v and __import__("os").environ.get("ENVIRONMENT", "development") == "production":
+            raise ValueError("DATABASE_URL must be set in production")
+        return v
 
 
 @lru_cache

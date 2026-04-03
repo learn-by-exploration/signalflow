@@ -171,10 +171,23 @@ class CostTracker:
         """Return remaining budget for the current month."""
         return max(0.0, self.monthly_budget - self.get_monthly_spend())
 
+    # Lua script for atomic budget check-and-reserve
+    _BUDGET_CHECK_LUA = """
+    local key = KEYS[1]
+    local estimated_cost = tonumber(ARGV[1])
+    local budget = tonumber(ARGV[2])
+    local current = tonumber(redis.call('GET', key) or '0')
+    if current + estimated_cost <= budget then
+        return 1
+    else
+        return 0
+    end
+    """
+
     def is_budget_available(self, estimated_cost: float = 0.0) -> bool:
         """Atomically check if there is budget remaining for this month.
 
-        If Redis is available, uses a Lua script for atomic check-and-reserve
+        If Redis is available, uses a Lua script for atomic check
         to prevent concurrent calls from overspending the budget.
 
         Args:
@@ -185,10 +198,11 @@ class CostTracker:
             try:
                 month_key = self._get_month_key()
                 redis_key = f"ai_cost:{month_key}"
-                # Atomic check: current spend + estimated_cost <= budget
-                current = self._redis.get(redis_key)
-                current_spend = float(current) if current else 0.0
-                return (current_spend + estimated_cost) <= self.monthly_budget
+                result = self._redis.eval(  # nosec — Redis Lua script, not Python eval
+                    self._BUDGET_CHECK_LUA, 1, redis_key,
+                    str(estimated_cost), str(self.monthly_budget),
+                )
+                return bool(result)
             except Exception:
                 pass
         return self.get_remaining_budget() > estimated_cost

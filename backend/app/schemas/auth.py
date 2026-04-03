@@ -59,6 +59,7 @@ class UserProfile(BaseModel):
     telegram_chat_id: int | None = None
     tier: str
     is_active: bool
+    email_verified: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -90,3 +91,37 @@ class DeleteAccountRequest(BaseModel):
 
     password: str = Field(min_length=1, max_length=128)
     confirm: bool = Field(description="Must be true to confirm deletion")
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Password reset request — step 1."""
+
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Password reset request — step 2."""
+
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """Enforce password complexity: uppercase, lowercase, digit, special char."""
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one digit")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>\-_+=\[\]~`/\\;']", v):
+            raise ValueError("Password must contain at least one special character")
+        return v
+
+
+class VerifyEmailRequest(BaseModel):
+    """Email verification request."""
+
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")

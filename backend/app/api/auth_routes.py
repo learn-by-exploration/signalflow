@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import UUID as PyUUID
 
@@ -26,11 +27,14 @@ from app.rate_limit import limiter
 from app.schemas.auth import (
     ChangePasswordRequest,
     DeleteAccountRequest,
+    ForgotPasswordRequest,
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserProfile,
+    VerifyEmailRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -75,8 +79,17 @@ async def register(
     await db.flush()
     await db.refresh(user)
 
-    # Generate tokens
+    # Generate email verification code
     settings = get_settings()
+    verify_code = f"{secrets.randbelow(900000) + 100000}"
+    try:
+        redis_client = aioredis.from_url(settings.redis_url)
+        await redis_client.setex(f"email_verify:{user.id}", 86400, verify_code)  # 24h TTL
+        logger.info("Email verification code for %s: %s", user.email, verify_code)
+    except (ConnectionError, OSError, Exception):
+        logger.warning("Failed to store email verification code for %s", user.email)
+
+    # Generate tokens
     access_token = create_access_token(user.id, user.telegram_chat_id, user.tier)
     refresh_token = create_refresh_token(user.id)
 
@@ -394,3 +407,153 @@ async def delete_account(
 
     logger.info("Account deleted for user %s", user_id)
     return {"data": "account_deleted"}
+
+
+# ── Password Reset ──
+
+
+@router.post("/forgot-password", response_model=dict)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    payload: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Request a password reset code (sent via email in production)."""
+    settings = get_settings()
+
+    # Always return success to avoid email enumeration
+    result = await db.execute(select(User).where(User.email == payload.email))
+    user = result.scalar_one_or_none()
+
+    if user and user.is_active:
+        reset_code = f"{secrets.randbelow(900000) + 100000}"
+        try:
+            rds = aioredis.from_url(settings.redis_url)
+            await rds.setex(f"password_reset:{payload.email}", 900, reset_code)  # 15-min TTL
+            logger.info("Reset code generated for %s (code omitted)", payload.email)
+        except (ConnectionError, OSError, Exception):
+            logger.warning("Failed to store reset code for %s", payload.email)
+
+    return {"data": {"message": "If an account exists with that email, a reset code has been sent."}}
+
+
+@router.post("/reset-password", response_model=dict)
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    payload: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Reset password using a code from forgot-password."""
+    settings = get_settings()
+
+    # Validate code from Redis
+    try:
+        rds = aioredis.from_url(settings.redis_url)
+        stored_code = await rds.get(f"password_reset:{payload.email}")
+    except (ConnectionError, OSError, Exception):
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+
+    if not stored_code or stored_code.decode() != payload.code:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code")
+
+    # Find user
+    result = await db.execute(select(User).where(User.email == payload.email))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code")
+
+    # Update password
+    user.password_hash = hash_password(payload.new_password)
+
+    # Delete the reset code
+    try:
+        await rds.delete(f"password_reset:{payload.email}")
+    except (ConnectionError, OSError, Exception):
+        pass
+
+    # Revoke all refresh tokens
+    tokens_result = await db.execute(
+        select(RefreshToken).where(
+            RefreshToken.user_id == user.id,
+            RefreshToken.is_revoked.is_(False),
+        )
+    )
+    for token in tokens_result.scalars().all():
+        token.is_revoked = True
+
+    logger.info("Password reset completed for %s", payload.email)
+    return {"data": {"message": "Password has been reset. Please log in with your new password."}}
+
+
+# ── Email Verification ──
+
+
+@router.post("/verify-email", response_model=dict)
+@limiter.limit("10/minute")
+async def verify_email(
+    request: Request,
+    payload: VerifyEmailRequest,
+    user: AuthContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Verify the current user's email address with a code."""
+    settings = get_settings()
+    user_id = PyUUID(user.user_id) if isinstance(user.user_id, str) else user.user_id
+
+    try:
+        rds = aioredis.from_url(settings.redis_url)
+        stored_code = await rds.get(f"email_verify:{user_id}")
+    except (ConnectionError, OSError, Exception):
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+
+    if not stored_code or stored_code.decode() != payload.code:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+
+    # Mark email as verified
+    result = await db.execute(select(User).where(User.id == user_id))
+    db_user = result.scalar_one_or_none()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db_user.email_verified = True
+
+    # Delete the verification code
+    try:
+        await rds.delete(f"email_verify:{user_id}")
+    except (ConnectionError, OSError, Exception):
+        pass
+
+    logger.info("Email verified for user %s", user_id)
+    return {"data": {"message": "Email verified successfully."}}
+
+
+@router.post("/resend-verification", response_model=dict)
+@limiter.limit("2/minute")
+async def resend_verification(
+    request: Request,
+    user: AuthContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Resend email verification code."""
+    settings = get_settings()
+    user_id = PyUUID(user.user_id) if isinstance(user.user_id, str) else user.user_id
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    db_user = result.scalar_one_or_none()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if db_user.email_verified:
+        return {"data": {"message": "Email is already verified."}}
+
+    verify_code = f"{secrets.randbelow(900000) + 100000}"
+    try:
+        rds = aioredis.from_url(settings.redis_url)
+        await rds.setex(f"email_verify:{user_id}", 86400, verify_code)  # 24h TTL
+        logger.info("Email verification code for %s: %s", db_user.email, verify_code)
+    except (ConnectionError, OSError, Exception):
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+
+    return {"data": {"message": "Verification code has been resent."}}

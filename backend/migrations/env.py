@@ -42,11 +42,28 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-    connectable = create_engine(db_url, poolclass=pool.NullPool)
+    """Run migrations in 'online' mode.
 
-    with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+    Supports two modes:
+    1. Normal CLI usage: creates engine from db_url
+    2. Programmatic usage (e.g., tests): reuses connection from config.attributes
+    """
+    # Standard Alembic pattern: allow callers to pass an existing connection
+    connectable = config.attributes.get("connection")
+
+    if connectable is None:
+        connectable = create_engine(db_url, poolclass=pool.NullPool)
+
+    # If we were given a Connection, use it directly; otherwise connect()
+    if hasattr(connectable, "connect"):
+        # It's an engine — we need to open a connection
+        with connectable.connect() as connection:
+            context.configure(connection=connection, target_metadata=target_metadata)
+            with context.begin_transaction():
+                context.run_migrations()
+    else:
+        # It's already a Connection object
+        context.configure(connection=connectable, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
 

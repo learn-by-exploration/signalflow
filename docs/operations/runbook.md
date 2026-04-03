@@ -190,3 +190,151 @@ railway service update --memory 1024 --cpu 1
 # Start command: celery -A app.tasks.celery_app worker --loglevel=info
 # (Remove --beat from the new worker — only one Beat scheduler)
 ```
+
+---
+
+## Database Migration Rollback
+
+> This section is critical. Read and rehearse BEFORE you need it.
+
+### When to Roll Back
+
+- A migration causes 500 errors on user-facing endpoints
+- A migration corrupts or loses data (signal history, trades, user records)
+- A migration causes Celery tasks to crash
+
+### Pre-Rollback Checklist
+
+1. **Confirm the migration is the cause** — check backend logs for `UndefinedColumnError`, `ProgrammingError`, or similar
+2. **Identify the bad revision** — `docker exec signalflow-backend-1 alembic current`
+3. **Check if data was written to new columns/tables** — data in new columns will be lost on downgrade
+
+### Rollback Procedure
+
+```bash
+# 1. Stop the web server (prevent new requests hitting broken schema)
+docker compose stop backend
+
+# 2. Take a backup BEFORE rolling back (in case downgrade also fails)
+docker exec signalflow-backend-1 bash scripts/backup.sh
+
+# 3. Downgrade one revision (the most common scenario)
+docker exec signalflow-backend-1 alembic downgrade -1
+
+# 4. Or downgrade to a specific known-good revision
+docker exec signalflow-backend-1 alembic downgrade <revision_id>
+
+# 5. Verify the schema matches the old code
+docker exec signalflow-backend-1 alembic current
+
+# 6. Redeploy the last known-good commit (so code matches schema)
+git revert <bad-commit> && git push origin main
+
+# 7. Restart the backend
+docker compose start backend
+
+# 8. Verify health
+curl http://localhost:8000/health
+```
+
+### Rollback for Railway (Production)
+
+```bash
+# 1. Rollback the deployment in Railway dashboard to the previous commit
+#    (Railway → Service → Deployments → "..." → Rollback)
+#
+# 2. If the migration has already run and the old code needs the old schema:
+#    - SSH into the service: railway run bash
+#    - Downgrade: alembic downgrade -1
+#    - Verify: alembic current
+#
+# 3. If the database is in an inconsistent state:
+#    - Restore from Railway automatic backup
+#    - Railway Dashboard → Database → Backups → Restore
+```
+
+### What Data Is Lost on Downgrade
+
+| Operation in Migration | Data Impact on Downgrade |
+|----------------------|--------------------------|
+| `add_column` | Data in that column is **permanently lost** |
+| `create_table` | All data in that table is **permanently lost** |
+| `alter_column` (type change) | Data may be **truncated or corrupted** |
+| `add_index` | No data loss (just removes index) |
+| `add_constraint` | No data loss (just removes constraint) |
+
+**Rule**: Always take a backup BEFORE downgrading. The pre-migration backup in supervisord handles this automatically for production deploys.
+
+---
+
+## Safe Migration Patterns (Expand-Then-Contract)
+
+> For a 24/7 trading platform, zero-downtime migrations are critical. Users should never miss signals because of a deployment.
+
+### The Problem
+
+Traditional migrations follow: **stop app → migrate → deploy new code → start app**. This causes downtime during every deployment that includes a schema change.
+
+### The Solution: Expand-Then-Contract
+
+Split every breaking schema change into 3 deployments:
+
+#### Phase 1: Expand (backward-compatible migration)
+
+Add the new column/table as **nullable** with no constraints. Deploy code that **reads the old schema** but **writes to both old and new**.
+
+```python
+# Migration: add column as nullable (no constraint yet)
+def upgrade():
+    op.add_column("signals", sa.Column("new_field", sa.String(100), nullable=True))
+
+# Code: write to new_field if present, but don't require it
+signal.new_field = computed_value  # write
+result = signal.old_field          # still read from old
+```
+
+#### Phase 2: Migrate Data
+
+Backfill existing rows. Deploy code that **reads from the new column**.
+
+```python
+# Migration: backfill existing rows
+def upgrade():
+    op.execute("UPDATE signals SET new_field = old_field WHERE new_field IS NULL")
+
+# Code: read from new_field, stop writing old_field
+result = signal.new_field
+```
+
+#### Phase 3: Contract (cleanup)
+
+Add constraints, drop the old column.
+
+```python
+# Migration: add NOT NULL constraint, drop old column
+def upgrade():
+    op.alter_column("signals", "new_field", nullable=False)
+    op.drop_column("signals", "old_field")
+```
+
+### When to Use Expand-Then-Contract
+
+| Change | Simple Migration OK? | Needs Expand-Then-Contract? |
+|--------|---------------------|-----------------------------|
+| Add nullable column | Yes | No |
+| Add NOT NULL column with default | Yes | No |
+| Rename column | No | **Yes** — add new, copy, drop old |
+| Change column type | No | **Yes** — add new typed column, migrate data |
+| Drop column | No | **Yes** — stop reading first, then drop |
+| Add new table | Yes | No |
+| Drop table | No | **Yes** — stop all references first |
+
+### Example: Renaming `telegram_chat_id` to `external_id`
+
+```
+Deploy 1: Add external_id (nullable), write to both
+Deploy 2: Backfill external_id from telegram_chat_id, read from external_id
+Deploy 3: Drop telegram_chat_id, add NOT NULL to external_id
+```
+
+Each deploy is independently safe. If any deploy fails, the previous schema still works.

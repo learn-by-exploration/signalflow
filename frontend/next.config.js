@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+const mkgUrl = process.env.MKG_URL || 'http://localhost:8001';
 
 const nextConfig = {
   output: 'standalone',
@@ -25,6 +26,15 @@ const nextConfig = {
       {
         source: '/ws/:path*',
         destination: `${backendUrl}/ws/:path*`,
+      },
+      // Proxy MKG research library
+      {
+        source: '/research',
+        destination: `${mkgUrl}/research/`,
+      },
+      {
+        source: '/research/:path*',
+        destination: `${mkgUrl}/research/:path*`,
       },
     ];
   },

@@ -1,4 +1,4 @@
-.PHONY: up down build logs backend-shell db-shell migrate test lint
+.PHONY: up down build logs backend-shell db-shell migrate test lint migration-check
 
 # ── Docker ──
 up:
@@ -29,6 +29,10 @@ migrate:
 
 migrate-gen:
 	cd backend && alembic revision --autogenerate -m "$(msg)"
+
+migration-check:
+	@echo "── Checking for model-migration drift ──"
+	cd backend && python -m pytest tests/test_migration_integrity.py -v --override-ini="asyncio_mode=auto"
 
 # ── Testing ──
 test:

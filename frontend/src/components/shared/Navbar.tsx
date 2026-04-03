@@ -15,7 +15,7 @@ import {
 
 const RESEARCH_ROUTES = [
   '/news', '/calendar', '/backtest', '/history', '/alerts',
-  '/how-it-works', '/pricing',
+  '/how-it-works', '/pricing', '/research',
 ];
 
 export function Navbar() {

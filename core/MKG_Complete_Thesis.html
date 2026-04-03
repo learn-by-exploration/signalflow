@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKG — The Complete Thesis</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:       #08090c;
+  --surface:  #0e0f14;
+  --surface2: #13151c;
+  --surface3: #181a24;
+  --border:   #1c1f2b;
+  --border2:  #252836;
+  --gold:     #c9a84c;
+  --gold-l:   #e8c97a;
+  --gold-dim: rgba(201,168,76,0.12);
+  --red:      #b5341c;
+  --red-dim:  rgba(181,52,28,0.10);
+  --teal:     #1abc9c;
+  --teal-dim: rgba(26,188,156,0.10);
+  --blue:     #4a9eff;
+  --blue-dim: rgba(74,158,255,0.10);
+  --violet:   #9b6fff;
+  --violet-dim:rgba(155,111,255,0.10);
+  --green:    #2ecc71;
+  --green-dim:rgba(46,204,113,0.10);
+  --amber:    #f0a030;
+  --amber-dim:rgba(240,160,48,0.10);
+  --text:     #dce3f0;
+  --muted:    #5a6280;
+  --muted2:   #3a3f55;
+  --white:    #f5f8ff;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1000; opacity: 0.3;
+}
+
+/* ── NAV ── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 52px;
+  background: rgba(8,9,12,0.95); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; z-index: 100; backdrop-filter: blur(12px);
+}
+.tb-brand { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:2.5px; color:var(--gold); text-transform:uppercase; font-weight:500; text-decoration:none; }
+.tb-nav { display:flex; gap:8px; }
+.tb-nav a { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1px; color:var(--muted); text-decoration:none; text-transform:uppercase; padding:4px 10px; border:1px solid transparent; transition:all .2s; }
+.tb-nav a:hover, .tb-nav a.active { color:var(--gold); border-color:var(--border2); }
+.tb-badge { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1px; color:var(--red); border:1px solid rgba(181,52,28,0.3); padding:3px 8px; text-transform:uppercase; }
+
+/* ── LAYOUT ── */
+.wrap { max-width:1100px; margin:0 auto; padding:0 40px; }
+.section { padding:100px 0 60px; border-bottom:1px solid var(--border); }
+.section:last-child { border-bottom:none; }
+
+.sec-kicker { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:16px; }
+.sec-num { color:var(--muted2); margin-right:8px; }
+.sec-title { font-family:'Cormorant Garamond',serif; font-size:clamp(32px,4vw,52px); font-weight:600; color:var(--white); line-height:1.1; margin-bottom:16px; }
+.sec-title em { font-style:italic; color:var(--gold-l); font-weight:300; }
+.sec-sub { font-size:15px; color:var(--muted); max-width:640px; line-height:1.7; margin-bottom:48px; }
+
+/* ── HERO ── */
+.hero { padding:140px 0 100px; border-bottom:1px solid var(--border); position:relative; }
+.hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:radial-gradient(ellipse 800px 600px at 30% 40%, rgba(201,168,76,0.03) 0%, transparent 60%); pointer-events:none; }
+.hero-kicker { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:4px; color:var(--gold); text-transform:uppercase; margin-bottom:32px; }
+.hero-title { font-family:'Cormorant Garamond',serif; font-size:clamp(48px,6vw,80px); font-weight:300; font-style:italic; line-height:1.08; color:var(--text); margin-bottom:36px; }
+.hero-title strong { font-weight:700; font-style:normal; color:var(--white); }
+.hero-sub { font-family:'Cormorant Garamond',serif; font-size:20px; font-style:italic; color:var(--muted); line-height:1.7; max-width:700px; }
+
+/* ── STATS ── */
+.stats { display:grid; gap:1px; background:var(--border); border:1px solid var(--border); margin:48px 0; }
+.stats-4 { grid-template-columns:repeat(4,1fr); }
+.stats-5 { grid-template-columns:repeat(5,1fr); }
+.stat { background:var(--surface); padding:24px 16px; text-align:center; }
+.stat-val { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:700; color:var(--gold); line-height:1; margin-bottom:6px; }
+.stat-lbl { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1.2px; color:var(--muted); text-transform:uppercase; line-height:1.4; }
+
+/* ── SPEED CARDS ── */
+.speed-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); border:1px solid var(--border); }
+.speed { background:var(--surface); padding:24px 20px; }
+.speed-head { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+.speed-name { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:var(--white); margin-bottom:4px; }
+.speed-time { font-family:'IBM Plex Mono',monospace; font-size:11px; margin-bottom:10px; }
+.speed-desc { font-size:13px; color:var(--muted); line-height:1.5; }
+.speed-edge { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; margin-top:12px; padding:4px 8px; display:inline-block; }
+.edge-none { color:var(--muted2); border:1px solid var(--muted2); }
+.edge-some { color:var(--amber); border:1px solid rgba(240,160,48,0.3); }
+.edge-mkg { color:var(--gold); border:1px solid rgba(201,168,76,0.4); background:var(--gold-dim); }
+
+/* ── BLOCKQUOTE ── */
+.bq { border-left:2px solid var(--gold-dim); padding:28px 36px; margin:48px 0; }
+.bq blockquote { font-family:'Cormorant Garamond',serif; font-size:20px; font-style:italic; color:var(--text); line-height:1.65; }
+.bq cite { display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.5px; color:var(--muted); font-style:normal; text-transform:uppercase; margin-top:16px; }
+
+/* ── MARKET SEGMENTS ── */
+.seg-grid { display:flex; flex-direction:column; gap:2px; }
+.seg { display:grid; grid-template-columns:200px 100px 80px 1fr; background:var(--surface); border:1px solid var(--border); align-items:center; }
+.seg-name { padding:16px 20px; font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:600; color:var(--white); border-right:1px solid var(--border); }
+.seg-size { padding:16px; font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--gold); text-align:center; border-right:1px solid var(--border); }
+.seg-cagr { padding:16px; font-family:'IBM Plex Mono',monospace; font-size:12px; text-align:center; border-right:1px solid var(--border); }
+.seg-note { padding:16px 20px; font-size:13px; color:var(--muted); }
+
+/* ── COMPETITOR CARDS ── */
+.comp-grid { display:flex; flex-direction:column; gap:3px; }
+.comp { background:var(--surface); border:1px solid var(--border); overflow:hidden; cursor:pointer; transition:border-color .2s; }
+.comp:hover { border-color:var(--border2); }
+.comp-head { display:grid; grid-template-columns:48px 1fr 100px 100px 100px 40px; align-items:center; }
+.comp-tier { display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:500; border-right:1px solid var(--border); height:100%; }
+.tier1 { color:var(--blue); }
+.tier2 { color:var(--violet); }
+.tier3 { color:var(--teal); }
+.comp-info { padding:14px 18px; }
+.comp-name { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:var(--white); }
+.comp-parent { font-family:'IBM Plex Mono',monospace; font-size:8px; color:var(--muted); letter-spacing:0.5px; }
+.comp-cell { padding:14px 12px; text-align:center; border-left:1px solid var(--border); }
+.comp-cell-lbl { font-family:'IBM Plex Mono',monospace; font-size:7px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; margin-bottom:3px; }
+.comp-cell-val { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text); }
+.comp-arrow { display:flex; align-items:center; justify-content:center; border-left:1px solid var(--border); font-size:12px; color:var(--muted2); transition:color .2s; }
+.comp:hover .comp-arrow { color:var(--gold); }
+.comp-body { display:none; border-top:1px solid var(--border); padding:20px; }
+.comp-body.open { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.cb-col h4 { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+.cb-item { font-size:13px; color:var(--text); line-height:1.5; margin-bottom:6px; padding-left:14px; position:relative; }
+.cb-item::before { content:''; position:absolute; left:0; top:8px; width:4px; height:4px; border-radius:50%; }
+.cb-has::before { background:var(--green); }
+.cb-miss::before { background:var(--red); }
+
+/* ── FEATURE MATRIX ── */
+.matrix-wrap { overflow-x:auto; margin:32px 0; }
+.matrix { border-collapse:collapse; width:100%; font-family:'IBM Plex Mono',monospace; font-size:10px; }
+.matrix th, .matrix td { padding:8px 6px; border:1px solid var(--border); text-align:center; white-space:nowrap; }
+.matrix th { background:var(--surface2); color:var(--muted); font-weight:400; letter-spacing:0.5px; text-transform:uppercase; font-size:8px; position:sticky; top:52px; }
+.matrix th:first-child { text-align:left; min-width:200px; }
+.matrix td:first-child { text-align:left; color:var(--text); font-size:11px; }
+.matrix .new td:first-child { color:var(--gold); }
+.matrix .yes { color:var(--green); }
+.matrix .no { color:var(--muted2); }
+.matrix .part { color:var(--amber); }
+.matrix .mkg { color:var(--gold); font-weight:600; }
+.matrix .mkg-new { color:var(--gold); font-weight:600; background:var(--gold-dim); }
+
+/* ── SCENARIO ── */
+.scenario { background:var(--surface); border:1px solid var(--border); margin-bottom:16px; overflow:hidden; }
+.sc-head { padding:20px 24px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+.sc-head:hover { background:var(--surface2); }
+.sc-title { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:var(--white); }
+.sc-tag { font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1px; padding:3px 8px; text-transform:uppercase; }
+.sc-body { display:none; border-top:1px solid var(--border); }
+.sc-body.open { display:block; }
+.sc-split { display:grid; grid-template-columns:1fr 1fr; }
+.sc-col { padding:20px 24px; }
+.sc-col:first-child { border-right:1px solid var(--border); }
+.sc-col-title { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; }
+.sc-without { color:var(--red); }
+.sc-with { color:var(--green); }
+.sc-step { font-size:13px; color:var(--text); margin-bottom:10px; line-height:1.5; }
+.sc-step strong { color:var(--white); }
+.sc-step .time { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); margin-right:6px; }
+.sc-value { font-family:'IBM Plex Mono',monospace; font-size:11px; padding:8px 12px; margin-top:12px; border:1px solid; display:inline-block; }
+
+/* ── ICEBERG ── */
+.iceberg { display:flex; flex-direction:column; gap:2px; margin:32px 0; }
+.ice-layer { display:grid; grid-template-columns:160px 1fr 200px; background:var(--surface); border:1px solid var(--border); align-items:center; }
+.ice-label { padding:20px; font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; border-right:1px solid var(--border); }
+.ice-desc { padding:20px; font-size:13px; color:var(--muted); line-height:1.5; }
+.ice-coverage { padding:20px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; border-left:1px solid var(--border); }
+
+/* ── TRIBAL CARDS ── */
+.tribal-grid { display:flex; flex-direction:column; gap:3px; }
+.tribal { background:var(--surface); border:1px solid var(--border); padding:24px; }
+.tribal-num { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:2px; color:var(--gold); text-transform:uppercase; margin-bottom:8px; }
+.tribal-name { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:var(--white); margin-bottom:12px; }
+.tribal-quote { font-family:'Cormorant Garamond',serif; font-size:15px; font-style:italic; color:var(--text); line-height:1.6; border-left:2px solid var(--border2); padding-left:16px; margin-bottom:14px; }
+.tribal-bridge { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--gold); letter-spacing:0.5px; }
+
+/* ── NICHE BOUNDARIES ── */
+.niche-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); }
+.niche-col { background:var(--surface); padding:28px 24px; }
+.niche-col h3 { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; margin-bottom:16px; }
+.niche-item { font-size:13px; line-height:1.6; margin-bottom:8px; padding-left:16px; position:relative; }
+.niche-item::before { position:absolute; left:0; }
+.niche-is::before { content:'✓'; color:var(--green); }
+.niche-not::before { content:'✗'; color:var(--red); }
+
+/* ── FOOTER ── */
+.footer { padding:48px 0 60px; display:flex; justify-content:space-between; align-items:center; }
+.footer-l { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.5px; color:var(--muted2); text-transform:uppercase; }
+.footer-r { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; color:var(--red); border:1px solid rgba(181,52,28,0.25); padding:4px 12px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width:900px) {
+  .topbar { padding:0 16px; }
+  .tb-nav { display:none; }
+  .wrap { padding:0 20px; }
+  .hero { padding:100px 0 60px; }
+  .speed-grid { grid-template-columns:1fr 1fr; }
+  .stats-4, .stats-5 { grid-template-columns:repeat(2,1fr); }
+  .seg { grid-template-columns:1fr; }
+  .seg-name, .seg-size, .seg-cagr { border-right:none; border-bottom:1px solid var(--border); }
+  .comp-head { grid-template-columns:40px 1fr 40px; }
+  .comp-cell { display:none; }
+  .comp-body.open { grid-template-columns:1fr; }
+  .matrix { font-size:8px; }
+  .matrix th, .matrix td { padding:4px 3px; }
+  .sc-split { grid-template-columns:1fr; }
+  .sc-col:first-child { border-right:none; border-bottom:1px solid var(--border); }
+  .ice-layer { grid-template-columns:1fr; }
+  .ice-label, .ice-desc { border-right:none; border-bottom:1px solid var(--border); }
+  .niche-grid { grid-template-columns:1fr; }
+  .footer { flex-direction:column; gap:12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<div class="topbar">
+  <a href="/research/" class="tb-brand">MKG</a>
+  <div class="tb-nav">
+    <a href="#problem">Problem</a>
+    <a href="#market">Market</a>
+    <a href="#competitors">Competitors</a>
+    <a href="#niche">Niche</a>
+    <a href="#scenarios">Scenarios</a>
+    <a href="#tribal">Tribal Knowledge</a>
+    <a href="#position">Position</a>
+  </div>
+  <span class="tb-badge">Confidential</span>
+</div>
+
+<!-- ══ HERO ══ -->
+<div class="wrap">
+<div class="hero" id="top">
+  <div class="hero-kicker">Market Knowledge Graph — The Complete Thesis</div>
+  <h1 class="hero-title">The world runs on <strong>relationships.</strong><br>No tool maps them.</h1>
+  <p class="hero-sub">Markets price direct events in milliseconds. Supply chains respond to tier-1 shocks in hours. But the shock that began three hops away — the signal no tool reads, through the relationship no database tracks, with the weight no system has computed — arrives weeks later. Completely invisible. Entirely preventable.</p>
+</div>
+
+<!-- ══ 01 · THE PROBLEM ══ -->
+<div class="section" id="problem">
+  <div class="sec-kicker"><span class="sec-num">01</span> The Problem</div>
+  <h2 class="sec-title">Markets have three speeds.<br><em>No one serves the third.</em></h2>
+  <p class="sec-sub">Every commercial platform serves Speed 1 and Speed 2. The supply chain contagion that arrives 1–14 weeks later — through relationships no database tracks — is completely invisible.</p>
+
+  <div class="speed-grid">
+    <div class="speed">
+      <div class="speed-head">Speed 1</div>
+      <div class="speed-name">Direct Event</div>
+      <div class="speed-time" style="color:var(--green)">< 100ms</div>
+      <div class="speed-desc">TSMC earnings → NVIDIA reprices in milliseconds. HFT-dominated. Fully arbitraged.</div>
+      <div class="speed-edge edge-none">Zero edge</div>
+    </div>
+    <div class="speed">
+      <div class="speed-head">Speed 2</div>
+      <div class="speed-name">Industry Spillover</div>
+      <div class="speed-time" style="color:var(--amber)">Hours – 3 days</div>
+      <div class="speed-desc">Competitors and peers reprice within hours. Relatively efficient for sophisticated research.</div>
+      <div class="speed-edge edge-some">Some edge</div>
+    </div>
+    <div class="speed">
+      <div class="speed-head">Speed 3A</div>
+      <div class="speed-name">Supply Chain Contagion</div>
+      <div class="speed-time" style="color:var(--red)">1 – 14 weeks</div>
+      <div class="speed-desc">Subsidiary, supplier, customer impacts reach days to weeks later. Academic proof: POM 2024.</div>
+      <div class="speed-edge edge-mkg">MKG's opportunity</div>
+    </div>
+    <div class="speed">
+      <div class="speed-head">Speed 3B</div>
+      <div class="speed-name">Relationship Network</div>
+      <div class="speed-time" style="color:var(--red)">Weeks – months</div>
+      <div class="speed-desc">Multi-hop effects through board interlocks, JVs, regulatory co-exposure. Currently invisible to all tools.</div>
+      <div class="speed-edge edge-mkg">MKG's alpha zone</div>
+    </div>
+  </div>
+
+  <div class="stats stats-5" style="margin-top:48px">
+    <div class="stat"><div class="stat-val">55+</div><div class="stat-lbl">Years PEAD<br>documented</div></div>
+    <div class="stat"><div class="stat-val">6%</div><div class="stat-lbl">Companies w/ full<br>SC visibility</div></div>
+    <div class="stat"><div class="stat-val">42%</div><div class="stat-lbl">Institutional knowledge<br>in individuals</div></div>
+    <div class="stat"><div class="stat-val">$0</div><div class="stat-lbl">Revenue from dynamic<br>weighted graphs</div></div>
+    <div class="stat"><div class="stat-val">14wk</div><div class="stat-lbl">Supply chain<br>propagation window</div></div>
+  </div>
+
+  <div class="bq">
+    <blockquote>"About half of a disruption's total effect may come from amplification through the supply chain network. A quarter of GDP and inflation effects after 2020 are attributed to shocks outside the U.S. that propagated through input-output networks."</blockquote>
+    <cite>Federal Reserve Bank of Richmond — Economic Brief, January 2025</cite>
+  </div>
+</div>
+
+<!-- ══ 02 · THE MARKET ══ -->
+<div class="section" id="market">
+  <div class="sec-kicker"><span class="sec-num">02</span> The Market</div>
+  <h2 class="sec-title">A $35 billion market<br><em>with a structural blind spot.</em></h2>
+  <p class="sec-sub">Five market segments intersect at the relationship intelligence gap MKG fills. Together they represent $15B+ in addressable spend — currently served by zero commercial systems.</p>
+
+  <div class="seg-grid">
+    <div class="seg">
+      <div class="seg-name">Traditional Financial Data</div>
+      <div class="seg-size">$35B</div>
+      <div class="seg-cagr" style="color:var(--muted)">8%</div>
+      <div class="seg-note">Bloomberg, Refinitiv, FactSet. Stable incumbents, slow growth, zero relationship intelligence.</div>
+    </div>
+    <div class="seg">
+      <div class="seg-name" style="color:var(--gold)">Alternative Data</div>
+      <div class="seg-size">$11.65B</div>
+      <div class="seg-cagr" style="color:var(--gold)">63%</div>
+      <div class="seg-note">$135B by 2030. Hedge funds dominate 68% of spend. MKG's output competes here.</div>
+    </div>
+    <div class="seg">
+      <div class="seg-name">Market Intelligence (AI)</div>
+      <div class="seg-size">~$8B</div>
+      <div class="seg-cagr" style="color:var(--blue)">16%</div>
+      <div class="seg-note">AlphaSense ($500M ARR), RavenPack. Document search, not graph traversal.</div>
+    </div>
+    <div class="seg">
+      <div class="seg-name">Knowledge Graph Tech</div>
+      <div class="seg-size">$1.1B</div>
+      <div class="seg-cagr" style="color:var(--teal)">37%</div>
+      <div class="seg-note">$6.9B by 2030. MKG's core architecture. 60% FI adoption for fraud detection.</div>
+    </div>
+    <div class="seg">
+      <div class="seg-name">Supply Chain Risk Mgmt</div>
+      <div class="seg-size">$4.52B</div>
+      <div class="seg-cagr" style="color:var(--violet)">15.3%</div>
+      <div class="seg-note">$9.2B by 2030. Resilinc, Interos ($1B). Operations-focused, not alpha generation.</div>
+    </div>
+  </div>
+
+  <div class="stats stats-4" style="margin-top:48px">
+    <div class="stat"><div class="stat-val">$900K</div><div class="stat-lbl">10-seat desk<br>annual spend</div></div>
+    <div class="stat"><div class="stat-val">43</div><div class="stat-lbl">Avg alt-data sets<br>per large fund</div></div>
+    <div class="stat"><div class="stat-val">$1.6M</div><div class="stat-lbl">Avg alt-data spend<br>per fund per year</div></div>
+    <div class="stat"><div class="stat-val">0</div><div class="stat-lbl">Products with<br>dynamic graph + WAN</div></div>
+  </div>
+
+  <div class="bq">
+    <blockquote>"A 10-seat team: Bloomberg ($280K) + FactSet ($120K) + AlphaSense ($75K) + Capital IQ ($100K) + RavenPack ($50K) = $625K–$900K/year. The graph propagation gap is still open."</blockquote>
+    <cite>MKG Pricing Landscape Analysis</cite>
+  </div>
+</div>
+
+<!-- ══ 03 · COMPETITORS ══ -->
+<div class="section" id="competitors">
+  <div class="sec-kicker"><span class="sec-num">03</span> Competitive Landscape</div>
+  <h2 class="sec-title">Every tool. Every feature.<br><em>Every gap. Precisely.</em></h2>
+  <p class="sec-sub">Nine platforms across three tiers. None fills all 16 critical capabilities. Most cover 2–4. MKG covers all 16 — 10 of which exist nowhere.</p>
+
+  <div class="comp-grid">
+    <!-- Tier 1 -->
+    <div class="comp" onclick="this.querySelector('.comp-body').classList.toggle('open')">
+      <div class="comp-head">
+        <div class="comp-tier tier1">T1</div>
+        <div class="comp-info"><div class="comp-name">Bloomberg Terminal</div><div class="comp-parent">Bloomberg L.P. · Founded 1982</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Revenue</div><div class="comp-cell-val">$10B+</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Per Seat</div><div class="comp-cell-val">$31,980</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Users</div><div class="comp-cell-val">325K</div></div>
+        <div class="comp-arrow">›</div>
+      </div>
+      <div class="comp-body">
+        <div class="cb-col"><h4>Strengths</h4>
+          <div class="cb-item cb-has">Real-time all asset classes, 2,700+ journalists</div>
+          <div class="cb-item cb-has">IB messaging network — unbreakable lock-in (&lt;5% churn)</div>
+          <div class="cb-item cb-has">BQL/BLPAPI for quant integration</div>
+        </div>
+        <div class="cb-col"><h4>Gaps (MKG's opportunity)</h4>
+          <div class="cb-item cb-miss">Zero relationship graph</div>
+          <div class="cb-item cb-miss">No event propagation or causal chains</div>
+          <div class="cb-item cb-miss">Cloud-only, no temporal graph state</div>
+        </div>
+      </div>
+    </div>
+    <div class="comp" onclick="this.querySelector('.comp-body').classList.toggle('open')">
+      <div class="comp-head">
+        <div class="comp-tier tier1">T1</div>
+        <div class="comp-info"><div class="comp-name">FactSet + Revere</div><div class="comp-parent">FactSet Research · 44 consecutive growth years</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Revenue</div><div class="comp-cell-val">$2.32B</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Per Seat</div><div class="comp-cell-val">$12–24K</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Retention</div><div class="comp-cell-val">95%</div></div>
+        <div class="comp-arrow">›</div>
+      </div>
+      <div class="comp-body">
+        <div class="cb-col"><h4>Strengths</h4>
+          <div class="cb-item cb-has">Revere: 40K+ supply chain relationships (closest to MKG)</div>
+          <div class="cb-item cb-has">62K+ public companies, 4.4M+ private</div>
+          <div class="cb-item cb-has">CUSIP Global Services, quant-friendly feeds</div>
+        </div>
+        <div class="cb-col"><h4>Gaps (MKG's opportunity)</h4>
+          <div class="cb-item cb-miss">Revere is static — filing-based, no dynamic update from news</div>
+          <div class="cb-item cb-miss">No event propagation, no temporal state</div>
+          <div class="cb-item cb-miss">No edge weight adjustment, no WAN</div>
+        </div>
+      </div>
+    </div>
+    <div class="comp" onclick="this.querySelector('.comp-body').classList.toggle('open')">
+      <div class="comp-head">
+        <div class="comp-tier tier2">T2</div>
+        <div class="comp-info"><div class="comp-name">AlphaSense</div><div class="comp-parent">Series F · $4B valuation · 2025</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">ARR</div><div class="comp-cell-val">$500M</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Per Seat</div><div class="comp-cell-val">$10–20K</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Corpus</div><div class="comp-cell-val">500M+</div></div>
+        <div class="comp-arrow">›</div>
+      </div>
+      <div class="comp-body">
+        <div class="cb-col"><h4>Strengths</h4>
+          <div class="cb-item cb-has">500M+ doc corpus, Generative Search with citations</div>
+          <div class="cb-item cb-has">Tegus acquisition: 240K+ expert call transcripts</div>
+          <div class="cb-item cb-has">88% S&P 100, 75% top hedge funds</div>
+        </div>
+        <div class="cb-col"><h4>Gaps (MKG's opportunity)</h4>
+          <div class="cb-item cb-miss">No relationship graph, no propagation</div>
+          <div class="cb-item cb-miss">English-dominant, cloud-only</div>
+          <div class="cb-item cb-miss">No temporal state, no systematic backtest</div>
+        </div>
+      </div>
+    </div>
+    <div class="comp" onclick="this.querySelector('.comp-body').classList.toggle('open')">
+      <div class="comp-head">
+        <div class="comp-tier tier2">T2</div>
+        <div class="comp-info"><div class="comp-name">RavenPack</div><div class="comp-parent">Alternative Data · 22-year corpus</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Revenue</div><div class="comp-cell-val">$25–37M</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Sources</div><div class="comp-cell-val">40K+</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Languages</div><div class="comp-cell-val">13</div></div>
+        <div class="comp-arrow">›</div>
+      </div>
+      <div class="comp-body">
+        <div class="cb-col"><h4>Strengths</h4>
+          <div class="cb-item cb-has">40K+ sources, 13 languages, 80+ fields per event</div>
+          <div class="cb-item cb-has">22 years historical sentiment corpus (2002–2025)</div>
+          <div class="cb-item cb-has">70%+ of top quant hedge funds · FT partnership (Dec 2025)</div>
+        </div>
+        <div class="cb-col"><h4>Gaps (MKG's opportunity)</h4>
+          <div class="cb-item cb-miss">Entity-level scores only — no edge/relationship scoring</div>
+          <div class="cb-item cb-miss">No relationship graph, no propagation traversal</div>
+          <div class="cb-item cb-miss">Cloud-only, resource-constrained vs. ambition</div>
+        </div>
+      </div>
+    </div>
+    <div class="comp" onclick="this.querySelector('.comp-body').classList.toggle('open')">
+      <div class="comp-head">
+        <div class="comp-tier tier2">T2</div>
+        <div class="comp-info"><div class="comp-name">Palantir Foundry</div><div class="comp-parent">Palantir Technologies · AIP Platform</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Revenue</div><div class="comp-cell-val">$2.87B</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Deal Size</div><div class="comp-cell-val">$5M–50M+</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Mkt Cap</div><div class="comp-cell-val">$250B+</div></div>
+        <div class="comp-arrow">›</div>
+      </div>
+      <div class="comp-body">
+        <div class="cb-col"><h4>Strengths</h4>
+          <div class="cb-item cb-has">On-premise / air-gapped (DoD TS/SCI certified)</div>
+          <div class="cb-item cb-has">Ontology-based graph modeling, AIP platform</div>
+          <div class="cb-item cb-has">560+ customers, 8 consecutive GAAP profitable quarters</div>
+        </div>
+        <div class="cb-col"><h4>Gaps (MKG's opportunity)</h4>
+          <div class="cb-item cb-miss">Not finance-specific, no pre-built financial data</div>
+          <div class="cb-item cb-miss">$5M+ minimum, 12–18mo implementation, 20+ person team</div>
+          <div class="cb-item cb-miss">No pre-built WAN, no propagation scoring</div>
+        </div>
+      </div>
+    </div>
+    <div class="comp" onclick="this.querySelector('.comp-body').classList.toggle('open')">
+      <div class="comp-head">
+        <div class="comp-tier tier3">T3</div>
+        <div class="comp-info"><div class="comp-name">Interos.ai</div><div class="comp-parent">Supply Chain Graph · $1B Unicorn</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Valuation</div><div class="comp-cell-val">$1B</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Series D</div><div class="comp-cell-val">$45.6M</div></div>
+        <div class="comp-cell"><div class="comp-cell-lbl">Focus</div><div class="comp-cell-val">SC Risk</div></div>
+        <div class="comp-arrow">›</div>
+      </div>
+      <div class="comp-body">
+        <div class="cb-col"><h4>Strengths</h4>
+          <div class="cb-item cb-has">Multi-tier SC graph at scale (Tier 1-2-3+)</div>
+          <div class="cb-item cb-has">AI risk scoring, continuous monitoring</div>
+          <div class="cb-item cb-has">Proves SC graph model valued at $1B+</div>
+        </div>
+        <div class="cb-col"><h4>Gaps (MKG's opportunity)</h4>
+          <div class="cb-item cb-miss">Not for investors — operations-only, no financial signals</div>
+          <div class="cb-item cb-miss">No temporal graph state, no backtest</div>
+          <div class="cb-item cb-miss">MKG serves PMs AND CPOs — 10-50x buying power</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature Matrix -->
+  <h3 style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin:48px 0 16px;">Capability Matrix — 16 Critical Features</h3>
+  <div class="matrix-wrap">
+    <table class="matrix">
+      <thead><tr>
+        <th>Capability</th><th>Bloomberg</th><th>FactSet</th><th>CapIQ</th><th>AlphaSense</th><th>RavenPack</th><th>Palantir</th><th>Interos</th><th>MKG</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Real-time market data</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
+        <tr><td>News in 6+ languages</td><td class="part">~</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="mkg">✓</td></tr>
+        <tr><td>Entity extraction (NER)</td><td class="part">~</td><td class="no">✗</td><td class="part">~</td><td class="yes">✓</td><td class="yes">✓</td><td class="part">~</td><td class="yes">✓</td><td class="mkg">✓</td></tr>
+        <tr><td>Static relationship graph</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="mkg">✓</td></tr>
+        <tr class="new"><td>Dynamic edge weights ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr class="new"><td>Weight Adjustment Network ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr class="new"><td>Lead-lag metadata ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr><td>Event propagation scoring</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="part">~</td><td class="mkg">✓</td></tr>
+        <tr class="new"><td>Impact + direction + confidence ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr class="new"><td>Multi-horizon decay ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr class="new"><td>Temporal graph rewind ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="part">~</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr class="new"><td>Edge weight history ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr class="new"><td>Full causal chain audit ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="part">~</td><td class="no">✗</td><td class="part">~</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr class="new"><td>MiFID II audit trail ✦</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="mkg-new">NEW</td></tr>
+        <tr><td>On-premise deployment</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td><td class="mkg">✓</td></tr>
+        <tr><td>Zero per-seat licensing</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="mkg">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--gold); margin-top:8px; letter-spacing:0.5px;">✦ = MKG-exclusive capability. 10 of 16 features exist nowhere in the $35B commercial market.</div>
+</div>
+
+<!-- ══ 04 · NICHE ══ -->
+<div class="section" id="niche">
+  <div class="sec-kicker"><span class="sec-num">04</span> The Niche</div>
+  <h2 class="sec-title">Two verticals. One architecture.<br><em>Twelve buyers who need this.</em></h2>
+  <p class="sec-sub">Financial markets and supply chain intelligence — the same dynamic graph serves both. 12 buyer personas across two verticals, all spending $50K–$2M/yr with the gap still unfilled.</p>
+
+  <div class="stats stats-4">
+    <div class="stat"><div class="stat-val">95</div><div class="stat-lbl">Long/Short PM<br>severity score</div></div>
+    <div class="stat"><div class="stat-val">96</div><div class="stat-lbl">CPO<br>severity score</div></div>
+    <div class="stat"><div class="stat-val">12</div><div class="stat-lbl">Buyer personas<br>identified</div></div>
+    <div class="stat"><div class="stat-val">$50K–2M</div><div class="stat-lbl">Annual budget<br>per buyer</div></div>
+  </div>
+
+  <div class="bq">
+    <blockquote>"Interos serves procurement officers. MKG serves portfolio managers AND procurement officers. Buying power is 10–50× larger for investment alpha generation vs. operational risk management."</blockquote>
+    <cite>MKG Niche Definition — Cross-Vertical Positioning</cite>
+  </div>
+</div>
+
+<!-- ══ 05 · LIVE SCENARIOS ══ -->
+<div class="section" id="scenarios">
+  <div class="sec-kicker"><span class="sec-num">05</span> Applied Intelligence</div>
+  <h2 class="sec-title">Three real events.<br><em>Before and after MKG.</em></h2>
+  <p class="sec-sub">Not hypotheticals. Real disruptions. Real dollar impact. Real latency gaps MKG eliminates.</p>
+
+  <div class="scenario">
+    <div class="sc-head" onclick="this.nextElementSibling.classList.toggle('open')">
+      <div class="sc-title">Red Sea Crisis — Maritime Disruption</div>
+      <span class="sc-tag" style="color:var(--red); border:1px solid rgba(181,52,28,0.3);">Geopolitical</span>
+    </div>
+    <div class="sc-body">
+      <div class="sc-split">
+        <div class="sc-col">
+          <div class="sc-col-title sc-without">Without MKG</div>
+          <div class="sc-step"><span class="time">T-30d</span>Houthi attacks begin. News reported. No systematic SC mapping.</div>
+          <div class="sc-step"><span class="time">T-3d</span>Frantic procurement calls. No Tier-2/3 mapping. Spot freight at <strong>200–400% premium</strong>.</div>
+          <div class="sc-step"><span class="time">T+0</span>Production lines slow. Inventory runs out.</div>
+          <div class="sc-step"><span class="time">T+4w</span>Full exposure finally understood. Far too late.</div>
+        </div>
+        <div class="sc-col">
+          <div class="sc-col-title sc-with">With MKG</div>
+          <div class="sc-step"><span class="time">T-45d</span><strong>Signal detected</strong> in Arabic &amp; English press. Graph traversal: which suppliers route via Red Sea?</div>
+          <div class="sc-step"><span class="time">T-38d</span><strong>Ranked exposure delivered.</strong> Red: 12 suppliers &gt;60% dependency. Air freight pre-booked at pre-crisis rates.</div>
+          <div class="sc-step"><span class="time">T+0</span>Disruption hits. Company pre-positioned. Competitors scrambling.</div>
+          <div class="sc-value" style="color:var(--green); border-color:rgba(46,204,113,0.3);">Value: $2–15M avoided per major event</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scenario">
+    <div class="sc-head" onclick="this.nextElementSibling.classList.toggle('open')">
+      <div class="sc-title">Renesas Factory Fire — Chip Shortage Cascade</div>
+      <span class="sc-tag" style="color:var(--amber); border:1px solid rgba(240,160,48,0.3);">Operational</span>
+    </div>
+    <div class="sc-body">
+      <div class="sc-split">
+        <div class="sc-col">
+          <div class="sc-col-title sc-without">Without MKG</div>
+          <div class="sc-step"><span class="time">T+0</span>Fire reported. No OEM had Renesas mapped as Tier-3 critical dependency.</div>
+          <div class="sc-step"><span class="time">T+days</span>Production slows. Discover Tier-3 dependencies they didn't know existed.</div>
+          <div class="sc-step"><span class="time">T+4w</span>Full impact understood. <strong>$210B automotive revenue lost globally.</strong></div>
+          <div class="sc-step">The one person at Ford who knew Renesas was critical Tier-3 had left 18 months earlier. <strong>Tribal knowledge destroyed.</strong></div>
+        </div>
+        <div class="sc-col">
+          <div class="sc-col-title sc-with">With MKG</div>
+          <div class="sc-step"><span class="time">T+60s</span><strong>Graph traversal triggered.</strong> Renesas → 47 entities across 3 tiers. Scoring: 91/100 criticality.</div>
+          <div class="sc-step"><span class="time">T+6h</span>Competitor analysis auto-run. TI &amp; Infineon alternatives identified.</div>
+          <div class="sc-step"><span class="time">T+1d</span>Alternate orders placed before industry panic. Spot inventory at pre-shortage prices.</div>
+          <div class="sc-value" style="color:var(--green); border-color:rgba(46,204,113,0.3);">Tribal knowledge → permanent graph query</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scenario">
+    <div class="sc-head" onclick="this.nextElementSibling.classList.toggle('open')">
+      <div class="sc-title">China REE Export Restriction — The Language Gap</div>
+      <span class="sc-tag" style="color:var(--violet); border:1px solid rgba(155,111,255,0.3);">Regulatory</span>
+    </div>
+    <div class="sc-body">
+      <div class="sc-split">
+        <div class="sc-col">
+          <div class="sc-col-title sc-without">Without MKG</div>
+          <div class="sc-step"><span class="time">Day 1</span>MOFCOM restriction published in <strong>Chinese government press only</strong>.</div>
+          <div class="sc-step"><span class="time">Day 12</span>English-language trade press coverage finally appears.</div>
+          <div class="sc-step"><strong>11 days of blind spot.</strong> Companies without multilingual monitoring lost 11 days of warning. Competitors locked supply at pre-restriction prices.</div>
+        </div>
+        <div class="sc-col">
+          <div class="sc-col-title sc-with">With MKG</div>
+          <div class="sc-step"><span class="time">Day 1</span><strong>MKG reads Chinese regulatory filing in real time.</strong> 13-language processing triggers immediately.</div>
+          <div class="sc-step"><span class="time">Day 2</span>Procurement secures strategic stockpile from non-Chinese refiners. Long-term contracts locked at pre-restriction prices.</div>
+          <div class="sc-value" style="color:var(--gold); border-color:rgba(201,168,76,0.3);">11 days of early warning competitors never had</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 06 · TRIBAL KNOWLEDGE ══ -->
+<div class="section" id="tribal">
+  <div class="sec-kicker"><span class="sec-num">06</span> The Moat</div>
+  <h2 class="sec-title">What the tools show.<br>What the expert knows.<br><em>The gap between.</em></h2>
+  <p class="sec-sub">42% of institutional knowledge is unique to individual employees. When a 15-year analyst leaves, their mental map of 200+ relationship edges, calibrated heuristics, and cycle timing patterns are completely lost. MKG makes tribal knowledge permanent.</p>
+
+  <!-- Iceberg -->
+  <div class="iceberg">
+    <div class="ice-layer">
+      <div class="ice-label" style="color:var(--blue)">Explicit</div>
+      <div class="ice-desc">Prices, filings, news, models. What Bloomberg shows. TSMC Q4 revenue: $26.9B. NVIDIA price: $145.83.</div>
+      <div class="ice-coverage" style="color:var(--green)">Tools: 100%</div>
+    </div>
+    <div class="ice-layer">
+      <div class="ice-label" style="color:var(--violet)">Implicit</div>
+      <div class="ice-desc">Industry dynamics, management tone. "TSMC sounded confident on pricing." AlphaSense &amp; RavenPack partially serve this.</div>
+      <div class="ice-coverage" style="color:var(--amber)">Tools: ~60%</div>
+    </div>
+    <div class="ice-layer">
+      <div class="ice-label" style="color:var(--amber)">Tacit</div>
+      <div class="ice-desc">Personal judgment, pattern recognition. "I've seen this pattern in semis before — early upcycle." Dies when analyst leaves.</div>
+      <div class="ice-coverage" style="color:var(--red)">Tools: 0%</div>
+    </div>
+    <div class="ice-layer">
+      <div class="ice-label" style="color:var(--gold)">Tribal</div>
+      <div class="ice-desc">Undocumented relationship maps, desk heuristics. "Everyone on this desk knows AMAT moves 3w after ASML." <strong>This is MKG's target.</strong></div>
+      <div class="ice-coverage" style="color:var(--gold)">MKG: NEW</div>
+    </div>
+  </div>
+
+  <!-- Six Types -->
+  <h3 style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin:48px 0 20px;">Six types of tribal knowledge MKG encodes</h3>
+  <div class="tribal-grid">
+    <div class="tribal">
+      <div class="tribal-num">Type 01</div>
+      <div class="tribal-name">The Secret Relationship Map</div>
+      <div class="tribal-quote">"AMAT always moves 2–3 weeks after ASML results because their booking lead times are almost identical but AMAT's IR doesn't front-run it. It's not in any database. You just know it after two cycles."</div>
+      <div class="tribal-bridge">MKG encodes → Lead-lag edge metadata from co-movement signals + earnings NLP</div>
+    </div>
+    <div class="tribal">
+      <div class="tribal-num">Type 02</div>
+      <div class="tribal-name">CEO/CFO Calibration</div>
+      <div class="tribal-quote">"This CFO guides down 8–12% from what they actually expect in Q3. Every year, for 8 years. Never written in any note. Just what everyone on the desk knows."</div>
+      <div class="tribal-bridge">MKG encodes → Historical guidance vs. actuals per executive per quarter</div>
+    </div>
+    <div class="tribal">
+      <div class="tribal-num">Type 03</div>
+      <div class="tribal-name">The Canary Companies</div>
+      <div class="tribal-quote">"There's a substrate supplier in Taiwan — 10 analysts globally. When their lead times go from 4 to 10 weeks, TSMC's advanced packaging revenue misses 6 weeks later. Four cycles, every time."</div>
+      <div class="tribal-bridge">MKG encodes → Lead-lag edge detection with directional lag metadata</div>
+    </div>
+    <div class="tribal">
+      <div class="tribal-num">Type 04</div>
+      <div class="tribal-name">Relationship Decay</div>
+      <div class="tribal-quote">"That JV is still in the database. But anyone who followed it knows the two companies barely interact anymore — one pivoted in 2022. The edge weight is simply wrong."</div>
+      <div class="tribal-bridge">MKG encodes → Temporal edge weight decay. No reinforcement → weight decays to zero</div>
+    </div>
+    <div class="tribal">
+      <div class="tribal-num">Type 05</div>
+      <div class="tribal-name">Sector Cycle Timing</div>
+      <div class="tribal-quote">"I've seen four semiconductor upcycles. They all follow the same sequence. We're at week 6 of a typical 14-week propagation."</div>
+      <div class="tribal-bridge">MKG encodes → Temporal graph rewind. Replay graph state at historical timestamps</div>
+    </div>
+    <div class="tribal">
+      <div class="tribal-num">Type 06</div>
+      <div class="tribal-name">Regulatory Co-Exposure</div>
+      <div class="tribal-quote">"Both file under the same FERC docket number. Nobody outside DC knows this. When FERC ruled against the first one, the second will follow within 90 days."</div>
+      <div class="tribal-bridge">MKG encodes → Regulatory entity nodes with co-exposure edges from agency filings</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 07 · POSITION ══ -->
+<div class="section" id="position">
+  <div class="sec-kicker"><span class="sec-num">07</span> The Position</div>
+  <h2 class="sec-title">What MKG is.<br><em>And deliberately is not.</em></h2>
+  <p class="sec-sub">MKG fills a gap. It does not replace what works. It adds the intelligence layer that no one has built.</p>
+
+  <div class="niche-grid">
+    <div class="niche-col">
+      <h3 style="color:var(--green)">MKG Is</h3>
+      <div class="niche-item niche-is">The relationship intelligence layer — dynamic, weighted, time-versioned edges</div>
+      <div class="niche-item niche-is">The propagation engine — ranked impact list with direction, confidence, and causal explanation in 60 seconds</div>
+      <div class="niche-item niche-is">The tribal knowledge encoder — unwritten maps, calibrations, and patterns made permanent</div>
+      <div class="niche-item niche-is">The temporal memory — graph state queryable at any historical timestamp</div>
+      <div class="niche-item niche-is">The on-premise option — deployable inside air-gapped institutions</div>
+      <div class="niche-item niche-is">The multilingual signal reader — 13 languages including Chinese regulatory press</div>
+      <div class="niche-item niche-is">The cross-vertical unified graph — investment intelligence AND supply chain disruption</div>
+    </div>
+    <div class="niche-col">
+      <h3 style="color:var(--red)">MKG Is Not</h3>
+      <div class="niche-item niche-not">A Bloomberg replacement — MKG sits on top, adds what Bloomberg cannot compute</div>
+      <div class="niche-item niche-not">A document search engine — reads documents as signals, doesn't surface them</div>
+      <div class="niche-item niche-not">An ERP or procurement tool — intelligence layer, not workflows or POs</div>
+      <div class="niche-item niche-not">An execution platform — no OMS, no routing, no trading infrastructure</div>
+      <div class="niche-item niche-not">A general-purpose graph database — not Neo4j/TigerGraph/Neptune</div>
+      <div class="niche-item niche-not">A compliance orchestration tool — generates evidence trail as byproduct</div>
+      <div class="niche-item niche-not">Palantir for everyone — purpose-built, weeks not months, priced for $1–50B AUM</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CLOSING QUOTE ══ -->
+<div class="bq" style="margin:80px 0;">
+  <blockquote>"Bloomberg tells you what happened. AlphaSense tells you what was said about it.
+  RavenPack tells you how the market felt. FactSet Revere tells you who is statically connected.
+  Interos tells you your Tier 1 and partial Tier 2 are at risk.
+  Palantir, if you have $5M and 18 months, will build you a graph.
+  <br><br>
+  None of them can answer the question that matters: A news event just hit this entity.
+  Which other entities are affected, in what direction, with what weight, through what path,
+  at what confidence, over what time horizon? — and deliver that answer in 60 seconds.
+  <br><br>
+  <strong>MKG can.</strong>"</blockquote>
+  <cite>MKG Niche Definition</cite>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  <div class="footer-l">MKG — Market Knowledge Graph · The Complete Thesis</div>
+  <div class="footer-r">Confidential · Internal Use Only</div>
+</div>
+
+</div><!-- /wrap -->
+
+</body>
+</html>

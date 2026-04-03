@@ -106,8 +106,19 @@ class ServiceContainer:
         await self.graph_storage.initialize()
 
     async def shutdown(self) -> None:
-        """Close storage connections."""
+        """Close all storage connections."""
         await self.graph_storage.close()
+        # Close persistent SQLite backends
+        if hasattr(self.audit_logger, '_conn') and self.audit_logger._conn:
+            try:
+                self.audit_logger._conn.close()
+            except Exception:
+                pass
+        if hasattr(self.provenance_tracker, '_conn') and self.provenance_tracker._conn:
+            try:
+                self.provenance_tracker._conn.close()
+            except Exception:
+                pass
 
 
 # Module-level singleton — initialised when the app starts

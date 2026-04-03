@@ -9,10 +9,12 @@ export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'di
 
 export class SignalWebSocket {
   private ws: WebSocket | null = null;
-  private reconnectInterval = 3000;
   private maxReconnectAttempts = 10;
   private reconnectAttempts = 0;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+  private lastMessageAt = 0;
+  private currentMarkets: string[] = [];
   private onMessage: (msg: WSMessage) => void;
   private onStatusChange?: (status: ConnectionStatus) => void;
 
@@ -38,14 +40,19 @@ export class SignalWebSocket {
 
     this.ws.onopen = () => {
       this.reconnectAttempts = 0;
+      this.lastMessageAt = Date.now();
+      this.currentMarkets = markets;
       this.onStatusChange?.('connected');
       // Subscribe to markets
       this.ws?.send(JSON.stringify({ type: 'subscribe', markets }));
       // Start pong responder
       this.startPingHandler();
+      // Start heartbeat timeout detector
+      this.startHeartbeatMonitor();
     };
 
     this.ws.onmessage = (event) => {
+      this.lastMessageAt = Date.now();
       try {
         const msg = JSON.parse(event.data) as WSMessage;
         if (msg.type === 'ping') {
@@ -60,6 +67,7 @@ export class SignalWebSocket {
 
     this.ws.onclose = () => {
       this.stopPingHandler();
+      this.stopHeartbeatMonitor();
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.onStatusChange?.('reconnecting');
       } else {
@@ -75,6 +83,7 @@ export class SignalWebSocket {
 
   disconnect(): void {
     this.stopPingHandler();
+    this.stopHeartbeatMonitor();
     this.reconnectAttempts = this.maxReconnectAttempts; // Prevent reconnect
     this.onStatusChange?.('disconnected');
     this.ws?.close();
@@ -83,8 +92,9 @@ export class SignalWebSocket {
 
   private scheduleReconnect(markets: string[]): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
+    const backoffMs = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
     this.reconnectAttempts++;
-    setTimeout(() => this.connect(markets), this.reconnectInterval);
+    setTimeout(() => this.connect(markets), backoffMs);
   }
 
   private startPingHandler(): void {
@@ -95,6 +105,24 @@ export class SignalWebSocket {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
+    }
+  }
+
+  private startHeartbeatMonitor(): void {
+    this.stopHeartbeatMonitor();
+    this.heartbeatInterval = setInterval(() => {
+      if (this.lastMessageAt > 0 && Date.now() - this.lastMessageAt > 45000) {
+        // No message received for 45s (server pings every 30s) — force reconnect
+        this.stopHeartbeatMonitor();
+        this.ws?.close();
+      }
+    }, 15000);
+  }
+
+  private stopHeartbeatMonitor(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
   }
 }

@@ -34,6 +34,12 @@ celery_app.conf.update(
     task_soft_time_limit=300,       # 5 min soft limit (raises SoftTimeLimitExceeded)
     task_time_limit=600,            # 10 min hard kill
     worker_max_tasks_per_child=100, # Restart worker after 100 tasks to prevent memory leaks
+    task_reject_on_worker_lost=True,  # Re-queue tasks if worker crashes
+    task_default_queue="default",
+    task_queues={
+        "default": {"exchange": "default", "routing_key": "default"},
+        "dlq": {"exchange": "dlq", "routing_key": "dlq"},
+    },
 )
 
 # Load beat schedule

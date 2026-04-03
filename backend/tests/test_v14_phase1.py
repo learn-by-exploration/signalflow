@@ -96,20 +96,20 @@ class TestTemperatureZero:
             "AIReasoner.generate_reasoning must include temperature=0 in the API call"
 
     def test_sentiment_event_chain_uses_temperature_zero(self):
-        """Sentiment event chain call must pass temperature=0."""
+        """Sentiment event chain call must pass temperature=0 (via shared _call_claude_api)."""
         import app.services.ai_engine.sentiment as mod
 
-        source = inspect.getsource(mod.AISentimentEngine._call_claude_event_chain)
+        source = inspect.getsource(mod.AISentimentEngine._call_claude_api)
         assert '"temperature": 0' in source or "'temperature': 0" in source, \
-            "_call_claude_event_chain must include temperature=0"
+            "_call_claude_api must include temperature=0"
 
     def test_sentiment_fallback_uses_temperature_zero(self):
-        """Sentiment fallback call must pass temperature=0."""
+        """Sentiment fallback delegates to _call_claude_api which uses temperature=0."""
         import app.services.ai_engine.sentiment as mod
 
-        source = inspect.getsource(mod.AISentimentEngine._call_claude_sentiment_fallback)
+        source = inspect.getsource(mod.AISentimentEngine._call_claude_api)
         assert '"temperature": 0' in source or "'temperature': 0" in source, \
-            "_call_claude_sentiment_fallback must include temperature=0"
+            "_call_claude_api must include temperature=0"
 
 
 # ═══════════════════════════════════════════════════════════
