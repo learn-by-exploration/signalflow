@@ -125,23 +125,25 @@ class CostTracker:
                     pct, new_total, self.monthly_budget,
                 )
 
-        # Audit log to JSON file (best-effort, not source of truth)
-        data = self._load_data()
-        data["calls"].append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "task_type": task_type,
-            "symbol": symbol,
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "cost_usd": cost,
-            "model": self.model,
-        })
+        # Audit log to JSON file (best-effort, development only — ephemeral filesystems skip this)
+        settings = get_settings()
+        if settings.environment == "development":
+            data = self._load_data()
+            data["calls"].append({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "task_type": task_type,
+                "symbol": symbol,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cost_usd": cost,
+                "model": self.model,
+            })
 
-        data["monthly_totals"][month_key] = (
-            data["monthly_totals"].get(month_key, 0.0) + cost
-        )
+            data["monthly_totals"][month_key] = (
+                data["monthly_totals"].get(month_key, 0.0) + cost
+            )
 
-        self._save_data(data)
+            self._save_data(data)
 
         logger.info(
             "Claude API call: %s/%s | %d in + %d out tokens | $%.4f",

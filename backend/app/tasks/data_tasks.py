@@ -176,3 +176,65 @@ def fetch_forex_4h(self) -> dict:
     result = fetcher.fetch_all()
     logger.info("Fetched forex 4h candles", extra={"count": result["count"]})
     return result
+
+
+@celery_app.task(name="app.tasks.data_tasks.cleanup_old_market_data")
+def cleanup_old_market_data() -> dict:
+    """Delete market_data rows older than data_retention_days (default: 180).
+
+    Runs daily at 3 AM IST to keep the TimescaleDB hypertable bounded.
+    """
+    from sqlalchemy import create_engine, text
+
+    from app.config import get_settings
+
+    settings = get_settings()
+    retention_days = settings.data_retention_days
+
+    engine = create_engine(settings.database_url_sync, pool_pre_ping=True)
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(
+                text(
+                    "DELETE FROM market_data WHERE timestamp < NOW() - INTERVAL ':days days'"
+                ).bindparams(days=retention_days)
+            )
+            conn.commit()
+            deleted = result.rowcount
+            logger.info("Cleaned up old market data", extra={"deleted": deleted, "retention_days": retention_days})
+            return {"deleted": deleted, "retention_days": retention_days}
+    except Exception as exc:
+        logger.error("Failed to cleanup market data", extra={"error": str(exc)})
+        return {"error": str(exc)}
+    finally:
+        engine.dispose()
+
+
+@celery_app.task(name="app.tasks.data_tasks.scheduled_backup")
+def scheduled_backup() -> dict:
+    """Run database backup script daily at 2 AM IST.
+
+    Executes scripts/backup.sh which pg_dumps and optionally uploads to S3/R2.
+    """
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["bash", "scripts/backup.sh"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+            env={**__import__("os").environ},
+        )
+        if result.returncode == 0:
+            logger.info("Scheduled backup completed", extra={"output": result.stdout[-200:]})
+            return {"status": "success", "output": result.stdout[-200:]}
+        else:
+            logger.error("Backup failed", extra={"stderr": result.stderr[-200:]})
+            return {"status": "failed", "error": result.stderr[-200:]}
+    except subprocess.TimeoutExpired:
+        logger.error("Backup timed out after 300s")
+        return {"status": "timeout"}
+    except Exception as exc:
+        logger.error("Backup error", extra={"error": str(exc)})
+        return {"status": "error", "error": str(exc)}

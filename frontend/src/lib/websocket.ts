@@ -27,15 +27,43 @@ export class SignalWebSocket {
     if (this.ws?.readyState === WebSocket.OPEN) return;
 
     this.onStatusChange?.('connecting');
+    this.currentMarkets = markets;
 
-    // Get auth token for WebSocket connection
+    // Use ticket-based auth to avoid JWT in URL (security best practice)
+    this._connectWithTicket(markets);
+  }
+
+  private async _connectWithTicket(markets: string[]): Promise<void> {
     let wsUrl = `${getWsUrl()}/ws/signals`;
+
+    // Try to get a short-lived ticket via REST, then connect with it
     if (typeof window !== 'undefined') {
       const token = sessionStorage.getItem('signalflow_access_token');
       if (token) {
-        wsUrl += `?token=${encodeURIComponent(token)}`;
+        try {
+          const resp = await fetch('/ws/ticket', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            const ticket = data.data?.ticket;
+            if (ticket) {
+              wsUrl += `?ticket=${encodeURIComponent(ticket)}`;
+            }
+          }
+        } catch {
+          // Fallback: connect without auth (will get limited access)
+        }
       }
     }
+    this._establishConnection(wsUrl, markets);
+  }
+
+  private _establishConnection(wsUrl: string, markets: string[]): void {
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {

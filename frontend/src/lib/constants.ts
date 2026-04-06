@@ -6,8 +6,7 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 /**
  * Derive WebSocket URL dynamically from window.location.
- * Connects to the backend directly on port 8000 using the same hostname
- * the user is already accessing the frontend from.
+ * Uses same-origin (no port) since Next.js proxies /ws/* to the backend.
  * Falls back to env var or localhost for SSR/test contexts.
  */
 export function getWsUrl(): string {
@@ -16,7 +15,7 @@ export function getWsUrl(): string {
   }
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.hostname}:8000`;
+    return `${protocol}//${window.location.host}`;
   }
   return 'ws://localhost:8000';
 }

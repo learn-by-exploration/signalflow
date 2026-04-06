@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # ── Database ──
     database_url: str = ""
     database_url_sync: str = ""
+    db_pool_size: int = 10
+    db_max_overflow: int = 5
+    data_retention_days: int = 180  # Auto-cleanup market_data older than this
 
     # ── Redis ──
     redis_url: str = "redis://localhost:6379/0"

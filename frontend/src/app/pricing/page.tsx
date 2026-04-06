@@ -36,13 +36,28 @@ export default function PricingPage() {
         }
         return;
       }
-      // If Razorpay is configured, redirect to checkout
-      // For now, show success message
-      if (data.data?.razorpay_key_id) {
-        setError(null);
-        // TODO: Integrate Razorpay checkout.js here
-        // For now, show that subscription was created
-        alert('Subscription created! Razorpay checkout integration coming soon.');
+      if (data.data?.razorpay_subscription_id && data.data?.razorpay_key_id) {
+        // Load Razorpay checkout dynamically
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => {
+          const options = {
+            key: data.data.razorpay_key_id,
+            subscription_id: data.data.razorpay_subscription_id,
+            name: 'SignalFlow AI',
+            description: `${plan === 'annual' ? 'Annual' : 'Monthly'} Pro Plan`,
+            handler: () => {
+              window.location.reload();
+            },
+            theme: { color: '#6366F1' },
+          };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        };
+        document.body.appendChild(script);
+      } else {
+        setError('Payment system is being configured. Please try again later.');
       }
     } catch {
       setError('Network error. Please try again.');
@@ -142,7 +157,7 @@ export default function PricingPage() {
 
         <div className="text-center">
           <p className="text-xs text-text-muted">
-            Razorpay checkout integration in progress. Upgrade will initiate payment flow.
+            Payments processed securely by Razorpay. Cancel anytime from Settings.
           </p>
         </div>
 

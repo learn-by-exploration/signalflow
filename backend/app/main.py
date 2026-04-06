@@ -178,7 +178,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="SignalFlow AI",
     description="AI-Powered Trading Signal Platform",
-    version="1.0.0",
+    version="1.5.0",
     lifespan=lifespan,
 )
 

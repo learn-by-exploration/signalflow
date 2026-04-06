@@ -1,5 +1,9 @@
-# docker-compose.prod.yml — Production overrides
+# docker-compose.prod.yml — Production overrides (Docker Compose deployments)
 # Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# NOTE: Railway uses supervisord (see railway.toml + supervisord.conf) which runs
+# web + celery-worker + celery-beat in a single container. This file is for
+# standalone Docker Compose production deployments with separate containers.
 
 services:
   backend:
@@ -10,10 +14,11 @@ services:
       bash -c "PYTHONPATH=/app alembic upgrade head &&
                exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-2}"
     ports: []  # Fronted by reverse proxy in production
-    user: appuser  # Override dev root user
+    user: appuser  # Non-root (Dockerfile creates this user)
     environment:
       ENVIRONMENT: production
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    volumes: []  # No bind mounts in production
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
@@ -33,11 +38,12 @@ services:
       dockerfile: Dockerfile
     command: >
       celery -A app.tasks.celery_app worker --beat --loglevel=info --concurrency=2
-    user: appuser  # Override dev root user
+    user: appuser  # Non-root (Dockerfile creates this user)
     environment:
       ENVIRONMENT: production
       PYTHONPATH: /app
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    volumes: []  # No bind mounts in production
     restart: always
     deploy:
       resources:

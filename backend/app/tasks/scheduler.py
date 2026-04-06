@@ -112,4 +112,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "app.tasks.engagement_tasks.send_reengagement_nudge",
         "schedule": crontab(hour=10, minute=0, day_of_week=3),  # Wednesday 10 AM IST
     },
+    # ── Data Retention (cleanup old market data) ──
+    "cleanup-old-market-data": {
+        "task": "app.tasks.data_tasks.cleanup_old_market_data",
+        "schedule": crontab(hour=3, minute=0),  # 3:00 AM IST daily
+    },
+    # ── Database Backup ──
+    "scheduled-backup": {
+        "task": "app.tasks.data_tasks.scheduled_backup",
+        "schedule": crontab(hour=2, minute=0),  # 2:00 AM IST daily
+    },
 }

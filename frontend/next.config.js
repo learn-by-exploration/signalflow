@@ -48,11 +48,14 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // Next.js requires 'unsafe-inline' for inline scripts in production builds.
+              // 'unsafe-eval' removed — not needed for production Next.js standalone output.
+              "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://plausible.io",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
-              "connect-src 'self' ws: wss:",
+              "connect-src 'self' ws: wss: https://lux-gateway.razorpay.com https://api.razorpay.com https://plausible.io",
               "font-src 'self' https://fonts.gstatic.com",
+              "frame-src https://api.razorpay.com",
               "frame-ancestors 'none'",
             ].join('; '),
           },

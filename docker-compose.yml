@@ -1,3 +1,6 @@
+# docker-compose.yml — LOCAL DEVELOPMENT ONLY
+# WARNING: Containers run as root for volume mount compatibility.
+# For production, use: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 services:
   # ── PostgreSQL + TimescaleDB ──
   db:

@@ -9,15 +9,47 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [1.5.0] — 2026-04-06 (`v1.5.0`)
+
+### Fixed (P0 — Launch Blockers)
+- **WebSocket URL hardcoding** — removed `:8000` port; now uses same-origin proxy via Next.js rewrites
+- **CSP `unsafe-eval` removed** — script-src no longer allows eval; Razorpay + Plausible domains whitelisted
+- **Payment flow** — Razorpay checkout.js dynamically loaded on pricing page; replaces `alert()` placeholder
+
+### Fixed (P1 — Critical)
+- **`float()` → `Decimal`** in price alert tasks for financial precision compliance
+- **Database pool_size** now configurable via `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` env vars (default: 10/5)
+- **CI uses PostgreSQL** instead of SQLite — GitHub Actions backend tests now run against real PG + Redis services
+- **WebSocket auth** — frontend now uses ticket-based auth (`POST /ws/ticket`) instead of JWT in URL query params
+- **Cost tracker** — JSON audit log only written in development (ephemeral filesystems skip writes)
+- **Dependency pinning** — `requirements.lock` generated from production container for reproducible builds
+- **npm vulnerabilities** — fixed `brace-expansion`, `lodash`, `picomatch`; remaining 4 are Next.js v14→v16 (deferred)
+
 ### Added
+- **Data retention task** — daily cleanup of market_data older than `DATA_RETENTION_DAYS` (default: 180)
+- **Scheduled backup task** — daily `pg_dump` at 2 AM IST via Celery Beat
+- **Plausible analytics** — privacy-focused analytics via `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` env var
+- **Track record empty state** — friendly "Building Track Record" message instead of empty charts
+- **Docker Compose warnings** — dev compose has root user warning; prod compose documents Railway vs standalone divergence
+
+### Changed
+- FastAPI version in OpenAPI spec: `1.0.0` → `1.5.0`
+- Frontend package.json version: `1.0.0` → `1.5.0`
 - Navigation reorganization: 5 primary links, Research dropdown, mobile bottom nav, site footer
 - v1.5 audit fixes: 14 items (models, env, hardcoded URLs, event loop, SEO routes, tests)
 
-### Planned
-- Documentation reorganization (see docs/design/v1.2-review-and-docs-plan.md)
-- Tier A quick wins: favicon, breadcrumbs, sparklines on cards, empty states
+## [1.4.0] — 2026-04-03 (`v1.4.0`)
 
----
+### Added
+- **Migration integrity test suite** (13 tests) — drift detection, chain validation, CI autogenerate
+- **Startup schema validation** — all 19 ORM models checked against DB on boot
+- **Login fix** — `email_verified` column migration (l3d7e9f1g2h6)
+- **Missing tables migration** (m4e8f0g2h3i7) — signal_feedback, confidence_calibration
+- **Operations runbook** — rollback procedures, expand-then-contract migration guide
+- **CI workflow** — GitHub Actions for frontend, backend, MKG, Docker build verification
+- MKG production hardening: Dockerfile, API, dependencies, deployment readiness tests
 
 ## [1.3.0] — 2026-03-27 (`v1.3.0`)
 

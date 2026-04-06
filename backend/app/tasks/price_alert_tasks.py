@@ -7,6 +7,7 @@ Telegram notifications when thresholds are crossed.
 import asyncio
 import logging
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from sqlalchemy import create_engine, text, update
 from sqlalchemy.orm import Session
@@ -60,12 +61,12 @@ def _check_alerts_sync() -> list[dict]:
                 if not price_row:
                     continue
 
-                current_price = float(price_row[0])
-                threshold_f = float(threshold)
+                current_price = Decimal(str(price_row[0]))
+                threshold_d = Decimal(str(threshold))
 
                 should_trigger = (
-                    (condition == "above" and current_price >= threshold_f)
-                    or (condition == "below" and current_price <= threshold_f)
+                    (condition == "above" and current_price >= threshold_d)
+                    or (condition == "below" and current_price <= threshold_d)
                 )
 
                 if should_trigger:

@@ -45,6 +45,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Privacy-focused analytics — set NEXT_PUBLIC_PLAUSIBLE_DOMAIN to enable */}
+        {process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN && (
+          <script
+            defer
+            data-domain={process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
+            src="https://plausible.io/js/script.js"
+          />
+        )}
+      </head>
         <body className={`${outfit.variable} ${jetbrainsMono.variable} flex flex-col min-h-screen bg-bg-primary text-text-primary font-body antialiased`}>
         <ErrorBoundary name="App">
         <AuthProvider>

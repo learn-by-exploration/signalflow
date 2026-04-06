@@ -2,10 +2,10 @@
 
 **AI-powered trading signal platform** — generates actionable buy/sell/hold signals across Indian Stocks (NSE), Cryptocurrency, and Forex, backed by technical analysis and Claude AI sentiment scoring.
 
-[![Release](https://img.shields.io/badge/release-v1.0.0-purple)](https://github.com/learn-by-exploration/signalflow)
-[![Python](https://img.shields.io/badge/python-3.11+-blue)](https://python.org)
+[![Release](https://img.shields.io/badge/release-v1.5.0-purple)](https://github.com/learn-by-exploration/signalflow)
+[![Python](https://img.shields.io/badge/python-3.12+-blue)](https://python.org)
 [![Next.js](https://img.shields.io/badge/next.js-14-black)](https://nextjs.org)
-[![Tests](https://img.shields.io/badge/tests-480%20passing-green)](backend/tests/)
+[![Tests](https://img.shields.io/badge/tests-2714%20passing-green)](backend/tests/)
 [![License](https://img.shields.io/badge/license-private-gray)]()
 
 ---

@@ -81,6 +81,29 @@ export default function TrackRecordPage() {
   }
 
   const resolved = (stats?.hit_target ?? 0) + (stats?.hit_stop ?? 0);
+
+  // Empty state — no signals resolved yet (new system or beta launch)
+  if (resolved === 0 && (stats?.pending ?? 0) === 0 && recentSignals.length === 0) {
+    return (
+      <main className="min-h-screen pb-12">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <h1 className="text-2xl font-display font-bold mb-6">Track Record</h1>
+          <div className="bg-bg-card border border-border-default rounded-xl p-8 text-center space-y-4">
+            <div className="text-4xl">📊</div>
+            <h2 className="text-lg font-display font-bold">Building Track Record</h2>
+            <p className="text-text-secondary text-sm max-w-md mx-auto">
+              SignalFlow AI is actively generating and monitoring signals. Once signals resolve
+              (hit target, stop-loss, or expire), performance data will appear here.
+            </p>
+            <p className="text-text-muted text-xs">
+              Signals typically resolve within 2-4 weeks. Check back soon for live accuracy metrics.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const winColor =
     (stats?.win_rate ?? 0) >= 60
       ? 'text-signal-buy'

@@ -49,6 +49,30 @@ jobs:
       run:
         working-directory: backend
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: signalflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -70,7 +94,9 @@ jobs:
       - name: Test
         run: python -m pytest tests/ -v --override-ini="asyncio_mode=auto"
         env:
-          DATABASE_URL: sqlite+aiosqlite:///./test.db
+          DATABASE_URL: postgresql+asyncpg://postgres:testpass@localhost:5432/signalflow_test
+          DATABASE_URL_SYNC: postgresql://postgres:testpass@localhost:5432/signalflow_test
+          TEST_DATABASE_URL_SYNC: postgresql://postgres:testpass@localhost:5432/signalflow_test
           REDIS_URL: redis://localhost:6379/0
           ANTHROPIC_API_KEY: test-key
           ENVIRONMENT: test

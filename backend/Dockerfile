@@ -7,8 +7,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt supervisor
+COPY requirements.txt requirements.lock* ./
+# Use lockfile for reproducible builds if available, fall back to requirements.txt
+RUN if [ -f requirements.lock ]; then \
+        pip install --no-cache-dir --prefix=/install -r requirements.lock supervisor; \
+    else \
+        pip install --no-cache-dir --prefix=/install -r requirements.txt supervisor; \
+    fi
 
 
 ### Runtime stage — slim image without build-essential
