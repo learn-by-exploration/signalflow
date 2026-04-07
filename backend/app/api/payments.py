@@ -16,6 +16,7 @@ from app.database import get_db
 from app.rate_limit import limiter
 from app.services.payment.razorpay_service import (
     PLAN_PRICES,
+    create_razorpay_subscription,
     create_subscription,
     get_active_subscription,
     handle_payment_failed,
@@ -136,10 +137,22 @@ async def create_paid_subscription(
     """
     settings = get_settings()
 
-    if not settings.razorpay_key_id:
+    if not settings.razorpay_key_id or not settings.razorpay_key_secret:
         raise HTTPException(503, "Payment system not configured")
 
+    # Create Razorpay subscription via their API
+    try:
+        rz_sub = await create_razorpay_subscription(body.plan)
+    except ValueError as e:
+        logger.error("Razorpay plan not configured: %s", e)
+        raise HTTPException(503, "Payment plan not configured")
+    except Exception:
+        logger.exception("Razorpay subscription creation failed")
+        raise HTTPException(502, "Payment provider error. Please try again.")
+
+    # Create local subscription record linked to Razorpay
     sub = await create_subscription(db, auth.user_id, body.plan)
+    sub.razorpay_subscription_id = rz_sub["id"]
     await db.commit()
 
     # NOTE: User tier is NOT upgraded here. Tier upgrade happens only
@@ -149,6 +162,7 @@ async def create_paid_subscription(
     return {
         "data": {
             "subscription_id": sub.id,
+            "razorpay_subscription_id": rz_sub["id"],
             "plan": body.plan,
             "amount_paise": PLAN_PRICES[body.plan],
             "razorpay_key_id": settings.razorpay_key_id,

@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import razorpay
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +24,50 @@ PLAN_PRICES = {
     "annual": 499900,   # ₹4,999/yr (2 months free)
     "trial": 0,         # Free trial
 }
+
+
+def _get_razorpay_client() -> razorpay.Client:
+    """Create and return a Razorpay client instance."""
+    settings = get_settings()
+    return razorpay.Client(auth=(settings.razorpay_key_id, settings.razorpay_key_secret))
+
+
+def _get_plan_id(plan: str) -> str:
+    """Get the Razorpay Plan ID for a given plan type."""
+    settings = get_settings()
+    if plan == "monthly":
+        return settings.razorpay_monthly_plan_id
+    elif plan == "annual":
+        return settings.razorpay_annual_plan_id
+    raise ValueError(f"No Razorpay plan ID for: {plan}")
+
+
+async def create_razorpay_subscription(plan: str) -> dict[str, Any]:
+    """Create a subscription on Razorpay and return the subscription details.
+
+    Args:
+        plan: "monthly" or "annual".
+
+    Returns:
+        Razorpay subscription entity dict with 'id', 'status', etc.
+
+    Raises:
+        ValueError: If plan ID is not configured.
+        razorpay.errors.BadRequestError: If Razorpay API rejects the request.
+    """
+    plan_id = _get_plan_id(plan)
+    if not plan_id:
+        raise ValueError(f"Razorpay plan ID not configured for '{plan}'. "
+                         f"Set RAZORPAY_{'MONTHLY' if plan == 'monthly' else 'ANNUAL'}_PLAN_ID.")
+
+    client = _get_razorpay_client()
+    rz_sub = client.subscription.create({
+        "plan_id": plan_id,
+        "total_count": 12 if plan == "monthly" else 1,
+        "quantity": 1,
+    })
+    logger.info("Created Razorpay subscription %s for plan %s", rz_sub.get("id"), plan)
+    return rz_sub
 
 
 def verify_webhook_signature(

@@ -47,6 +47,7 @@ class AIReasoner:
         confidence: int,
         technical_data: dict[str, Any],
         sentiment_data: dict[str, Any] | None,
+        mkg_context: str = "",
     ) -> str:
         """Generate a human-readable explanation for a signal.
 
@@ -56,6 +57,7 @@ class AIReasoner:
             confidence: Confidence score 0-100.
             technical_data: Full technical indicators dict.
             sentiment_data: AI sentiment analysis dict (may be None).
+            mkg_context: Supply chain context from MKG enrichment.
 
         Returns:
             2-3 sentence explanation string. Falls back to template if API fails.
@@ -66,6 +68,10 @@ class AIReasoner:
 
         technical_summary = self._summarize_technical(technical_data)
         sentiment_summary = self._summarize_sentiment(sentiment_data)
+
+        # Append MKG supply chain context to sentiment summary
+        if mkg_context:
+            sentiment_summary += f"\nSupply Chain Context: {mkg_context}"
 
         prompt = REASONING_PROMPT.format(
             symbol=symbol,

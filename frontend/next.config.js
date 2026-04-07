@@ -27,6 +27,11 @@ const nextConfig = {
         source: '/ws/:path*',
         destination: `${backendUrl}/ws/:path*`,
       },
+      // Proxy MKG API calls
+      {
+        source: '/mkg/api/v1/:path*',
+        destination: `${mkgUrl}/api/v1/:path*`,
+      },
       // Proxy MKG research library
       {
         source: '/research',

@@ -32,6 +32,9 @@ from app.services.data_ingestion.validators import is_spot_only_candle
 
 logger = logging.getLogger(__name__)
 
+# Maximum confidence adjustment MKG can apply
+MAX_MKG_CONFIDENCE_ADJUSTMENT = 15
+
 # Minimum data points needed for meaningful analysis
 MIN_DATA_POINTS = 50
 
@@ -185,6 +188,17 @@ class SignalGenerator:
             market_type=market_type,
         )
 
+        # 5b. MKG supply chain enrichment
+        mkg_enrichment = await self._get_mkg_enrichment(symbol, market_type)
+        if mkg_enrichment.get("has_material_impact"):
+            adj = mkg_enrichment.get("confidence_adjustment", 0)
+            adj = max(-MAX_MKG_CONFIDENCE_ADJUSTMENT, min(MAX_MKG_CONFIDENCE_ADJUSTMENT, adj))
+            confidence = max(0, min(100, confidence + adj))
+            logger.info(
+                "MKG adjustment for %s: %+d (new confidence=%d, risk=%.2f)",
+                symbol, adj, confidence, mkg_enrichment.get("supply_chain_risk", 0),
+            )
+
         # 6. Generate AI reasoning
         ai_reasoning = await self.reasoner.generate_reasoning(
             symbol=symbol,
@@ -192,9 +206,21 @@ class SignalGenerator:
             confidence=confidence,
             technical_data=technical_data,
             sentiment_data=sentiment_data,
+            mkg_context=mkg_enrichment.get("reasoning_context", ""),
         )
 
         # 7. Create and persist signal
+        # Merge MKG enrichment into sentiment_data for storage
+        enriched_sentiment = dict(sentiment_data) if sentiment_data else {}
+        if mkg_enrichment.get("has_material_impact"):
+            enriched_sentiment["mkg"] = {
+                "supply_chain_risk": mkg_enrichment["supply_chain_risk"],
+                "confidence_adjustment": mkg_enrichment["confidence_adjustment"],
+                "risk_factors": mkg_enrichment.get("risk_factors", []),
+                "affected_companies": mkg_enrichment.get("affected_companies", []),
+                "impact_count": mkg_enrichment.get("impact_count", 0),
+            }
+
         signal = Signal(
             symbol=symbol,
             market_type=market_type,
@@ -206,7 +232,7 @@ class SignalGenerator:
             timeframe=targets["timeframe"],
             ai_reasoning=ai_reasoning,
             technical_data=technical_data,
-            sentiment_data=sentiment_data,
+            sentiment_data=enriched_sentiment if enriched_sentiment else None,
             is_active=True,
             expires_at=datetime.now(timezone.utc) + timedelta(days=7),
         )
@@ -357,3 +383,24 @@ class SignalGenerator:
             await self.db.flush()
         except Exception:
             logger.warning("Failed to link news events to signal %s", signal_id)
+
+    @staticmethod
+    async def _get_mkg_enrichment(symbol: str, market_type: str) -> dict[str, Any]:
+        """Get MKG supply chain enrichment for a symbol.
+
+        Returns empty enrichment on any error so signal generation continues.
+        """
+        try:
+            from mkg.integration.signal_enrichment import enrich_signal_for_symbol_async
+
+            return await enrich_signal_for_symbol_async(
+                symbol=symbol,
+                market_type=market_type,
+                include_compliance=False,
+            )
+        except ImportError:
+            logger.debug("MKG module not available, skipping enrichment for %s", symbol)
+            return {"has_material_impact": False}
+        except Exception:
+            logger.warning("MKG enrichment failed for %s, continuing without", symbol)
+            return {"has_material_impact": False}

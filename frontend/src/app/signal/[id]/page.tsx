@@ -19,6 +19,7 @@ import { IndicatorTooltip } from '@/components/shared/IndicatorTooltip';
 import { PipCalculator } from '@/components/signals/PipCalculator';
 import { TrailingStopSuggestion } from '@/components/signals/TrailingStopSuggestion';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
+import { SupplyChainContext } from '@/components/graph/SupplyChainContext';
 
 interface SignalDetailResponse {
   data: Signal;
@@ -383,6 +384,11 @@ export default function SignalDetailPage() {
             </div>
           </CollapsibleSection>
         )}
+
+        {/* ── Supply Chain Context ── */}
+        <CollapsibleSection title="🔗 Supply Chain Context" storageKey={`supply-chain-${signalId}`} defaultOpen={false}>
+          <SupplyChainContext symbol={signal.symbol} marketType={signal.market_type} />
+        </CollapsibleSection>
 
         {/* ── Trading Tools ── */}
         <h3 className="text-xs text-text-muted uppercase tracking-wider mt-2">Trading Tools</h3>

@@ -27,16 +27,37 @@ class ServiceFactory:
         self._article_storage: Any = None
 
     async def initialize(self) -> None:
-        """Initialize storage backends."""
+        """Initialize storage backends.
+
+        Set MKG_GRAPH_BACKEND=postgres and MKG_DATABASE_URL to use
+        PostgreSQL graph storage. Defaults to sqlite.
+        """
         os.makedirs(self._db_dir, exist_ok=True)
 
-        from mkg.infrastructure.sqlite.graph_storage import SQLiteGraphStorage
-        from mkg.infrastructure.sqlite.article_storage import SQLiteArticleStorage
+        graph_backend = os.environ.get("MKG_GRAPH_BACKEND", "sqlite").lower()
 
-        self._graph_storage = SQLiteGraphStorage(
-            db_path=os.path.join(self._db_dir, "graph.db")
-        )
+        if graph_backend == "postgres":
+            from mkg.infrastructure.postgres.graph_storage import PostgresGraphStorage
+
+            database_url = os.environ.get(
+                "MKG_DATABASE_URL",
+                os.environ.get("DATABASE_URL", ""),
+            )
+            if not database_url:
+                raise ValueError(
+                    "MKG_GRAPH_BACKEND=postgres requires MKG_DATABASE_URL or DATABASE_URL"
+                )
+            self._graph_storage = PostgresGraphStorage(database_url=database_url)
+        else:
+            from mkg.infrastructure.sqlite.graph_storage import SQLiteGraphStorage
+
+            self._graph_storage = SQLiteGraphStorage(
+                db_path=os.path.join(self._db_dir, "graph.db")
+            )
+
         await self._graph_storage.initialize()
+
+        from mkg.infrastructure.sqlite.article_storage import SQLiteArticleStorage
 
         self._article_storage = SQLiteArticleStorage(
             db_path=os.path.join(self._db_dir, "articles.db")

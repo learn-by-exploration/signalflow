@@ -62,6 +62,7 @@ export const NAV_PRIMARY_LINKS = [
 ];
 
 export const NAV_RESEARCH_LINKS = [
+  { href: '/knowledge-graph', label: 'Supply Chain Map', icon: '🕸️' },
   { href: '/news', label: 'News', icon: '📰' },
   { href: '/calendar', label: 'Calendar', icon: '📅' },
   { href: '/backtest', label: 'Backtest', icon: '🔬' },
@@ -94,6 +95,7 @@ export const NAV_MOBILE_MENU_GROUPS = [
   {
     title: 'Research',
     links: [
+      { href: '/knowledge-graph', label: 'Supply Chain Map', icon: '🕸️' },
       { href: '/news', label: 'News', icon: '📰' },
       { href: '/calendar', label: 'Calendar', icon: '📅' },
       { href: '/backtest', label: 'Backtest', icon: '🔬' },

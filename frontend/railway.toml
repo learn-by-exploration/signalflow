@@ -1,0 +1,13 @@
+# Railway configuration for the frontend service.
+# Create a separate Railway service in the dashboard pointing to this directory.
+# Set BACKEND_URL env var to the backend service's internal Railway URL.
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "frontend/Dockerfile"
+
+[deploy]
+startCommand = "node server.js"
+restartPolicyType = "always"
+healthcheckPath = "/"
+healthcheckTimeout = 30
