@@ -82,6 +82,8 @@ fastapi==0.135.1
     # via
     #   -r requirements.txt
     #   sentry-sdk
+flower==2.0.1
+    # via -r requirements.txt
 frozendict==2.4.7
     # via yfinance
 frozenlist==1.8.0

@@ -114,9 +114,11 @@ async def get_accuracy_trend(
     """Get weekly win rate trend for the last N weeks."""
     since = datetime.now(timezone.utc) - timedelta(weeks=weeks)
 
+    week_expr = func.date_trunc("week", SignalHistory.resolved_at)
+
     stmt = (
         select(
-            func.date_trunc("week", SignalHistory.resolved_at).label("week_start"),
+            week_expr.label("week_start"),
             func.count(SignalHistory.id).label("total"),
             func.count(SignalHistory.id)
             .filter(SignalHistory.outcome == "hit_target")
@@ -124,8 +126,8 @@ async def get_accuracy_trend(
         )
         .where(SignalHistory.resolved_at.isnot(None))
         .where(SignalHistory.resolved_at >= since)
-        .group_by(func.date_trunc("week", SignalHistory.resolved_at))
-        .order_by(func.date_trunc("week", SignalHistory.resolved_at))
+        .group_by(week_expr)
+        .order_by(week_expr)
     )
     result = await db.execute(stmt)
     rows = result.all()
