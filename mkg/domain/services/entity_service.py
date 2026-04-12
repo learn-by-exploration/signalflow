@@ -71,7 +71,13 @@ class EntityService:
         results = await self._storage.find_entities(
             entity_type=type_str, filters=filters, limit=limit, offset=offset,
         )
-        return [self._dict_to_entity(r) for r in results]
+        entities: list[Entity] = []
+        for r in results:
+            try:
+                entities.append(self._dict_to_entity(r))
+            except (ValueError, KeyError):
+                continue  # skip malformed rows
+        return entities
 
     async def update_entity(
         self,
@@ -156,11 +162,13 @@ class EntityService:
     @staticmethod
     def _dict_to_entity(data: dict[str, Any]) -> Entity:
         """Convert a storage dict to an Entity domain model."""
+        entity_id = data["id"]
+        name = data.get("name") or entity_id
         return Entity(
-            id=data["id"],
+            id=entity_id,
             entity_type=EntityType(data.get("entity_type", "Company")),
-            name=data.get("name", ""),
-            canonical_name=data.get("canonical_name", data.get("name", "")),
+            name=name,
+            canonical_name=data.get("canonical_name") or name,
             confidence=data.get("confidence", 1.0),
             metadata=data.get("metadata", {}),
             source=data.get("source"),
