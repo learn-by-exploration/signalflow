@@ -13,6 +13,8 @@ from app.config import get_settings
 from app.models.market_data import MarketData
 from app.models.signal import Signal
 from app.models.signal_history import SignalHistory
+from app.schemas.signal import SignalResponse
+from app.services.pubsub import publish_signal
 from app.services.signal_gen.generator import SignalGenerator
 from app.tasks._engine import get_task_session_factory
 from app.tasks.celery_app import celery_app
@@ -32,6 +34,15 @@ async def _generate_signals_async() -> dict:
             generator = SignalGenerator(db=db, redis_client=redis_client)
             signals = await generator.generate_all()
             await db.commit()
+
+            # Publish new signals to Redis so WebSocket clients get real-time delivery
+            for signal in signals:
+                try:
+                    signal_data = SignalResponse.model_validate(signal).model_dump(mode="json")
+                    await publish_signal(redis_client, signal_data)
+                except Exception:
+                    logger.warning("pubsub_publish_error signal_id=%s", signal.id)
+
             return {"status": "ok", "signals_generated": len(signals)}
     finally:
         await redis_client.aclose()

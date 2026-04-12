@@ -210,14 +210,36 @@ async def require_auth(
             tier=payload.get("tier", "free"),
         )
 
-    # Fall back to API key
+    # Fall back to API key — accept api_secret_key or internal_api_key
     if not settings.api_secret_key:
         logger.error("API_SECRET_KEY not configured — rejecting request")
         raise HTTPException(status_code=401, detail="Server misconfiguration: API key not set")
-    if api_key and hmac.compare_digest(api_key, settings.api_secret_key):
-        return AuthContext(auth_type="api_key")
+    if api_key:
+        if hmac.compare_digest(api_key, settings.api_secret_key):
+            return AuthContext(auth_type="api_key")
+        internal_key = settings.internal_api_key
+        if internal_key and hmac.compare_digest(api_key, internal_key):
+            # Internal callers get pro-equivalent access
+            return AuthContext(auth_type="internal_api_key", tier="pro")
 
     raise HTTPException(status_code=401, detail="Invalid or missing authentication")
+
+
+async def get_optional_auth(
+    api_key: str | None = Security(api_key_header),
+    authorization: str | None = Header(None),
+) -> AuthContext | None:
+    """Like require_auth but returns None instead of raising if no credentials provided.
+
+    Use for endpoints that are public but behave differently for authenticated users
+    (e.g., tier gating on signal detail views).
+    """
+    if not api_key and not authorization:
+        return None
+    try:
+        return await require_auth(api_key=api_key, authorization=authorization)
+    except HTTPException:
+        return None
 
 
 async def get_current_user(auth: AuthContext = Depends(require_auth)) -> AuthContext:
@@ -267,4 +289,4 @@ async def require_internal_auth(
         raise HTTPException(status_code=401, detail="Internal API key not configured")
     if not api_key or not hmac.compare_digest(api_key, internal_key):
         raise HTTPException(status_code=401, detail="Invalid internal API key")
-    return AuthContext(auth_type="internal_api_key")
+    return AuthContext(auth_type="internal_api_key", tier="pro")

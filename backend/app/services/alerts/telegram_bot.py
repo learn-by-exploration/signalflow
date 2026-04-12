@@ -289,6 +289,7 @@ class SignalFlowBot:
                 resp = await client.post(
                     api_url,
                     json={"symbol": symbol, "question": question},
+                    headers={"X-API-Key": settings.internal_api_key or settings.api_secret_key or ""},
                 )
                 resp.raise_for_status()
                 data = resp.json()

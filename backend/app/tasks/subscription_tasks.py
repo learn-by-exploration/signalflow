@@ -39,9 +39,7 @@ def check_expired_subscriptions(self) -> dict:
         return count
 
     try:
-        loop = asyncio.new_event_loop()
-        count = loop.run_until_complete(_check())
-        loop.close()
+        count = asyncio.run(_check())
     except Exception:
         logger.exception("Failed to check expired subscriptions")
         count = 0

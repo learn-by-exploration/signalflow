@@ -2,17 +2,22 @@
 
 import re
 from datetime import datetime, timezone
+from typing import Optional
 from uuid import UUID
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import AuthContext, get_optional_auth
+from app.config import get_settings
 from app.database import get_db
 from app.models.signal import Signal
 from app.models.signal_news_link import SignalNewsLink
 from app.models.news_event import NewsEvent
 from app.schemas.signal import MetaResponse, SignalListResponse, SignalResponse
+from app.services.tier_gating import consume_free_detail_view, redact_signal_for_free_tier
 
 router = APIRouter(prefix="/signals", tags=["signals"])
 
@@ -69,8 +74,13 @@ async def list_signals(
 async def get_signal(
     signal_id: UUID,
     db: AsyncSession = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ) -> dict:
-    """Get a single signal by ID, including linked news events."""
+    """Get a single signal by ID, including linked news events.
+
+    Free users get 3 full-detail views per week; subsequent views are redacted.
+    Pro users always receive full data.
+    """
     result = await db.execute(select(Signal).where(Signal.id == signal_id))
     signal = result.scalar_one_or_none()
     if not signal:
@@ -102,7 +112,25 @@ async def get_signal(
                 "published_at": ne.published_at.isoformat() if ne.published_at else None,
             })
 
+    signal_data = SignalResponse.model_validate(signal).model_dump(mode="json")
+
+    # Apply tier gating: pro users always get full data;
+    # free/anonymous users get 3 views/week then redacted.
+    is_pro = auth is not None and auth.tier == "pro"
+    if not is_pro and auth is not None and auth.user_id:
+        settings = get_settings()
+        redis_client = aioredis.from_url(settings.redis_url)
+        try:
+            allowed = await consume_free_detail_view(auth.user_id, redis_client)
+        finally:
+            await redis_client.aclose()
+        if not allowed:
+            signal_data = redact_signal_for_free_tier(signal_data)
+    elif not is_pro and auth is None:
+        # Unauthenticated requests always get redacted detail
+        signal_data = redact_signal_for_free_tier(signal_data)
+
     return {
-        "data": SignalResponse.model_validate(signal),
+        "data": signal_data,
         "news": news_items,
     }
