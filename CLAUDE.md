@@ -1445,4 +1445,118 @@ healthcheckTimeout = 30
 
 ---
 
-*Last updated: 29 March 2026 | SignalFlow AI v1.3.0 + unreleased*
+## AI Powerhouse Integration
+
+> **Submodule location:** `external/ai-powerhouse` (git submodule, fully initialized)
+> **Installation state:** 279 agents · 365 skills · 280 commands installed in `~/.claude` (installed 2026-04-11)
+> **Rule:** Use the routing table below *before* writing code. The right agent saves hours.
+
+### Two-Tier Agent System
+
+The `.claude/helpers/router.js` auto-routes every prompt to the right agents via the `UserPromptSubmit` hook. You'll see `[ROUTE]` output at the start of each session.
+
+**Tier 1 — Project agents** (in `.claude/agents/signalflow/`): know SignalFlow's architecture, file layout, non-negotiables.
+**Tier 2 — Specialist agents** (from ai-powerhouse in `~/.claude/agents/`): deep technical expertise paired with each domain.
+
+### Routing Table
+
+| Domain | Project Agent | Specialist Agents |
+|--------|--------------|-------------------|
+| FastAPI endpoints | `signalflow-backend` | `ws-api-scaffolding-fastapi-pro` |
+| Celery / Redis tasks | `signalflow-backend` | `ws-python-development-python-pro` |
+| PostgreSQL / TimescaleDB / Alembic | `signalflow-backend` | `ws-database-design-sql-pro` · `ws-database-migrations-database-admin` |
+| Claude API / AI engine / prompts | `signalflow-ai-engine` | `ws-llm-application-dev-ai-engineer` |
+| Signal scoring / pipeline | `signalflow-signal` | `ws-backend-development-tdd-orchestrator` |
+| Market data / indicators | `signalflow-data` | `ws-python-development-python-pro` |
+| JWT / auth / Razorpay | `signalflow-security` | `ecc-security-reviewer` |
+| Next.js / React / Tailwind | `signalflow-frontend` | `ecc-typescript-reviewer` |
+| MKG knowledge graph | `signalflow-backend` | `ws-backend-development-backend-architect` |
+| TDD / test writing | — | `ecc-tdd-guide` · `ws-backend-development-tdd-orchestrator` |
+| Code review | — | `ecc-code-reviewer` · `ecc-python-reviewer` · `superpowers-code-reviewer` |
+| Security audit | — | `ecc-security-reviewer` · `gsd-security-auditor` · `ws-security-scanning-security-auditor` |
+| Performance / slow queries | — | `ecc-performance-optimizer` · `ws-backend-development-performance-engineer` · `ws-database-cloud-optimization-database-optimizer` |
+| Refactor / dead code | — | `ecc-refactor-cleaner` · `sc-refactoring-expert` |
+| Debugging / tracebacks | — | `gsd-debugger` · `ws-error-debugging-error-detective` |
+| Observability / Prometheus | — | `ws-observability-monitoring-observability-engineer` |
+| Architecture decisions | — | `ecc-architect` · `sc-system-architect` |
+| Build / import errors | — | `ecc-build-error-resolver` |
+| DevOps / Docker / Railway | — | `ws-cicd-automation-deployment-engineer` |
+
+### Key Skills for This Project
+
+```
+ecc-python-patterns          — idiomatic Python patterns (services, async, DI)
+ecc-python-testing           — pytest fixtures, async tests, coverage
+ecc-postgres-patterns        — TimescaleDB hypertable queries, indexing
+ecc-database-migrations      — Alembic migration workflow
+ecc-claude-api               — Anthropic SDK usage, prompt design
+ecc-cost-aware-llm-pipeline  — token budget enforcement, caching, fallbacks
+ecc-llm-trading-agent-security — LLM-specific security for trading contexts
+ecc-security-review          — pre-commit security checklist
+ecc-tdd-workflow             — full TDD loop for Python
+ws-fastapi-templates         — FastAPI dependency injection, router patterns
+ws-async-python-patterns     — asyncio, async SQLAlchemy, Celery async
+ws-python-background-jobs    — Celery task design, beat scheduler, retries
+ws-python-observability      — structured logging, metrics, tracing
+ws-postgresql                — query optimization, indexes, EXPLAIN ANALYZE
+ws-python-testing-patterns   — pytest-asyncio, factory fixtures, mocking
+ws-python-error-handling     — exception hierarchies, propagation patterns
+ws-python-type-safety        — mypy, Pydantic v2 type patterns
+ws-slo-implementation        — SLI/SLO design for uptime monitoring
+ws-llm-evaluation            — eval harness for AI signal reasoning quality
+```
+
+### Key Commands (invoke with `/`)
+
+```bash
+/ecc-tdd           # Full TDD workflow — write failing test first
+/ecc-python-review # Python code quality review
+/ecc-code-review   # General quality review (logic, patterns, coverage)
+/ecc-plan          # Implementation planning before a feature
+/ecc-build-fix     # Fix build / import errors fast
+/ecc-test-coverage # Check and improve test coverage
+/ecc-verify        # Pre-commit verification checklist
+/gsd-add-tests     # Add missing tests for existing code
+/gsd-code-review   # GSD-style structured code review
+/gsd-debug         # Structured debugging session
+```
+
+### Daily Workflow for SignalFlow
+
+```
+1. Before writing anything new:
+   → mem-mem-search ("was this pattern solved before?")
+
+2. For any feature:
+   → /ecc-plan  (plan first)
+   → ecc-tdd-guide  (Red → Green → Refactor)
+   → ecc-python-reviewer  (after writing)
+   → ecc-security-reviewer  (if touching auth/payments/AI engine)
+
+3. Before commit:
+   → /ecc-verify  (checklist)
+   → /ecc-python-review  (final quality pass)
+   → all tests green + docker build clean (per CLAUDE.md mandate)
+
+4. For AI engine changes (sentiment, reasoner, cost tracker):
+   → ecc-claude-api skill  (SDK patterns)
+   → ecc-cost-aware-llm-pipeline skill  (budget enforcement)
+   → ecc-llm-trading-agent-security skill  (prompt injection, output sanitization)
+   → ws-llm-evaluation skill  (eval strategy for signal reasoning quality)
+```
+
+### Updating the Submodule
+
+```bash
+cd external/ai-powerhouse
+git submodule update --remote --merge
+bash scripts/update-hashes.sh
+cd ../..
+git add external/ai-powerhouse
+git commit -m "chore: update ai-powerhouse submodule"
+bash external/ai-powerhouse/master/install.sh  # refresh ~/.claude symlinks
+```
+
+---
+
+*Last updated: 12 April 2026 | SignalFlow AI v1.3.0 + unreleased*

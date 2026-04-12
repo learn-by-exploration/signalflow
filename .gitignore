@@ -49,3 +49,7 @@ coverage.xml
 *.log
 ai_cost_log.json
 backend/celerybeat-schedule
+
+# Claude Code session data
+.claude-flow/
+.claude/settings.local.json
