@@ -147,6 +147,27 @@ export default function SignalDetailPage() {
           </div>
         </div>
 
+        {/* Tier lock banner — shown when free-tier quota is exhausted */}
+        {signal.is_locked && (
+          <div className="bg-accent-purple/10 border border-accent-purple/30 rounded-xl px-4 py-4 flex items-start gap-3">
+            <span className="text-2xl">🔒</span>
+            <div className="flex-1">
+              <p className="text-sm font-display font-semibold text-accent-purple">
+                Weekly limit reached
+              </p>
+              <p className="text-xs text-text-muted mt-0.5">
+                Free accounts get 3 full signal views per week. Upgrade to Pro for unlimited access to AI reasoning, target prices, and stop-losses.
+              </p>
+              <a
+                href="/pricing"
+                className="inline-block mt-2 px-4 py-1.5 bg-accent-purple text-white text-xs rounded-lg font-medium hover:bg-accent-purple/90 transition-colors"
+              >
+                Upgrade to Pro →
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Earnings proximity warning for stocks */}
         {signal.market_type === 'stock' && (() => {
           const month = new Date().getMonth();
@@ -182,11 +203,17 @@ export default function SignalDetailPage() {
             <div className="text-right space-y-1">
               <div>
                 <p className="text-xs text-text-muted">Target</p>
-                <p className="text-sm font-mono text-signal-buy">🎯 {formatPrice(signal.target_price, signal.market_type)}</p>
+                {signal.is_locked || !signal.target_price
+                  ? <p className="text-sm text-accent-purple/70">🔒 Pro only</p>
+                  : <p className="text-sm font-mono text-signal-buy">🎯 {formatPrice(signal.target_price, signal.market_type)}</p>
+                }
               </div>
               <div>
                 <p className="text-xs text-text-muted">Stop-Loss</p>
-                <p className="text-sm font-mono text-signal-sell">🛑 {formatPrice(signal.stop_loss, signal.market_type)}</p>
+                {signal.is_locked || !signal.stop_loss
+                  ? <p className="text-sm text-accent-purple/70">🔒 Pro only</p>
+                  : <p className="text-sm font-mono text-signal-sell">🛑 {formatPrice(signal.stop_loss, signal.market_type)}</p>
+                }
               </div>
             </div>
           </div>

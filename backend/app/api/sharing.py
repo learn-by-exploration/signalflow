@@ -38,7 +38,9 @@ async def share_signal(
 
 
 @router.get("/shared/{share_id}", response_model=dict)
+@limiter.limit("30/minute")
 async def get_shared_signal(
+    request: Request,
     share_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -61,6 +63,8 @@ async def get_shared_signal(
     if not signal:
         raise HTTPException(status_code=404, detail="Signal no longer exists")
 
+    # Shared signals show directional data (entry, targets) but redact full AI reasoning.
+    # This lets Pro users share proof of signals without giving away the full product.
     return {
         "data": {
             "symbol": signal.symbol,
@@ -71,7 +75,8 @@ async def get_shared_signal(
             "target_price": str(signal.target_price),
             "stop_loss": str(signal.stop_loss),
             "timeframe": signal.timeframe,
-            "ai_reasoning": signal.ai_reasoning,
+            "ai_reasoning": (signal.ai_reasoning[:200] + "…") if signal.ai_reasoning and len(signal.ai_reasoning) > 200 else signal.ai_reasoning,
             "created_at": signal.created_at.isoformat(),
+            "shared": True,
         }
     }

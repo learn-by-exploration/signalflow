@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from app.auth import AuthContext, require_auth
 from app.database import get_db
 from app.models.signal import Signal
 from app.models.signal_history import SignalHistory
@@ -33,6 +34,7 @@ async def list_signal_history(
     outcome: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    auth: AuthContext = Depends(require_auth),
     db: AsyncSession = Depends(get_db),
 ) -> SignalHistoryResponse:
     """List past signal outcomes with embedded signal details."""

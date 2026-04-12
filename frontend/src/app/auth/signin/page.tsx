@@ -119,16 +119,21 @@ function SignInForm() {
             />
           </div>
 
-          {/* Remember me */}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="rounded border-border-default bg-bg-card text-accent-purple focus:ring-accent-purple"
-            />
-            <span className="text-xs text-text-secondary">Remember me for 30 days</span>
-          </label>
+          {/* Remember me + Forgot password */}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded border-border-default bg-bg-card text-accent-purple focus:ring-accent-purple"
+              />
+              <span className="text-xs text-text-secondary">Remember me for 30 days</span>
+            </label>
+            <Link href="/auth/forgot-password" className="text-xs text-accent-purple hover:underline">
+              Forgot password?
+            </Link>
+          </div>
 
           <button
             type="submit"

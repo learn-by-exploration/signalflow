@@ -34,16 +34,21 @@ async def _generate_signals_async() -> dict:
             generator = SignalGenerator(db=db, redis_client=redis_client)
             signals = await generator.generate_all()
             await db.commit()
-
-            # Publish new signals to Redis so WebSocket clients get real-time delivery
+            # Serialize inside the session while ORM objects are still valid
+            serialized = []
             for signal in signals:
                 try:
-                    signal_data = SignalResponse.model_validate(signal).model_dump(mode="json")
-                    await publish_signal(redis_client, signal_data)
+                    serialized.append(SignalResponse.model_validate(signal).model_dump(mode="json"))
                 except Exception:
-                    logger.warning("pubsub_publish_error signal_id=%s", signal.id)
+                    logger.warning("signal_serialize_error signal_id=%s", signal.id)
+        # Publish after session is closed — keeps DB session short, Redis errors don't affect commits
+        for signal_data in serialized:
+            try:
+                await publish_signal(redis_client, signal_data)
+            except Exception:
+                logger.warning("pubsub_publish_error signal_id=%s", signal_data.get("id"))
 
-            return {"status": "ok", "signals_generated": len(signals)}
+        return {"status": "ok", "signals_generated": len(serialized)}
     finally:
         await redis_client.aclose()
 

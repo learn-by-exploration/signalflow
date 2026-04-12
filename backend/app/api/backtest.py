@@ -51,6 +51,7 @@ async def start_backtest(
 
     now = datetime.now(timezone.utc)
     backtest = BacktestRun(
+        user_id=auth.user_id,
         symbol=safe_symbol,
         market_type=payload.market_type,
         start_date=now - timedelta(days=payload.days),
@@ -67,14 +68,34 @@ async def start_backtest(
     return {"data": BacktestData.model_validate(backtest)}
 
 
+@router.get("", response_model=dict)
+async def list_backtests(
+    auth: AuthContext = Depends(require_tier("pro")),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """List all backtest runs for the authenticated user."""
+    result = await db.execute(
+        select(BacktestRun)
+        .where(BacktestRun.user_id == auth.user_id)
+        .order_by(BacktestRun.created_at.desc())
+        .limit(50)
+    )
+    backtests = result.scalars().all()
+    return {"data": [BacktestData.model_validate(b) for b in backtests]}
+
+
 @router.get("/{backtest_id}", response_model=dict)
 async def get_backtest(
     backtest_id: UUID,
+    auth: AuthContext = Depends(require_tier("pro")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Get backtest results by ID."""
+    """Get backtest results by ID — only the owner can access."""
     result = await db.execute(
-        select(BacktestRun).where(BacktestRun.id == backtest_id)
+        select(BacktestRun).where(
+            BacktestRun.id == backtest_id,
+            BacktestRun.user_id == auth.user_id,
+        )
     )
     backtest = result.scalar_one_or_none()
     if not backtest:

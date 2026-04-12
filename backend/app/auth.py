@@ -229,17 +229,18 @@ async def get_optional_auth(
     api_key: str | None = Security(api_key_header),
     authorization: str | None = Header(None),
 ) -> AuthContext | None:
-    """Like require_auth but returns None instead of raising if no credentials provided.
+    """Like require_auth but returns None when no credentials are provided.
+
+    If credentials ARE provided but are invalid/expired, raises 401 so the client
+    knows to re-authenticate rather than silently falling back to anonymous tier.
 
     Use for endpoints that are public but behave differently for authenticated users
     (e.g., tier gating on signal detail views).
     """
     if not api_key and not authorization:
         return None
-    try:
-        return await require_auth(api_key=api_key, authorization=authorization)
-    except HTTPException:
-        return None
+    # Credentials were provided — validate them fully (raises on bad/expired token)
+    return await require_auth(api_key=api_key, authorization=authorization)
 
 
 async def get_current_user(auth: AuthContext = Depends(require_auth)) -> AuthContext:

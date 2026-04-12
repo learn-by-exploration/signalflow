@@ -19,6 +19,7 @@ export interface Signal {
   technical_data: Record<string, unknown>;
   sentiment_data: Record<string, unknown> | null;
   is_active: boolean;
+  is_locked?: boolean;
   created_at: string;
   expires_at: string | null;
 }

@@ -85,7 +85,7 @@ async def register(
     try:
         redis_client = aioredis.from_url(settings.redis_url)
         await redis_client.setex(f"email_verify:{user.id}", 86400, verify_code)  # 24h TTL
-        logger.info("Email verification code for %s: %s", user.email, verify_code)
+        logger.info("Email verification code generated for %s (code omitted)", user.email)
     except (ConnectionError, OSError, Exception):
         logger.warning("Failed to store email verification code for %s", user.email)
 
@@ -101,6 +101,7 @@ async def register(
         expires_at=datetime.now(timezone.utc) + timedelta(days=settings.jwt_refresh_token_expire_days),
     )
     db.add(db_token)
+    await db.commit()
 
     return {
         "data": {
@@ -196,6 +197,7 @@ async def login(
         expires_at=datetime.now(timezone.utc) + timedelta(days=settings.jwt_refresh_token_expire_days),
     )
     db.add(db_token)
+    await db.commit()
 
     return {
         "data": {
@@ -552,7 +554,7 @@ async def resend_verification(
     try:
         rds = aioredis.from_url(settings.redis_url)
         await rds.setex(f"email_verify:{user_id}", 86400, verify_code)  # 24h TTL
-        logger.info("Email verification code for %s: %s", db_user.email, verify_code)
+        logger.info("Email verification code generated for %s (code omitted)", db_user.email)
     except (ConnectionError, OSError, Exception):
         raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 

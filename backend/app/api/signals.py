@@ -120,10 +120,16 @@ async def get_signal(
     if not is_pro and auth is not None and auth.user_id:
         settings = get_settings()
         redis_client = aioredis.from_url(settings.redis_url)
+        allowed = True  # Fail-open: if Redis is down, grant the view
         try:
             allowed = await consume_free_detail_view(auth.user_id, redis_client)
+        except Exception:
+            logger.warning("redis_unavailable tier_gating user_id=%s — granting view", auth.user_id)
         finally:
-            await redis_client.aclose()
+            try:
+                await redis_client.aclose()
+            except Exception:
+                pass
         if not allowed:
             signal_data = redact_signal_for_free_tier(signal_data)
     elif not is_pro and auth is None:

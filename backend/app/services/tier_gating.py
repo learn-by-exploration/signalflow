@@ -33,8 +33,23 @@ LOCKED_FIELDS = {
 }
 
 
+_INCR_WITH_EXPIRE_LUA = """
+local key = KEYS[1]
+local ttl = tonumber(ARGV[1])
+local count = redis.call('INCR', key)
+if count == 1 then
+    redis.call('EXPIRE', key, ttl)
+end
+return count
+"""
+
+
 async def consume_free_detail_view(user_id: str, redis_client) -> bool:
     """Attempt to consume one free detail view for a user.
+
+    Uses an atomic Lua script so the INCR and EXPIRE are a single operation —
+    prevents the race where two concurrent requests both see count=1 and
+    both set a new TTL, effectively resetting the weekly window.
 
     Args:
         user_id: The user's UUID string.
@@ -44,11 +59,8 @@ async def consume_free_detail_view(user_id: str, redis_client) -> bool:
         True if the view was allowed (quota not exhausted), False if locked.
     """
     key = _VIEWS_KEY.format(user_id=user_id)
-    count = await redis_client.incr(key)
-    if count == 1:
-        # First increment — set TTL for 1 week
-        await redis_client.expire(key, _VIEWS_TTL_SECONDS)
-    return count <= FREE_DETAIL_VIEWS_PER_WEEK
+    count = await redis_client.eval(_INCR_WITH_EXPIRE_LUA, 1, key, _VIEWS_TTL_SECONDS)  # nosec — redis Lua eval, not Python eval
+    return int(count) <= FREE_DETAIL_VIEWS_PER_WEEK
 
 
 async def get_free_views_remaining(user_id: str, redis_client) -> int:
